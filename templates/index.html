@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Purchase Internal Control Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────── -->
+<header class="hdr">
+  <a class="hdr-brand" href="#">
+    <img src="/static/images/logo.png" alt="LASER logo" class="hdr-logo-mark" />
+    <span class="hdr-brand-text">
+      <span class="hdr-logo">LASER</span>
+      <span class="hdr-subtitle">Internal Control Dashboard</span>
+    </span>
+  </a>
+  <div class="hdr-right">
+    <div class="chip"><span class="dot"></span> FY 2026–27</div>
+  </div>
+</header>
+<div class="hdr-accent"></div>
+
+<!-- ── TOP NAV ────────────────────────────────── -->
+<nav class="topnav" id="topnav">
+  <button class="nav-tab active" data-page="welcome">🏠 Welcome</button>
+  <button class="nav-tab" data-page="filters">⚙ Filters</button>
+  <button class="nav-tab" data-page="hygiene">🔍 Data Hygiene</button>
+  <button class="nav-tab" data-page="po-summary">📊 PO vs Invoice vs GRN vs Bank</button>
+  <button class="nav-tab" data-page="po-detail">📋 PO Detail</button>
+  <button class="nav-tab" data-page="purchase">🛒 Purchase</button>
+  <button class="nav-tab" data-page="ai-dashboard">🤖 AI Dashboard</button>
+  <button class="nav-tab" data-page="formula">✔ Calculation Check</button>
+  <button class="nav-tab" data-page="addition">➕ Addition</button>
+</nav>
+<div class="obs-wrap">
+  <button class="obs-btn" type="button">Observation</button>
+</div>
+
+<!-- ── PAGES CONTAINER ────────────────────────── -->
+<div class="wrap">
+
+  <!-- PAGE: WELCOME -->
+  <div class="page active" id="page-welcome">
+    <div class="hero">
+      <div class="eyebrow">Purchase Internal Control</div>
+      <h1>Purchase <span>Control</span><br>Dashboard</h1>
+      <p>Comprehensive audit and control analytics for purchase transactions — data hygiene, PO matching, vendor risk, GST formula validation, and AI-driven insights in one place.</p>
+      <div class="cta">
+        <button class="btn primary" onclick="goTo('ai-dashboard')">Open AI Dashboard →</button>
+        <button class="btn ghost" onclick="goTo('filters')">Set Filters</button>
+      </div>
+    </div>
+    <div class="modules" id="welcome-modules">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- PAGE: FILTERS -->
+  <div class="page" id="page-filters">
+    <div class="page-head">
+      <div class="eyebrow">Global Settings</div>
+      <h1>Dashboard Filters</h1>
+      <p>Set filters here — all pages update instantly to reflect your selection.</p>
+    </div>
+    <div class="filter-page-grid" id="filter-page-grid">
+      <!-- Populated by JS -->
+    </div>
+    <div class="filter-actions">
+      <button class="btn primary" onclick="applyFilters()">Apply Filters</button>
+      <button class="btn ghost" onclick="resetFilters()">Reset All</button>
+    </div>
+  </div>
+
+  <!-- PAGE: DATA HYGIENE -->
+  <div class="page" id="page-hygiene">
+    <div class="filter-shell">
+      <div class="rail" id="rail-hygiene"></div>
+      <div>
+        <div class="page-head">
+          <div class="eyebrow">Data Quality</div>
+          <h1>Purchase Data Hygiene</h1>
+          <p>Flags duplicate master data, mismatched GST codes, and product anomalies.</p>
+        </div>
+        <div id="filter-strip-hygiene"></div>
+        <div class="section-label">Tax & GST Checks</div>
+        <div class="grid g2" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Multiple Tax Code</div><div class="desc">GST rate mapped to more than one tax description</div></div></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-multi-tax"><thead><tr><th>GST Rate (%)</th><th>Tax Description</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Same Product, Multiple GST Rate</div><div class="desc">A product billed at more than one GST rate</div></div></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-gst"><thead><tr><th>Product Name</th><th class="r">GST Rate (%)</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+          </div>
+        </div>
+        <div class="section-label">Customer & Product Master Checks</div>
+        <div class="grid g3">
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Duplicate Customer Name</div><div class="desc">Same name under different codes</div></div></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-dup-cust"><thead><tr><th>Customer Name</th><th>Code</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Product Name Check</div><div class="desc">Same product, multiple codes</div></div></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-name"><thead><tr><th>Product Name</th><th>Code</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Product Code Check</div><div class="desc">Codes not found in master</div></div></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-code"><thead><tr><th>Product Code</th><th class="c">Status</th></tr></thead><tbody></tbody></table></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: PO SUMMARY -->
+  <div class="page" id="page-po-summary">
+    <div class="page-head">
+      <div class="eyebrow">Reconciliation</div>
+      <h1>PO vs Invoice vs GRN vs Bank</h1>
+      <p>Comparing purchase orders against invoices, goods receipts, and bank payments.</p>
+    </div>
+    <div id="filter-strip-po"></div>
+    <div class="kpi-row" id="kpi-po"></div>
+    <div class="card">
+      <div class="card-h"><div class="grow"><div class="ttl">Detailed Comparison — PO / Invoice / GRN / Bank</div><div class="desc">Line-by-line reconciliation with match status</div></div></div>
+      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-comparison"><thead><tr><th>Invoice No</th><th>Vendor Name</th><th>PO No</th><th class="c">PO Amt (₹)</th><th>GRN No</th><th class="c">GRN Amt (₹)</th><th class="c">Bank Amt (₹)</th><th class="c">GRN Amt - Bank Amt (₹)</th></tr></thead><tbody></tbody></table></div></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PO DETAIL -->
+  <div class="page" id="page-po-detail">
+    <div class="page-head">
+      <div class="eyebrow">Exceptions</div>
+      <h1>PO V/s Inv V/s GRN V/s Bank — Detail</h1>
+      <p>Exceptions: missing GRNs, open POs, bank accounts, and payment days analysis.</p>
+    </div>
+    <div id="filter-strip-detail"></div>
+    <div class="grid g2" style="margin-bottom:18px">
+      <div>
+        <div class="section-label">GRN Without Purchase Invoice</div>
+        <div class="card">
+          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-grn-without"><thead><tr><th>GRN No</th><th>Invoice No</th><th>Company</th><th class="r">Amount (₹)</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">Open PO (No GRN)</div>
+        <div class="card">
+          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-open-po"><thead><tr><th>PO No</th><th>Invoice No</th><th>Company</th><th class="r">Amount (₹)</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid g2">
+      <div>
+        <div class="section-label">Number of Bank Accounts per Vendor</div>
+        <div class="card">
+          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-bank-accounts"><thead><tr><th>Company</th><th class="r">Bank Count</th><th>Banks Used</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">Average Payment Days</div>
+        <div class="card">
+          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-pay-days"><thead><tr><th>Company</th><th class="r">Avg Days</th><th class="r">Transactions</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: PURCHASE -->
+  <div class="page" id="page-purchase">
+    <div class="filter-shell">
+      <div class="rail" id="rail-purchase"></div>
+      <div>
+        <div class="page-head">
+          <div class="eyebrow">Purchase Analytics</div>
+          <h1>Purchase</h1>
+          <p>Blocked vendor payments, purchase vs return trend, and detailed purchase register.</p>
+        </div>
+        <div id="filter-strip-purchase"></div>
+        <div class="grid g2" style="margin-bottom:18px">
+          <div>
+            <div class="section-label">Payment to Blocked Vendors</div>
+            <div class="card">
+              <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-blocked"><thead><tr><th>Vendor Name</th><th>Reason</th><th>Invoice No</th><th class="r">Amount (₹)</th></tr></thead><tbody></tbody></table></div></div>
+            </div>
+          </div>
+          <div>
+            <div class="section-label">Purchase vs Purchase Return (Trend)</div>
+            <div class="card">
+              <div class="card-h"><div class="grow"><div class="ttl">Purchase vs Return — Monthly</div><div class="desc">Combo chart: purchase amount (bars) vs return amount (line)</div></div></div>
+              <div class="card-b"><div class="chart-wrap"><canvas id="chart-purchase-combo"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="section-label">Purchase Report</div>
+        <div class="card">
+          <div class="card-h"><div class="grow"><div class="ttl">Detailed Purchase Register</div><div class="desc">Full transaction log with product, date, customer, and amount</div></div></div>
+          <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-purchase-report"><thead><tr><th>Invoice No</th><th>Product Name</th><th>Year</th><th>Month</th><th>Invoice Date</th><th>Customer</th><th class="r">Amount (₹)</th><th class="r">GST (₹)</th><th class="r">Total (₹)</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: AI DASHBOARD -->
+  <div class="page" id="page-ai-dashboard">
+    <div class="filter-shell">
+      <div class="rail" id="rail-ai"></div>
+      <div>
+        <div class="page-head">
+          <div class="eyebrow">AI Insights</div>
+          <h1>Purchase Dashboard</h1>
+          <p>AI-driven aggregated view — by entity, period, and product distribution.</p>
+        </div>
+        <div id="filter-strip-ai"></div>
+        <div class="kpi-row" id="kpi-ai"></div>
+        <div class="grid g2" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Purchase Distribution</div><div class="desc">By product / customer / state — use dropdown to switch</div></div>
+              <select id="pie-dimension" style="font-family:var(--body);font-size:12px;border:1px solid var(--line2);border-radius:var(--rs);padding:4px 8px;cursor:pointer;background:#fff;color:var(--ink)">
+                <option value="PROD_NM">By Product</option>
+                <option value="CUST_NM">By Customer</option>
+                <option value="CUST_STATE">By State</option>
+                <option value="COMP_NM">By Company</option>
+              </select>
+            </div>
+            <div class="card-b"><div class="chart-wrap"><canvas id="chart-pie"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><div class="grow"><div class="ttl">Month-wise Trend</div><div class="desc">Invoice amount by month — use Period to filter</div></div></div>
+            <div class="card-b"><div class="chart-wrap"><canvas id="chart-month-trend"></canvas></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><div class="grow"><div class="ttl">Company-wise Performance</div><div class="desc">Invoice amount per company — bar chart</div></div></div>
+          <div class="card-b"><div class="chart-wrap chart-wrap-tall"><canvas id="chart-company-bar"></canvas></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: FORMULA CHECK -->
+  <div class="page" id="page-formula">
+    <div class="page-head">
+      <div class="eyebrow">Validation</div>
+      <h1>Calculation Check</h1>
+      <p>GST rate validation and discount difference analysis across all invoices.</p>
+    </div>
+    <div class="grid g2">
+      <div>
+        <div class="section-label">GST Rate Check</div>
+        <div class="card">
+          <div class="card-h"><div class="grow"><div class="ttl">GST Calculation Variance</div><div class="desc">Expected vs actual GST — flags errors</div></div></div>
+          <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-gst-check"><thead><tr><th>Invoice No</th><th class="r">Invoice Amt (₹)</th><th class="c">GST %</th><th class="r">Actual GST (₹)</th><th class="r">Expected GST (₹)</th><th class="r">Diff (₹)</th><th class="c">Status</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">Discount Difference</div>
+        <div class="card">
+          <div class="card-h"><div class="grow"><div class="ttl">Discount Variance</div><div class="desc">Applied vs calculated discount — flags overrides</div></div></div>
+          <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-disc-check"><thead><tr><th>Invoice No</th><th class="r">Invoice Amt (₹)</th><th class="r">Discount (₹)</th><th class="r">Calc Disc (₹)</th><th class="r">Diff (₹)</th><th class="c">Status</th></tr></thead><tbody></tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: ADDITION -->
+  <div class="page" id="page-addition">
+    <div class="page-head">
+      <div class="eyebrow">Roadmap</div>
+      <h1>Additional Modules</h1>
+      <p>Planned capabilities for the next phase of the Purchase ICD platform.</p>
+    </div>
+    <div class="card">
+      <ul class="addition-list">
+        <li>
+          <span class="li-num">01</span>
+          <div><div class="li-title">MIS Reporting</div><div class="li-desc">Automated management information system reports with drill-down capabilities</div></div>
+          <span class="coming-badge">Coming Soon</span>
+        </li>
+        <li>
+          <span class="li-num">02</span>
+          <div><div class="li-title">Fraud Analysis</div><div class="li-desc">ML-powered anomaly detection across vendor payments, duplicate invoices and round-amount transactions</div></div>
+          <span class="coming-badge">Coming Soon</span>
+        </li>
+        <li>
+          <span class="li-num">03</span>
+          <div><div class="li-title">Business Transformation</div><div class="li-desc">Process benchmarking, payment cycle optimisation and working capital analytics</div></div>
+          <span class="coming-badge">Coming Soon</span>
+        </li>
+        <li>
+          <span class="li-num">04</span>
+          <div><div class="li-title">Inventory Analysis</div><div class="li-desc">Stock turn, slow-moving inventory flagging and reorder point calculation</div></div>
+          <span class="coming-badge">Coming Soon</span>
+        </li>
+        <li>
+          <span class="li-num">05</span>
+          <div><div class="li-title">Trial Balance</div><div class="li-desc">GL reconciliation, period-end balancing and variance commentary generation</div></div>
+          <span class="coming-badge">Coming Soon</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
