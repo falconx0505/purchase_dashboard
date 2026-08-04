@@ -142,6 +142,11 @@ body {
 .wrap { max-width: 1360px; margin: 0 auto; padding: 22px 26px 60px; }
 .page { display: none; }
 .page.active { display: block; animation: fadeIn .22s ease; }
+.data-loading { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(246,243,238,.78); backdrop-filter: blur(2px); }
+.data-loading[hidden] { display: none; }
+.loading-card { display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--r); background: #fff; box-shadow: var(--shh); color: var(--ink); font-family: var(--display); font-size: 13px; font-weight: 600; }
+.loading-spinner { width: 20px; height: 20px; flex: 0 0 20px; border: 3px solid var(--peach); border-top-color: var(--orange); border-radius: 50%; animation: loading-spin .8s linear infinite; }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
 .page-head { margin-bottom: 20px; }
@@ -374,3 +379,77 @@ table.tbl tr.row-warn td { background: var(--warnbg); }
 }
 .fchip .rm { cursor: pointer; font-size: 13px; line-height: 1; }
 .fchip .rm:hover { color: var(--red); }
+
+/* ── REMARK CELL & BUTTONS ──────────────────────── */
+.remark-cell {
+  min-width: 210px;
+}
+.remark-box {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.remark-input {
+  flex: 1;
+  min-width: 100px;
+  padding: 4px 8px;
+  font-family: var(--body);
+  font-size: 11.5px;
+  border: 1px solid var(--line);
+  border-radius: var(--rs);
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.remark-input:disabled {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+  cursor: default;
+}
+.remark-input:focus {
+  outline: none;
+  border-color: var(--maroon);
+  box-shadow: 0 0 0 2px rgba(108, 14, 18, 0.12);
+}
+.remark-input.remark-saved {
+  border-color: var(--ok) !important;
+  background-color: #f0fdf4 !important;
+}
+
+.remark-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.btn-rmk {
+  border: none;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: var(--display);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.btn-rmk:hover {
+  opacity: 0.88;
+}
+.btn-rmk-save {
+  background: var(--ok);
+  color: #fff;
+}
+.btn-rmk-edit {
+  background: var(--blue);
+  color: #fff;
+}
+.btn-rmk-del {
+  background: #fee2e2;
+  color: var(--red);
+}
+
+

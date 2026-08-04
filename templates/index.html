@@ -39,11 +39,12 @@
   <button class="nav-tab" data-page="formula">✔ Calculation Check</button>
   <button class="nav-tab" data-page="addition">➕ Addition</button>
 </nav>
-<div class="obs-wrap">
-  <button class="obs-btn" type="button">Observation</button>
-</div>
 
 <!-- ── PAGES CONTAINER ────────────────────────── -->
+<div id="data-loading" class="data-loading" role="status" aria-live="polite">
+  <div class="loading-card"><span class="loading-spinner"></span><span class="loading-message">Loading dashboard data…</span></div>
+</div>
+
 <div class="wrap">
 
   <!-- PAGE: WELCOME -->
@@ -92,27 +93,27 @@
         <div class="section-label">Tax & GST Checks</div>
         <div class="grid g2" style="margin-bottom:18px">
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Multiple Tax Code</div><div class="desc">GST rate mapped to more than one tax description</div></div></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-multi-tax"><thead><tr><th>GST Rate (%)</th><th>Tax Description</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="card-h"><div class="grow"><div class="ttl">Multiple Tax Code</div><div class="desc">GST rate mapped to more than one tax description</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('multi_tax')">Observation</button></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-multi-tax"><thead><tr><th>GST Rate (%)</th><th>Tax Description</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
           </div>
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Same Product, Multiple GST Rate</div><div class="desc">A product billed at more than one GST rate</div></div></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-gst"><thead><tr><th>Product Name</th><th class="r">GST Rate (%)</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="card-h"><div class="grow"><div class="ttl">Same Product, Multiple GST Rate</div><div class="desc">A product billed at more than one GST rate</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('prod_gst')">Observation</button></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-gst"><thead><tr><th>Product Name</th><th class="r">GST Rate (%)</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
           </div>
         </div>
         <div class="section-label">Customer & Product Master Checks</div>
         <div class="grid g3">
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Duplicate Customer Name</div><div class="desc">Same name under different codes</div></div></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-dup-cust"><thead><tr><th>Customer Name</th><th>Code</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="card-h"><div class="grow"><div class="ttl">Duplicate Customer Name</div><div class="desc">Same name under different codes</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('dup_cust')">Observation</button></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-dup-cust"><thead><tr><th>Customer Name</th><th>Code</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
           </div>
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Product Name Check</div><div class="desc">Same product, multiple codes</div></div></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-name"><thead><tr><th>Product Name</th><th>Code</th><th class="r">Count</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="card-h"><div class="grow"><div class="ttl">Product Name Check</div><div class="desc">Same product, multiple codes</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('prod_name')">Observation</button></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-name"><thead><tr><th>Product Name</th><th>Code</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
           </div>
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Product Code Check</div><div class="desc">Codes not found in master</div></div></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-code"><thead><tr><th>Product Code</th><th class="c">Status</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="card-h"><div class="grow"><div class="ttl">Product Code Check</div><div class="desc">Codes not found in master</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('prod_code')">Observation</button></div>
+            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-code"><thead><tr><th>Product Code</th><th class="c">Status</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
           </div>
         </div>
       </div>
@@ -269,6 +270,21 @@
     </div>
   </div>
 
+  <!-- PAGE: OBSERVATIONS -->
+  <div class="page" id="page-observations">
+    <div class="page-head">
+      <div class="eyebrow">Observation Log</div>
+      <h1 id="obs-page-title">Table</h1>
+      <p>Manage observations for this category.</p>
+    </div>
+    <button type="button" class="btn ghost sm" onclick="goTo('hygiene')" style="margin-bottom: 20px;">← Back to Data Hygiene</button>
+    <div class="card">
+      <div class="obs-modal-body" id="obs-modal-body" style="padding: 20px;">
+        <!-- Populated by main.js -->
+      </div>
+    </div>
+  </div>
+
   <!-- PAGE: ADDITION -->
   <div class="page" id="page-addition">
     <div class="page-head">
@@ -308,6 +324,7 @@
   </div>
 
 </div><!-- /wrap -->
+
 
 <script src="/static/js/main.js"></script>
 </body>

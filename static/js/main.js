@@ -1,9 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════
    PURCHASE ICD — MAIN JS
-   Navigation · Filters · Data · Tables · Charts
+   Navigation · Filters · Data · Tables · Charts · Observations
 ═══════════════════════════════════════════════════════════════ */
 
-// ── COLOUR PALETTE (from laser CSS) ──────────────────────────
 const C = {
   maroon:  '#6C0E12', red:    '#C22829', orange: '#F37A04',
   amber:   '#F1A646', blue:   '#5388B7', ok:     '#2f8f5b',
@@ -15,19 +14,15 @@ const PIE_COLORS = [
   '#2f8f5b','#857a74','#B45309','#1D4ED8','#7C3AED',
 ];
 
-// ── FILTER STATE ─────────────────────────────────────────────
 let F = { company: [], state: [], product: [], customer: [], month: [] };
-let RAW = null; // cached API data
+let RAW = null;
+let currentObsCategory = '';
 
-// ── CHART REGISTRY (destroy before re-render) ────────────────
 const CHARTS = {};
 function destroyChart(id) {
   if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; }
 }
 
-// ─────────────────────────────────────────────────────────────
-// NAVIGATION
-// ─────────────────────────────────────────────────────────────
 function goTo(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -43,22 +38,44 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
   btn.addEventListener('click', () => goTo(btn.dataset.page));
 });
 
-// ─────────────────────────────────────────────────────────────
-// DATA LOADING
-// ─────────────────────────────────────────────────────────────
 async function loadData() {
-  const res = await fetch('/api/data');
-  RAW = await res.json();
-  buildFilterUI();
-  renderCurrentPage('welcome');
+  setLoading(true, 'Loading and preparing your workbook data…');
+  try {
+    const res = await fetch('/api/data');
+    if (!res.ok) throw new Error(`Data service returned ${res.status}`);
+    RAW = await res.json();
+    buildFilterUI();
+    renderCurrentPage(currentPage());
+  } catch (error) {
+    console.error('Unable to load dashboard data:', error);
+    setLoading(true, 'The workbook could not be loaded. Check the Flask terminal for details, then refresh this page.');
+    return;
+  }
+  setLoading(false);
 }
 
-// ─────────────────────────────────────────────────────────────
-// FILTER HELPERS
-// ─────────────────────────────────────────────────────────────
+function setLoading(visible, message = '') {
+  const el = document.getElementById('data-loading');
+  if (!el) return;
+  el.hidden = !visible;
+  el.querySelector('.loading-message').textContent = message;
+}
+
 function filteredPurchase() {
   if (!RAW) return [];
   return RAW.purchase.filter(r => {
+    if (F.company.length  && !F.company.includes(r.COMP_NM))   return false;
+    if (F.state.length    && !F.state.includes(r.COMP_STATE))  return false;
+    if (F.product.length  && !F.product.includes(r.PROD_NM))   return false;
+    if (F.customer.length && !F.customer.includes(r.CUST_NM))  return false;
+    if (F.month.length    && !F.month.includes(r.MONTH))       return false;
+    return true;
+  });
+}
+function filteredPurchaseRaw() {
+  if (!RAW) return [];
+  const rows = RAW.purchase_raw || RAW.purchase || [];
+  return rows.filter(r => {
     if (F.company.length  && !F.company.includes(r.COMP_NM))   return false;
     if (F.state.length    && !F.state.includes(r.COMP_STATE))  return false;
     if (F.product.length  && !F.product.includes(r.PROD_NM))   return false;
@@ -75,9 +92,7 @@ function filteredComparison() {
     return true;
   });
 }
-function activeFilterCount() {
-  return F.company.length + F.state.length + F.product.length + F.customer.length + F.month.length;
-}
+
 function fmtPercentList(value) {
   return String(value || '')
     .split(',')
@@ -87,31 +102,28 @@ function fmtPercentList(value) {
     .join(', ');
 }
 
-// ─────────────────────────────────────────────────────────────
-// BUILD FILTER UI (Filters page + rails)
-// ─────────────────────────────────────────────────────────────
 function buildFilterUI() {
   if (!RAW) return;
   const grid = document.getElementById('filter-page-grid');
   if (!grid) return;
   const dims = [
-    { key: 'company',  label: 'Company Name',   values: RAW.companies }, //columns in filter UI
-    { key: 'state',    label: 'Company State',   values: RAW.states },
-    { key: 'product',  label: 'Product Name',    values: RAW.products },
-    { key: 'customer', label: 'Customer Name',   values: RAW.customers },
-    { key: 'month',    label: 'Month',           values: RAW.months },
+    { key: 'company',  label: 'Company / Store', values: RAW.companies },
+    { key: 'state',    label: 'Region',           values: RAW.states },
+    { key: 'product',  label: 'Product Name',     values: RAW.products },
+    { key: 'customer', label: 'Customer / Channel', values: RAW.customers },
+    { key: 'month',    label: 'Month',            values: RAW.months },
   ];
   grid.innerHTML = dims.map(d => `
     <div class="filter-card">
       <h3>${d.label}</h3>
-      <div class="checklist" id="cl-${d.key}">
-        ${d.values.map(v => `
-          <label>
-            <input type="checkbox" value="${esc(v)}" data-dim="${d.key}"
-              ${F[d.key].includes(v) ? 'checked' : ''}
-              onchange="toggleFilter('${d.key}','${esc(v)}',this.checked)">
-            ${esc(v)}
-          </label>`).join('')}
+      <div style="margin-top:12px">
+        <select class="remark-input" style="padding:8px 12px;font-size:13px;height:auto;cursor:pointer"
+          onchange="setFilterSingle('${d.key}', this.value)">
+          <option value="">-- All ${d.label}s --</option>
+          ${d.values.map(v => `
+            <option value="${esc(v)}" ${F[d.key].includes(v) ? 'selected' : ''}>${esc(v)}</option>
+          `).join('')}
+        </select>
       </div>
     </div>`).join('');
 
@@ -120,20 +132,26 @@ function buildFilterUI() {
 
 function buildRails() {
   const railIds = ['rail-hygiene', 'rail-purchase', 'rail-ai'];
+  const filterItems = [
+    { k: 'company',  label: 'Company' },
+    { k: 'state',    label: 'Region' },
+    { k: 'product',  label: 'Product' },
+    { k: 'customer', label: 'Customer' },
+    { k: 'month',    label: 'Month' }
+  ];
   railIds.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.innerHTML = `
       <div class="rail-card">
         <h3>Filters</h3>
-        ${['company','state','product','customer','month'].map(k => `
+        ${filterItems.map(item => `
           <div class="slicer">
-            <label>${k.charAt(0).toUpperCase()+k.slice(1)}</label>
-            <select onchange="setFilterSingle('${k}',this.value)">
+            <label>${item.label}</label>
+            <select onchange="setFilterSingle('${item.k}',this.value)">
               <option value="">All</option>
-              ${(RAW[k+'s']||RAW.companies).map ? 
-                (k==='company'?RAW.companies:k==='state'?RAW.states:k==='product'?RAW.products:k==='customer'?RAW.customers:RAW.months)
-                  .map(v=>`<option value="${esc(v)}" ${F[k].includes(v)?'selected':''}>${esc(v)}</option>`).join('') : ''}
+              ${(item.k==='company'?RAW.companies:item.k==='state'?RAW.states:item.k==='product'?RAW.products:item.k==='customer'?RAW.customers:RAW.months)
+                  .map(v=>`<option value="${esc(v)}" ${F[item.k].includes(v)?'selected':''}>${esc(v)}</option>`).join('')}
             </select>
           </div>`).join('')}
         <button class="btn-reset" onclick="resetFilters()">↺ Reset Filters</button>
@@ -141,10 +159,6 @@ function buildRails() {
   });
 }
 
-function toggleFilter(dim, val, checked) {
-  if (checked) { if (!F[dim].includes(val)) F[dim].push(val); }
-  else { F[dim] = F[dim].filter(v => v !== val); }
-}
 function setFilterSingle(dim, val) {
   F[dim] = val ? [val] : [];
   renderCurrentPage(currentPage());
@@ -163,9 +177,6 @@ function currentPage() {
   return active ? active.dataset.page : 'welcome';
 }
 
-// ─────────────────────────────────────────────────────────────
-// FILTER STRIP RENDERER
-// ─────────────────────────────────────────────────────────────
 function renderFilterStrip(containerId) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -189,9 +200,6 @@ function removeFilter(dim, val) {
   renderCurrentPage(currentPage());
 }
 
-// ─────────────────────────────────────────────────────────────
-// ROUTING: decide what to render per page
-// ─────────────────────────────────────────────────────────────
 function renderCurrentPage(pageId) {
   if (!RAW) return;
   switch(pageId) {
@@ -204,12 +212,10 @@ function renderCurrentPage(pageId) {
     case 'ai-dashboard': renderAiDashboard();  break;
     case 'formula':      renderFormula();      break;
     case 'addition':     break;
+    case 'observations': renderObsList();      break;
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// WELCOME PAGE
-// ─────────────────────────────────────────────────────────────
 function renderWelcome() {
   const modules = [
     { icon:'⚙', id:'filters',      title:'Dashboard Filters',        desc:'Set global filters for company, state, product, customer, and month.' },
@@ -230,50 +236,298 @@ function renderWelcome() {
     </div>`).join('');
 }
 
-// ─────────────────────────────────────────────────────────────
-// DATA HYGIENE
-// ─────────────────────────────────────────────────────────────
+function getSavedRemark(issueId) {
+  if (!RAW || !RAW.hygiene_remarks) return '';
+  return RAW.hygiene_remarks[issueId] || '';
+}
+
+function renderRemarkCell(r) {
+  const hasRemark = Boolean(r.REMARK && String(r.REMARK).trim());
+  const isDisabled = hasRemark;
+
+  return `
+    <td class="remark-cell">
+      <div class="remark-box" id="rmk-box-${esc(r.ISSUE_ID)}">
+        <input type="text" class="remark-input"
+          id="rmk-input-${esc(r.ISSUE_ID)}"
+          data-issue-id="${esc(r.ISSUE_ID)}"
+          data-category="${esc(r.CATEGORY)}"
+          data-key="${esc(r.ENTITY_KEY)}"
+          value="${esc(r.REMARK || '')}"
+          placeholder="Add remark..."
+          ${isDisabled ? 'disabled' : ''}>
+        <div class="remark-actions">
+          ${isDisabled ? `
+            <button type="button" class="btn-rmk btn-rmk-edit" title="Edit Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'edit')">✏️ Edit</button>
+            <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'delete')">🗑️ Delete</button>
+          ` : `
+            <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'save')">💾 Save</button>
+          `}
+        </div>
+      </div>
+    </td>`;
+}
+
+async function handleRemarkAction(issueId, action) {
+  const inputEl = document.getElementById(`rmk-input-${issueId}`);
+  if (!inputEl) return;
+
+  const category = inputEl.dataset.category;
+  const entity_key = inputEl.dataset.key;
+
+  if (!RAW) RAW = {};
+  if (!RAW.hygiene_remarks) RAW.hygiene_remarks = {};
+
+  if (action === 'edit') {
+    inputEl.disabled = false;
+    inputEl.focus();
+    const box = document.getElementById(`rmk-box-${issueId}`);
+    if (box) {
+      const actions = box.querySelector('.remark-actions');
+      if (actions) {
+        actions.innerHTML = `
+          <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(issueId)}', 'save')">💾 Save</button>
+          <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(issueId)}', 'delete')">🗑️ Delete</button>
+        `;
+      }
+    }
+    return;
+  }
+
+  if (action === 'save') {
+    const remark = inputEl.value.trim();
+    if (!remark) return;
+
+    RAW.hygiene_remarks[issueId] = remark;
+    inputEl.disabled = true;
+
+    try {
+      const res = await fetch('/api/hygiene/remark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ issue_id: issueId, category, entity_key, remark, action: 'save' })
+      });
+      const json = await res.json();
+      if (json.success) {
+        inputEl.classList.add('remark-saved');
+        setTimeout(() => inputEl.classList.remove('remark-saved'), 1500);
+        const box = document.getElementById(`rmk-box-${issueId}`);
+        if (box) {
+          const actions = box.querySelector('.remark-actions');
+          if (actions) {
+            actions.innerHTML = `
+              <button type="button" class="btn-rmk btn-rmk-edit" title="Edit Remark" onclick="handleRemarkAction('${esc(issueId)}', 'edit')">✏️ Edit</button>
+              <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(issueId)}', 'delete')">🗑️ Delete</button>
+            `;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error saving remark:', err);
+    }
+    return;
+  }
+
+  if (action === 'delete') {
+    delete RAW.hygiene_remarks[issueId];
+    inputEl.value = '';
+    inputEl.disabled = false;
+
+    try {
+      const res = await fetch('/api/hygiene/remark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ issue_id: issueId, category, entity_key, remark: '', action: 'delete' })
+      });
+      const json = await res.json();
+      if (json.success) {
+        const box = document.getElementById(`rmk-box-${issueId}`);
+        if (box) {
+          const actions = box.querySelector('.remark-actions');
+          if (actions) {
+            actions.innerHTML = `
+              <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(issueId)}', 'save')">💾 Save</button>
+            `;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error deleting remark:', err);
+    }
+    return;
+  }
+}
+
 function renderHygiene() {
   renderFilterStrip('filter-strip-hygiene');
-  // Multiple Tax Code
-  fillTable('tbl-multi-tax', RAW.multi_tax, r => `
+
+  const rows = filteredPurchaseRaw();
+  const multiTaxMap = {};
+  const prodGstMap = {};
+  const prodGstCount = {};
+  const prodNameMap = {};
+  const prodNameCount = {};
+  const prodCodeMap = {};
+  const dupCustomerMap = {};
+
+  rows.forEach(r => {
+    const prodCode = String(r.PROD_CODE || 'Unknown').trim() || 'Unknown';
+    const gstRate = String(r.GST_RATE || '').trim();
+    const taxDesc = String(r.TAX_DESC || '').trim();
+    const prodName = String(r.PROD_NM || 'Unknown Product').trim() || 'Unknown Product';
+    const custName = String(r.CUST_NM || 'Unknown').trim() || 'Unknown';
+    const custCode = String(r.CUST_STATE || 'Unknown').trim() || 'Unknown';
+
+    if (!multiTaxMap[prodCode]) {
+      multiTaxMap[prodCode] = { rates: new Set(), descs: new Set(), count: 0 };
+    }
+    if (gstRate) multiTaxMap[prodCode].rates.add(gstRate);
+    if (taxDesc) multiTaxMap[prodCode].descs.add(taxDesc);
+    multiTaxMap[prodCode].count += 1;
+
+    if (!prodGstMap[prodName]) prodGstMap[prodName] = new Set();
+    prodGstMap[prodName].add(gstRate);
+    prodGstCount[prodName] = (prodGstCount[prodName] || 0) + 1;
+
+    if (!prodNameMap[prodName]) prodNameMap[prodName] = new Set();
+    prodNameMap[prodName].add(prodCode);
+    prodNameCount[prodName] = (prodNameCount[prodName] || 0) + 1;
+
+    if (!prodCodeMap[prodCode]) prodCodeMap[prodCode] = new Set();
+    if (prodName) prodCodeMap[prodCode].add(prodName);
+
+    if (!dupCustomerMap[custName]) {
+      dupCustomerMap[custName] = { codes: new Set(), count: 0 };
+    }
+    dupCustomerMap[custName].codes.add(custCode);
+    dupCustomerMap[custName].count += 1;
+  });
+
+  const multiTax = Object.entries(multiTaxMap)
+    .filter(([_, group]) => group.rates.size > 1 || group.descs.size > 1)
+    .map(([code, group]) => {
+      const issueId = `multi_tax:${code}`;
+      return {
+        ISSUE_ID: issueId,
+        CATEGORY: 'multi_tax',
+        ENTITY_KEY: code,
+        GST_RATE: Array.from(group.rates).filter(Boolean).join(', '),
+        TAX_DESC: Array.from(group.descs).filter(Boolean).join(', '),
+        COUNT: group.count,
+        REMARK: getSavedRemark(issueId),
+      };
+    });
+
+  const prodGstIssues = Object.entries(prodGstMap)
+    .filter(([_, rates]) => rates.size > 1)
+    .map(([name, rates]) => {
+      const issueId = `prod_gst:${name}`;
+      return {
+        ISSUE_ID: issueId,
+        CATEGORY: 'prod_gst',
+        ENTITY_KEY: name,
+        PROD_NM: name,
+        GST_RATE: Array.from(rates).filter(Boolean).join(', '),
+        COUNT: prodGstCount[name] || 0,
+        REMARK: getSavedRemark(issueId),
+      };
+    });
+
+  const prodNameIssues = Object.entries(prodNameMap)
+    .filter(([_, codes]) => codes.size > 1)
+    .map(([name, codes]) => {
+      const issueId = `prod_name:${name}`;
+      return {
+        ISSUE_ID: issueId,
+        CATEGORY: 'prod_name',
+        ENTITY_KEY: name,
+        PROD_NM: name,
+        PROD_CODE: Array.from(codes).filter(Boolean).join(', '),
+        COUNT: prodNameCount[name] || 0,
+        REMARK: getSavedRemark(issueId),
+      };
+    });
+
+  const prodCodeCheck = [];
+  Object.entries(prodCodeMap).forEach(([code, names]) => {
+    if (!code || code === 'Unknown') {
+      const issueId = 'prod_code:Unknown';
+      prodCodeCheck.push({
+        ISSUE_ID: issueId,
+        CATEGORY: 'prod_code',
+        ENTITY_KEY: 'Unknown',
+        PROD_CODE: 'Unknown',
+        STATUS: 'Missing code',
+        REMARK: getSavedRemark(issueId),
+      });
+    } else if (names.size > 1) {
+      const issueId = `prod_code:${code}`;
+      prodCodeCheck.push({
+        ISSUE_ID: issueId,
+        CATEGORY: 'prod_code',
+        ENTITY_KEY: code,
+        PROD_CODE: code,
+        STATUS: 'Multiple products',
+        REMARK: getSavedRemark(issueId),
+      });
+    }
+  });
+
+  const dupCustomers = Object.entries(dupCustomerMap)
+    .filter(([_, group]) => group.codes.size > 1)
+    .map(([name, group]) => {
+      const issueId = `dup_cust:${name}`;
+      return {
+        ISSUE_ID: issueId,
+        CATEGORY: 'dup_cust',
+        ENTITY_KEY: name,
+        CUST_NM: name,
+        CUST_CD: Array.from(group.codes).filter(Boolean).join(', '),
+        COUNT: group.count,
+        REMARK: getSavedRemark(issueId),
+      };
+    });
+
+  fillTable('tbl-multi-tax', multiTax, r => `
     <tr class="${r.COUNT > 30 ? 'row-flag' : ''}">
       <td>${esc(fmtPercentList(r.GST_RATE))}</td>
       <td>${esc(String(r.TAX_DESC || '').replace(/\+/g, ', '))}</td>
       <td class="r">${r.COUNT}</td>
+      ${renderRemarkCell(r)}
     </tr>`);
-  // Same product multiple GST
-  fillTable('tbl-prod-gst', RAW.prod_gst_issues, r => `
+
+  fillTable('tbl-prod-gst', prodGstIssues, r => `
     <tr class="row-flag">
       <td class="grp">${esc(r.PROD_NM)}</td>
       <td class="r">${esc(String(r.GST_RATE || '').replace(/\+/g, ', '))}</td>
       <td class="r">${r.COUNT}</td>
+      ${renderRemarkCell(r)}
     </tr>`);
-  // Duplicate customers
-  fillTable('tbl-dup-cust', RAW.dup_customers, r => `
+
+  fillTable('tbl-dup-cust', dupCustomers, r => `
     <tr class="${r.COUNT===1?'row-flag':''}">
       <td>${esc(r.CUST_NM)}</td>
       <td>${esc(r.CUST_CD)}</td>
       <td class="r">${r.COUNT}</td>
+      ${renderRemarkCell(r)}
     </tr>`);
-  // Product name issues
-  fillTable('tbl-prod-name', RAW.prod_name_issues, r => `
+
+  fillTable('tbl-prod-name', prodNameIssues, r => `
     <tr class="${r.COUNT <= 3 ? 'row-flag' : ''}">
       <td>${esc(r.PROD_NM)}</td>
       <td>${esc(r.PROD_CODE)}</td>
       <td class="r">${r.COUNT}</td>
+      ${renderRemarkCell(r)}
     </tr>`);
-  // Product code check
-  fillTable('tbl-prod-code', RAW.prod_code_check, r => `
+
+  fillTable('tbl-prod-code', prodCodeCheck, r => `
     <tr class="row-flag">
       <td class="grp">${esc(r.PROD_CODE)}</td>
       <td class="c"><span class="tag flag">Not in Master</span></td>
+      ${renderRemarkCell(r)}
     </tr>`);
 }
 
-// ─────────────────────────────────────────────────────────────
-// PO SUMMARY
-// ─────────────────────────────────────────────────────────────
 function renderPoSummary() {
   renderFilterStrip('filter-strip-po');
   const data = filteredComparison();
@@ -309,9 +563,6 @@ function renderPoSummary() {
   });
 }
 
-// ─────────────────────────────────────────────────────────────
-// PO DETAIL
-// ─────────────────────────────────────────────────────────────
 function renderPoDetail() {
   renderFilterStrip('filter-strip-detail');
   fillTable('tbl-grn-without', RAW.grn_without_inv, r => `
@@ -344,9 +595,6 @@ function renderPoDetail() {
   });
 }
 
-// ─────────────────────────────────────────────────────────────
-// PURCHASE PAGE
-// ─────────────────────────────────────────────────────────────
 function renderPurchase() {
   renderFilterStrip('filter-strip-purchase');
   fillTable('tbl-blocked', RAW.blocked_vendors, r => `
@@ -357,14 +605,12 @@ function renderPurchase() {
       <td class="r">${fmtINR(r.AMT)}</td>
     </tr>`);
 
-  // Combo chart: purchase vs return by month
   const months  = RAW.months;
   const byMonth = {};
   months.forEach(m => { byMonth[m] = { purchase: 0, returns: 0 }; });
   filteredPurchase().forEach(r => {
     if (byMonth[r.MONTH]) byMonth[r.MONTH].purchase += r.INVOICE_AMT;
   });
-  // Simulate returns as ~15% of purchase with noise
   let seed = 7;
   const rng = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
   months.forEach(m => { byMonth[m].returns = byMonth[m].purchase * (0.05 + rng() * 0.15); });
@@ -392,7 +638,6 @@ function renderPurchase() {
     options: chartOptions({
       plugins: {
         tooltip: richTooltip(d => {
-          const month = d[0]?.label || '';
           return d.map(item => ({
             name: item.dataset.label,
             value: fmtINR(item.raw),
@@ -407,7 +652,6 @@ function renderPurchase() {
     })
   });
 
-  // Purchase report table
   const rows = filteredPurchase().slice(0, 100);
   fillTable('tbl-purchase-report', rows, r => `
     <tr>
@@ -423,9 +667,6 @@ function renderPurchase() {
     </tr>`);
 }
 
-// ─────────────────────────────────────────────────────────────
-// AI DASHBOARD
-// ─────────────────────────────────────────────────────────────
 function renderAiDashboard() {
   renderFilterStrip('filter-strip-ai');
   const data = filteredPurchase();
@@ -483,12 +724,8 @@ function renderPieChart(data, dimension) {
           labels: { font: { family: "'Poppins', sans-serif", size: 11 }, color: C.ink, boxWidth: 12, padding: 12 }
         },
         tooltip: {
-          backgroundColor: '#fff',
-          borderColor: '#ece6df',
-          borderWidth: 1,
-          titleColor: C.ink,
-          bodyColor: C.muted,
-          padding: 12,
+          backgroundColor: '#fff', borderColor: '#ece6df', borderWidth: 1,
+          titleColor: C.ink, bodyColor: C.muted, padding: 12,
           titleFont: { family: "'Poppins', sans-serif", weight: '600', size: 12 },
           bodyFont:  { family: "'Raleway', sans-serif", size: 12 },
           callbacks: {
@@ -620,9 +857,6 @@ function renderCompanyBar(data) {
   });
 }
 
-// ─────────────────────────────────────────────────────────────
-// FORMULA CHECK
-// ─────────────────────────────────────────────────────────────
 function renderFormula() {
   fillTable('tbl-gst-check', RAW.gst_check, r => {
     const err = r.STATUS === 'Error';
@@ -655,7 +889,222 @@ function renderFormula() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// CHART HELPERS
+// OBSERVATION MODAL LOGIC & TABLE RENDERING
+// ─────────────────────────────────────────────────────────────
+const OBS_TITLES = {
+  'multi_tax': 'Multiple Tax Code Observations',
+  'prod_gst': 'Same Product, Multiple GST Rate Observations',
+  'dup_cust': 'Duplicate Customer Name Observations',
+  'prod_name': 'Product Name Check Observations',
+  'prod_code': 'Product Code Check Observations'
+};
+
+const DROPDOWNS = {
+  RepeatObservation: ['Yes', 'No'],
+  ObservationType: ['Compliance', 'Financial', 'Operational', 'Process Defect'],
+  RiskType: ['High', 'Medium', 'Low', 'Critical'],
+  Department: ['Procurement', 'Finance', 'Taxation', 'Logistics', 'Audit', 'IT'],
+  SBU: ['Retail', 'Enterprise', 'Supply Chain', 'E-Commerce'],
+  FollowUpFrequency: ['Weekly', 'Monthly', 'Quarterly', 'Annually'],
+  ShareWith: ['Auditor', 'Management', 'Vendor', 'Board']
+};
+
+function renderDropdown(fieldName, selectedValue = '') {
+  const options = DROPDOWNS[fieldName] || [];
+  return `
+    <select name="${fieldName}" class="remark-input" style="min-width:130px;padding:4px 8px;font-size:12px">
+      <option value="">-- Select --</option>
+      ${options.map(opt => `<option value="${esc(opt)}" ${opt === selectedValue ? 'selected' : ''}>${esc(opt)}</option>`).join('')}
+    </select>`;
+}
+
+async function openObservationModal(category) {
+  currentObsCategory = category;
+  goTo('observations');
+  const titleEl = document.getElementById('obs-page-title');
+  if (titleEl) titleEl.textContent = OBS_TITLES[category] || 'Observation Log';
+  
+  await renderObsList();
+}
+
+function closeObservationModal() {
+  goTo('hygiene');
+}
+
+async function renderObsList() {
+  const body = document.getElementById('obs-modal-body');
+  if (!body) return;
+
+  body.innerHTML = '<div style="padding:20px;text-align:center">Loading observations...</div>';
+
+  try {
+    const res = await fetch(`/api/observations?category=${encodeURIComponent(currentObsCategory)}`);
+    const list = await res.json();
+
+    let html = `
+      <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--muted)">Found <strong>${list.length}</strong> observation record(s)</span>
+        <button class="btn primary sm" onclick="showObsForm()">+ Add New Observation</button>
+      </div>`;
+
+    if (list.length === 0) {
+      html += `<div style="padding:40px;text-align:center;color:var(--muted);background:#fff;border-radius:8px">No observations recorded yet for this table. Click "+ Add New Observation" above to log one.</div>`;
+    } else {
+      html += `
+        <div class="tbl-wrap" style="max-height:450px;overflow:auto">
+          <table class="tbl" style="font-size:12px;white-space:nowrap">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Sub Process</th>
+                <th>Type</th>
+                <th>Risk</th>
+                <th>Department</th>
+                <th>SBU</th>
+                <th>Repeat</th>
+                <th>Frequency</th>
+                <th>Share With</th>
+                <th>Auditee</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.map(item => `
+                <tr>
+                  <td><strong>${esc(item.ObservationTitle || 'Untitled')}</strong></td>
+                  <td>${esc(item.ObservationSubProcess || '—')}</td>
+                  <td>${esc(item.ObservationType || '—')}</td>
+                  <td><span class="tag ${item.RiskType === 'High' || item.RiskType === 'Critical' ? 'flag' : 'ok'}">${esc(item.RiskType || '—')}</span></td>
+                  <td>${esc(item.Department || '—')}</td>
+                  <td>${esc(item.SBU || '—')}</td>
+                  <td>${esc(item.RepeatObservation || '—')}</td>
+                  <td>${esc(item.FollowUpFrequency || '—')}</td>
+                  <td>${esc(item.ShareWith || '—')}</td>
+                  <td>${esc(item.Auditee || '—')}</td>
+                  <td>
+                    <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>✏️ Edit</button>
+                    <button class="btn-rmk btn-rmk-del" onclick="deleteObservation(${item.id})">🗑️ Delete</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+    body.innerHTML = html;
+  } catch (err) {
+    console.error('Failed to load observations:', err);
+    body.innerHTML = '<div style="padding:20px;color:red">Failed to load observations.</div>';
+  }
+}
+
+function showObsForm(data = null) {
+  const body = document.getElementById('obs-modal-body');
+  if (!body) return;
+
+  const isEdit = Boolean(data && data.id);
+  const item = data || {};
+
+  body.innerHTML = `
+    <form id="obs-form" onsubmit="saveObservation(event, ${item.id || 'null'})" style="padding:5px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+        <h4 style="margin:0">${isEdit ? 'Edit Observation' : 'New Observation Entry'}</h4>
+        <button type="button" class="btn ghost sm" onclick="renderObsList()">← Back to List</button>
+      </div>
+
+      <div class="tbl-wrap" style="max-height:420px;overflow:auto;border:1px solid var(--line2);border-radius:6px;margin-bottom:15px">
+        <table class="tbl" style="font-size:12px;white-space:nowrap">
+          <thead>
+            <tr style="background:var(--bg)">
+              <th style="min-width:180px">Field Name</th>
+              <th style="min-width:320px">Value / Input</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Observation Title</strong></td><td><input type="text" name="ObservationTitle" class="remark-input" value="${esc(item.ObservationTitle || '')}" required></td></tr>
+            <tr><td><strong>Observation Sub Process</strong></td><td><input type="text" name="ObservationSubProcess" class="remark-input" value="${esc(item.ObservationSubProcess || '')}"></td></tr>
+            <tr><td><strong>Repeat Observation</strong></td><td>${renderDropdown('RepeatObservation', item.RepeatObservation)}</td></tr>
+            <tr><td><strong>Observation Type</strong></td><td>${renderDropdown('ObservationType', item.ObservationType)}</td></tr>
+            <tr><td><strong>Risk Type</strong></td><td>${renderDropdown('RiskType', item.RiskType)}</td></tr>
+            <tr><td><strong>Department</strong></td><td>${renderDropdown('Department', item.Department)}</td></tr>
+            <tr><td><strong>SBU</strong></td><td>${renderDropdown('SBU', item.SBU)}</td></tr>
+            <tr><td><strong>Follow Up Frequency</strong></td><td>${renderDropdown('FollowUpFrequency', item.FollowUpFrequency)}</td></tr>
+            <tr><td><strong>Share With</strong></td><td>${renderDropdown('ShareWith', item.ShareWith)}</td></tr>
+            <tr><td><strong>Observation Description</strong></td><td><textarea name="ObservationDescription" class="remark-input" rows="2">${esc(item.ObservationDescription || '')}</textarea></td></tr>
+            <tr><td><strong>Short Observation</strong></td><td><input type="text" name="ShortObservation" class="remark-input" value="${esc(item.ShortObservation || '')}"></td></tr>
+            <tr><td><strong>Root Cause</strong></td><td><textarea name="RootCause" class="remark-input" rows="2">${esc(item.RootCause || '')}</textarea></td></tr>
+            <tr><td><strong>Impact / Concern</strong></td><td><textarea name="ImpactConcern" class="remark-input" rows="2">${esc(item.ImpactConcern || '')}</textarea></td></tr>
+            <tr><td><strong>Financial Implication</strong></td><td><input type="text" name="FinancialImplication" class="remark-input" value="${esc(item.FinancialImplication || '')}"></td></tr>
+            <tr><td><strong>Auditee</strong></td><td><input type="text" name="Auditee" class="remark-input" value="${esc(item.Auditee || '')}"></td></tr>
+            <tr><td><strong>Other Auditee</strong></td><td><input type="text" name="OtherAuditee" class="remark-input" value="${esc(item.OtherAuditee || '')}"></td></tr>
+            <tr><td><strong>Escalator 1</strong></td><td><input type="text" name="Escalator1" class="remark-input" value="${esc(item.Escalator1 || '')}"></td></tr>
+            <tr><td><strong>Escalator 2</strong></td><td><input type="text" name="Escalator2" class="remark-input" value="${esc(item.Escalator2 || '')}"></td></tr>
+            <tr><td><strong>Escalator 3</strong></td><td><input type="text" name="Escalator3" class="remark-input" value="${esc(item.Escalator3 || '')}"></td></tr>
+            <tr><td><strong>Recommendation</strong></td><td><textarea name="Recommendation" class="remark-input" rows="2">${esc(item.Recommendation || '')}</textarea></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn ghost sm" onclick="renderObsList()">Cancel</button>
+        <button type="submit" class="btn primary sm">💾 Save Observation</button>
+      </div>
+    </form>`;
+}
+
+async function saveObservation(event, id) {
+  event.preventDefault();
+  const form = document.getElementById('obs-form');
+  if (!form) return;
+
+  const formData = new FormData(form);
+  const payload = {
+    id: id || undefined,
+    category: currentObsCategory,
+    table_name: OBS_TITLES[currentObsCategory] || currentObsCategory
+  };
+
+  formData.forEach((val, key) => { payload[key] = val; });
+
+  try {
+    const res = await fetch('/api/observations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (json.success) {
+      await renderObsList();
+    } else {
+      alert('Error saving observation: ' + (json.error || 'Unknown error'));
+    }
+  } catch (err) {
+    console.error('Failed to save observation:', err);
+    alert('Failed to communicate with server.');
+  }
+}
+
+async function deleteObservation(id) {
+  if (!confirm('Are you sure you want to delete this observation entry?')) return;
+  try {
+    const res = await fetch('/api/observations/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id })
+    });
+    const json = await res.json();
+    if (json.success) {
+      await renderObsList();
+    } else {
+      alert('Failed to delete entry.');
+    }
+  } catch (err) {
+    console.error('Delete failed:', err);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// CHART & TABLE HELPERS
 // ─────────────────────────────────────────────────────────────
 function chartOptions(overrides = {}) {
   return {
@@ -687,9 +1136,6 @@ function richTooltip(getRows) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────
-// TABLE HELPER
-// ─────────────────────────────────────────────────────────────
 function fillTable(id, rows, rowFn) {
   const tbody = document.querySelector(`#${id} tbody`);
   if (!tbody) return;
@@ -700,9 +1146,6 @@ function fillTable(id, rows, rowFn) {
   tbody.innerHTML = rows.map(rowFn).join('');
 }
 
-// ─────────────────────────────────────────────────────────────
-// KPI CARD BUILDER
-// ─────────────────────────────────────────────────────────────
 function kpiCard(label, val, sub, accent) {
   return `
     <div class="kpi" style="--accent:${accent}">
@@ -712,9 +1155,6 @@ function kpiCard(label, val, sub, accent) {
     </div>`;
 }
 
-// ─────────────────────────────────────────────────────────────
-// FORMAT HELPERS
-// ─────────────────────────────────────────────────────────────
 function fmtINR(v) {
   return '₹' + Math.round(+v || 0).toLocaleString('en-IN');
 }
@@ -737,7 +1177,4 @@ function hexA(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// ─────────────────────────────────────────────────────────────
-// BOOT
-// ─────────────────────────────────────────────────────────────
 loadData();
