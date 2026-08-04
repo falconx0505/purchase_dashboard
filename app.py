@@ -92,6 +92,16 @@ def init_db_schema(conn):
         Escalator2 TEXT,
         Escalator3 TEXT,
         Recommendation TEXT,
+        CorrectiveActionPlan TEXT,
+        PreventiveActionPlan TEXT,
+        ShortActionPlan TEXT,
+        TargetDateNotApplicable BOOLEAN,
+        TargetDate DATE,
+        RevisedTargetDate DATE,
+        PercentageCompletedAuditee DECIMAL(5,2),
+        PercentageCompletedAuditor DECIMAL(5,2),
+        ClosureDate DATE,
+        ClosureReason TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -601,7 +611,11 @@ def save_observation():
         "RepeatObservation", "ObservationType", "RiskType", "Department", "SBU",
         "FollowUpFrequency", "ShareWith", "ObservationDescription", "ShortObservation",
         "RootCause", "ImpactConcern", "FinancialImplication", "Auditee", "OtherAuditee",
-        "Escalator1", "Escalator2", "Escalator3", "Recommendation"
+        "Escalator1", "Escalator2", "Escalator3", "Recommendation",
+        "CorrectiveActionPlan", "PreventiveActionPlan", "ShortActionPlan",
+        "TargetDateNotApplicable", "TargetDate", "RevisedTargetDate",
+        "PercentageCompletedAuditee", "PercentageCompletedAuditor",
+        "ClosureDate", "ClosureReason"
     ]
     vals = [str(data.get(f, "") or "").strip() for f in fields]
 

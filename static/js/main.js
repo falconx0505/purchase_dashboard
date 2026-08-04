@@ -4,14 +4,14 @@
 ═══════════════════════════════════════════════════════════════ */
 
 const C = {
-  maroon:  '#6C0E12', red:    '#C22829', orange: '#F37A04',
-  amber:   '#F1A646', blue:   '#5388B7', ok:     '#2f8f5b',
-  muted:   '#857a74', ink:    '#241c1b', faint:  '#a89f99',
-  peach:   '#FFE2CA', cream:  '#F5E3B5', bg:     '#f6f3ee',
+  maroon: '#6C0E12', red: '#C22829', orange: '#F37A04',
+  amber: '#F1A646', blue: '#5388B7', ok: '#2f8f5b',
+  muted: '#857a74', ink: '#241c1b', faint: '#a89f99',
+  peach: '#FFE2CA', cream: '#F5E3B5', bg: '#f6f3ee',
 };
 const PIE_COLORS = [
-  '#C22829','#F37A04','#F1A646','#5388B7','#6C0E12',
-  '#2f8f5b','#857a74','#B45309','#1D4ED8','#7C3AED',
+  '#C22829', '#F37A04', '#F1A646', '#5388B7', '#6C0E12',
+  '#2f8f5b', '#857a74', '#B45309', '#1D4ED8', '#7C3AED',
 ];
 
 let F = { company: [], state: [], product: [], customer: [], month: [] };
@@ -27,9 +27,9 @@ function goTo(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   const page = document.getElementById('page-' + pageId);
-  const tab  = document.querySelector(`[data-page="${pageId}"]`);
+  const tab = document.querySelector(`[data-page="${pageId}"]`);
   if (page) page.classList.add('active');
-  if (tab)  tab.classList.add('active');
+  if (tab) tab.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
 }
@@ -64,11 +64,11 @@ function setLoading(visible, message = '') {
 function filteredPurchase() {
   if (!RAW) return [];
   return RAW.purchase.filter(r => {
-    if (F.company.length  && !F.company.includes(r.COMP_NM))   return false;
-    if (F.state.length    && !F.state.includes(r.COMP_STATE))  return false;
-    if (F.product.length  && !F.product.includes(r.PROD_NM))   return false;
-    if (F.customer.length && !F.customer.includes(r.CUST_NM))  return false;
-    if (F.month.length    && !F.month.includes(r.MONTH))       return false;
+    if (F.company.length && !F.company.includes(r.COMP_NM)) return false;
+    if (F.state.length && !F.state.includes(r.COMP_STATE)) return false;
+    if (F.product.length && !F.product.includes(r.PROD_NM)) return false;
+    if (F.customer.length && !F.customer.includes(r.CUST_NM)) return false;
+    if (F.month.length && !F.month.includes(r.MONTH)) return false;
     return true;
   });
 }
@@ -76,11 +76,11 @@ function filteredPurchaseRaw() {
   if (!RAW) return [];
   const rows = RAW.purchase_raw || RAW.purchase || [];
   return rows.filter(r => {
-    if (F.company.length  && !F.company.includes(r.COMP_NM))   return false;
-    if (F.state.length    && !F.state.includes(r.COMP_STATE))  return false;
-    if (F.product.length  && !F.product.includes(r.PROD_NM))   return false;
-    if (F.customer.length && !F.customer.includes(r.CUST_NM))  return false;
-    if (F.month.length    && !F.month.includes(r.MONTH))       return false;
+    if (F.company.length && !F.company.includes(r.COMP_NM)) return false;
+    if (F.state.length && !F.state.includes(r.COMP_STATE)) return false;
+    if (F.product.length && !F.product.includes(r.PROD_NM)) return false;
+    if (F.customer.length && !F.customer.includes(r.CUST_NM)) return false;
+    if (F.month.length && !F.month.includes(r.MONTH)) return false;
     return true;
   });
 }
@@ -88,7 +88,7 @@ function filteredComparison() {
   if (!RAW) return [];
   return RAW.comparison.filter(r => {
     if (F.company.length && !F.company.includes(r.COMP_NM)) return false;
-    if (F.month.length   && !F.month.includes(r.MONTH))     return false;
+    if (F.month.length && !F.month.includes(r.MONTH)) return false;
     return true;
   });
 }
@@ -107,11 +107,11 @@ function buildFilterUI() {
   const grid = document.getElementById('filter-page-grid');
   if (!grid) return;
   const dims = [
-    { key: 'company',  label: 'Company / Store', values: RAW.companies },
-    { key: 'state',    label: 'Region',           values: RAW.states },
-    { key: 'product',  label: 'Product Name',     values: RAW.products },
+    { key: 'company', label: 'Company / Store', values: RAW.companies },
+    { key: 'state', label: 'Region', values: RAW.states },
+    { key: 'product', label: 'Product Name', values: RAW.products },
     { key: 'customer', label: 'Customer / Channel', values: RAW.customers },
-    { key: 'month',    label: 'Month',            values: RAW.months },
+    { key: 'month', label: 'Month', values: RAW.months },
   ];
   grid.innerHTML = dims.map(d => `
     <div class="filter-card">
@@ -133,11 +133,11 @@ function buildFilterUI() {
 function buildRails() {
   const railIds = ['rail-hygiene', 'rail-purchase', 'rail-ai'];
   const filterItems = [
-    { k: 'company',  label: 'Company' },
-    { k: 'state',    label: 'Region' },
-    { k: 'product',  label: 'Product' },
+    { k: 'company', label: 'Company' },
+    { k: 'state', label: 'Region' },
+    { k: 'product', label: 'Product' },
     { k: 'customer', label: 'Customer' },
-    { k: 'month',    label: 'Month' }
+    { k: 'month', label: 'Month' }
   ];
   railIds.forEach(id => {
     const el = document.getElementById(id);
@@ -150,8 +150,8 @@ function buildRails() {
             <label>${item.label}</label>
             <select onchange="setFilterSingle('${item.k}',this.value)">
               <option value="">All</option>
-              ${(item.k==='company'?RAW.companies:item.k==='state'?RAW.states:item.k==='product'?RAW.products:item.k==='customer'?RAW.customers:RAW.months)
-                  .map(v=>`<option value="${esc(v)}" ${F[item.k].includes(v)?'selected':''}>${esc(v)}</option>`).join('')}
+              ${(item.k === 'company' ? RAW.companies : item.k === 'state' ? RAW.states : item.k === 'product' ? RAW.products : item.k === 'customer' ? RAW.customers : RAW.months)
+        .map(v => `<option value="${esc(v)}" ${F[item.k].includes(v) ? 'selected' : ''}>${esc(v)}</option>`).join('')}
             </select>
           </div>`).join('')}
         <button class="btn-reset" onclick="resetFilters()">↺ Reset Filters</button>
@@ -202,34 +202,34 @@ function removeFilter(dim, val) {
 
 function renderCurrentPage(pageId) {
   if (!RAW) return;
-  switch(pageId) {
-    case 'welcome':      renderWelcome();      break;
-    case 'filters':      buildFilterUI();      break;
-    case 'hygiene':      renderHygiene();      break;
-    case 'po-summary':   renderPoSummary();    break;
-    case 'po-detail':    renderPoDetail();     break;
-    case 'purchase':     renderPurchase();     break;
-    case 'ai-dashboard': renderAiDashboard();  break;
-    case 'formula':      renderFormula();      break;
-    case 'addition':     break;
-    case 'observations': renderObsList();      break;
+  switch (pageId) {
+    case 'welcome': renderWelcome(); break;
+    case 'filters': buildFilterUI(); break;
+    case 'hygiene': renderHygiene(); break;
+    case 'po-summary': renderPoSummary(); break;
+    case 'po-detail': renderPoDetail(); break;
+    case 'purchase': renderPurchase(); break;
+    case 'ai-dashboard': renderAiDashboard(); break;
+    case 'formula': renderFormula(); break;
+    case 'addition': break;
+    case 'observations': renderObsList(); break;
   }
 }
 
 function renderWelcome() {
   const modules = [
-    { icon:'⚙', id:'filters',      title:'Dashboard Filters',        desc:'Set global filters for company, state, product, customer, and month.' },
-    { icon:'🔍', id:'hygiene',      title:'Data Hygiene',             desc:'Detect duplicate master data, GST mismatches, and product code errors.' },
-    { icon:'📊', id:'po-summary',   title:'PO vs Invoice vs GRN vs Bank', desc:'Full reconciliation across purchase orders, invoices, GRNs, and payments.' },
-    { icon:'📋', id:'po-detail',    title:'PO Detail — Exceptions',   desc:'GRN without invoice, open POs, bank account count, and payment ageing.' },
-    { icon:'🛒', id:'purchase',     title:'Purchase Analytics',       desc:'Blocked vendor detection, purchase vs return combo chart, full register.' },
-    { icon:'🤖', id:'ai-dashboard', title:'AI Dashboard',             desc:'AI-driven distribution pie, month trend, and company bar with smart filters.' },
-    { icon:'✔', id:'formula',      title:'Formula Check',            desc:'GST rate variance and discount difference validation per invoice.' },
-    { icon:'➕', id:'addition',     title:'Additional Modules',       desc:'Roadmap: MIS reporting, fraud analysis, inventory, trial balance.' },
+    { icon: '⚙', id: 'filters', title: 'Dashboard Filters', desc: 'Set global filters for company, state, product, customer, and month.' },
+    { icon: '🔍', id: 'hygiene', title: 'Data Hygiene', desc: 'Detect duplicate master data, GST mismatches, and product code errors.' },
+    { icon: '📊', id: 'po-summary', title: 'PO vs Invoice vs GRN vs Bank', desc: 'Full reconciliation across purchase orders, invoices, GRNs, and payments.' },
+    { icon: '📋', id: 'po-detail', title: 'PO Detail — Exceptions', desc: 'GRN without invoice, open POs, bank account count, and payment ageing.' },
+    { icon: '🛒', id: 'purchase', title: 'Purchase Analytics', desc: 'Blocked vendor detection, purchase vs return combo chart, full register.' },
+    { icon: '🤖', id: 'ai-dashboard', title: 'AI Dashboard', desc: 'AI-driven distribution pie, month trend, and company bar with smart filters.' },
+    { icon: '✔', id: 'formula', title: 'Formula Check', desc: 'GST rate variance and discount difference validation per invoice.' },
+    { icon: '➕', id: 'addition', title: 'Additional Modules', desc: 'Roadmap: MIS reporting, fraud analysis, inventory, trial balance.' },
   ];
-  document.getElementById('welcome-modules').innerHTML = modules.map((m,i) => `
+  document.getElementById('welcome-modules').innerHTML = modules.map((m, i) => `
     <div class="mod" onclick="goTo('${m.id}')">
-      <div class="mnum">${String(i+1).padStart(2,'0')} ${m.icon}</div>
+      <div class="mnum">${String(i + 1).padStart(2, '0')} ${m.icon}</div>
       <h4>${m.title}</h4>
       <p>${m.desc}</p>
       <div class="arr">Open →</div>
@@ -505,7 +505,7 @@ function renderHygiene() {
     </tr>`);
 
   fillTable('tbl-dup-cust', dupCustomers, r => `
-    <tr class="${r.COUNT===1?'row-flag':''}">
+    <tr class="${r.COUNT === 1 ? 'row-flag' : ''}">
       <td>${esc(r.CUST_NM)}</td>
       <td>${esc(r.CUST_CD)}</td>
       <td class="r">${r.COUNT}</td>
@@ -532,30 +532,30 @@ function renderPoSummary() {
   renderFilterStrip('filter-strip-po');
   const data = filteredComparison();
   const total = data.length;
-  const invoiceAmt = data.reduce((s,r) => s + ((+r.PO_AMT || 0) > 0 ? (+r.PO_AMT || 0) : 0), 0);
-  const grnAmt = data.reduce((s,r) => s + ((+r.GRN_AMT || 0) > 0 ? (+r.GRN_AMT || 0) : 0), 0);
-  const bankAmt = data.reduce((s,r) => s + ((+r.BANK_AMT || 0) > 0 ? (+r.BANK_AMT || 0) : 0), 0);
-  const totalAmt = data.reduce((s,r) => s + (+r.PO_AMT || 0), 0);
+  const invoiceAmt = data.reduce((s, r) => s + ((+r.PO_AMT || 0) > 0 ? (+r.PO_AMT || 0) : 0), 0);
+  const grnAmt = data.reduce((s, r) => s + ((+r.GRN_AMT || 0) > 0 ? (+r.GRN_AMT || 0) : 0), 0);
+  const bankAmt = data.reduce((s, r) => s + ((+r.BANK_AMT || 0) > 0 ? (+r.BANK_AMT || 0) : 0), 0);
+  const totalAmt = data.reduce((s, r) => s + (+r.PO_AMT || 0), 0);
 
   document.getElementById('kpi-po').innerHTML = `
-    ${kpiCard('Total Invoices',    fmt0(total),      'records in comparison',   C.blue)}
-    ${kpiCard('Invoice Amount',    fmtINRcr(invoiceAmt), 'from PO amounts',   C.ok)}
-    ${kpiCard('GRN Amount',        fmtINRcr(grnAmt), 'from GRN amounts',     C.amber)}
-    ${kpiCard('Bank Amount',       fmtINRcr(bankAmt), 'from bank amounts',      C.red)}
-    ${kpiCard('Total PO Value',    fmtINRcr(totalAmt), 'across all lines',       C.maroon)}`;
+    ${kpiCard('Total Invoices', fmt0(total), 'records in comparison', C.blue)}
+    ${kpiCard('Invoice Amount', fmtINRcr(invoiceAmt), 'from PO amounts', C.ok)}
+    ${kpiCard('GRN Amount', fmtINRcr(grnAmt), 'from GRN amounts', C.amber)}
+    ${kpiCard('Bank Amount', fmtINRcr(bankAmt), 'from bank amounts', C.red)}
+    ${kpiCard('Total PO Value', fmtINRcr(totalAmt), 'across all lines', C.maroon)}`;
 
   fillTable('tbl-comparison', data, r => {
-    const cls = r.MATCH.includes('✓')?'match': r.MATCH.includes('⚠')?'partial':'missing';
+    const cls = r.MATCH.includes('✓') ? 'match' : r.MATCH.includes('⚠') ? 'partial' : 'missing';
     const grnAmt = Number(r.GRN_AMT);
     const bankAmt = Number(r.BANK_AMT);
     const hasMissingValue = !Number.isFinite(grnAmt) || !Number.isFinite(bankAmt) || grnAmt === 0 || bankAmt === 0;
     const diffText = hasMissingValue ? '<span class="tag flag">Missing</span>' : fmtINR(grnAmt - bankAmt);
-    return `<tr class="${cls==='missing'?'row-flag':cls==='partial'?'row-warn':''}">
+    return `<tr class="${cls === 'missing' ? 'row-flag' : cls === 'partial' ? 'row-warn' : ''}">
       <td class="grp">${esc(r.INVOICE_NO)}</td>
       <td>${esc(r.COMP_NM)}</td>
       <td>${esc(r.PO_NO)}</td>
       <td class="c">${fmtINR(r.PO_AMT)}</td>
-      <td>${r.GRN_NO==='Missing'?'<span class="tag flag">Missing</span>':esc(r.GRN_NO)}</td>
+      <td>${r.GRN_NO === 'Missing' ? '<span class="tag flag">Missing</span>' : esc(r.GRN_NO)}</td>
       <td class="c">${r.GRN_AMT ? fmtINR(r.GRN_AMT) : '—'}</td>
       <td class="c">${r.BANK_AMT ? fmtINR(r.BANK_AMT) : '—'}</td>
       <td class="c">${diffText}</td>
@@ -587,7 +587,7 @@ function renderPoDetail() {
     </tr>`);
   fillTable('tbl-pay-days', RAW.pay_summary, r => {
     const high = r.AVG_DAYS > 60;
-    return `<tr class="${high?'row-flag':''}">
+    return `<tr class="${high ? 'row-flag' : ''}">
       <td class="grp">${esc(r.COMP_NM)}</td>
       <td class="r">${r.AVG_DAYS} days ${high ? '<span class="tag flag">Slow</span>' : '<span class="tag ok">OK</span>'}</td>
       <td class="r">${r.COUNT}</td>
@@ -605,7 +605,7 @@ function renderPurchase() {
       <td class="r">${fmtINR(r.AMT)}</td>
     </tr>`);
 
-  const months  = RAW.months;
+  const months = RAW.months;
   const byMonth = {};
   months.forEach(m => { byMonth[m] = { purchase: 0, returns: 0 }; });
   filteredPurchase().forEach(r => {
@@ -670,22 +670,22 @@ function renderPurchase() {
 function renderAiDashboard() {
   renderFilterStrip('filter-strip-ai');
   const data = filteredPurchase();
-  const totalAmt  = data.reduce((s,r) => s + r.INVOICE_AMT, 0);
-  const totalGst  = data.reduce((s,r) => s + r.GST_AMT, 0);
+  const totalAmt = data.reduce((s, r) => s + r.INVOICE_AMT, 0);
+  const totalGst = data.reduce((s, r) => s + r.GST_AMT, 0);
   const companies = new Set(data.map(r => r.COMP_NM)).size;
-  const invoices  = data.length;
+  const invoices = data.length;
 
   document.getElementById('kpi-ai').innerHTML = `
-    ${kpiCard('Total Invoice Amount', fmtINRk(totalAmt), `${invoices} invoice lines`,                  C.red)}
-    ${kpiCard('Total GST',            fmtINRk(totalGst), 'across all lines',                           C.amber)}
-    ${kpiCard('Companies',            fmt0(companies),   'distinct entities',                           C.blue)}
-    ${kpiCard('Avg Invoice Value',    fmtINRk(totalAmt / (invoices||1)), 'per transaction',             C.maroon)}`;
+    ${kpiCard('Total Invoice Amount', fmtINRk(totalAmt), `${invoices} invoice lines`, C.red)}
+    ${kpiCard('Total GST', fmtINRk(totalGst), 'across all lines', C.amber)}
+    ${kpiCard('Companies', fmt0(companies), 'distinct entities', C.blue)}
+    ${kpiCard('Avg Invoice Value', fmtINRk(totalAmt / (invoices || 1)), 'per transaction', C.maroon)}`;
 
   renderPieChart(data, document.getElementById('pie-dimension').value);
   renderMonthTrend(data);
   renderCompanyBar(data);
 
-  document.getElementById('pie-dimension').onchange = function() {
+  document.getElementById('pie-dimension').onchange = function () {
     renderPieChart(filteredPurchase(), this.value);
   };
 }
@@ -696,9 +696,9 @@ function renderPieChart(data, dimension) {
     const key = r[dimension] || 'Unknown';
     grouped[key] = (grouped[key] || 0) + r.INVOICE_AMT;
   });
-  const sorted  = Object.entries(grouped).sort((a,b) => b[1]-a[1]).slice(0,8);
-  const labels  = sorted.map(e => e[0]);
-  const values  = sorted.map(e => e[1]);
+  const sorted = Object.entries(grouped).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const labels = sorted.map(e => e[0]);
+  const values = sorted.map(e => e[1]);
 
   destroyChart('pie');
   const ctx = document.getElementById('chart-pie');
@@ -727,12 +727,12 @@ function renderPieChart(data, dimension) {
           backgroundColor: '#fff', borderColor: '#ece6df', borderWidth: 1,
           titleColor: C.ink, bodyColor: C.muted, padding: 12,
           titleFont: { family: "'Poppins', sans-serif", weight: '600', size: 12 },
-          bodyFont:  { family: "'Raleway', sans-serif", size: 12 },
+          bodyFont: { family: "'Raleway', sans-serif", size: 12 },
           callbacks: {
-            title:  items => items[0].label,
+            title: items => items[0].label,
             label: item => {
-              const total = item.dataset.data.reduce((s,v) => s+v, 0);
-              const pct   = ((item.raw / total) * 100).toFixed(1);
+              const total = item.dataset.data.reduce((s, v) => s + v, 0);
+              const pct = ((item.raw / total) * 100).toFixed(1);
               return [
                 `  Amount:  ${fmtINR(item.raw)}`,
                 `  Share:   ${pct}%`,
@@ -750,14 +750,14 @@ function renderPieChart(data, dimension) {
 }
 
 function renderMonthTrend(data) {
-  const months = ['April','May','June','July','August','September','October','November','December','January','February','March'];
+  const months = ['April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December', 'January', 'February', 'March'];
   const byMonth = {};
   months.forEach(m => { byMonth[m] = { amt: 0, count: 0, gst: 0 }; });
   data.forEach(r => {
     if (byMonth[r.MONTH]) {
-      byMonth[r.MONTH].amt   += r.INVOICE_AMT;
+      byMonth[r.MONTH].amt += r.INVOICE_AMT;
       byMonth[r.MONTH].count += 1;
-      byMonth[r.MONTH].gst   += r.GST_AMT;
+      byMonth[r.MONTH].gst += r.GST_AMT;
     }
   });
   const present = months.filter(m => byMonth[m].count > 0);
@@ -783,7 +783,7 @@ function renderMonthTrend(data) {
           backgroundColor: '#fff', borderColor: '#ece6df', borderWidth: 1,
           titleColor: C.ink, bodyColor: C.muted, padding: 12,
           titleFont: { family: "'Poppins', sans-serif", weight: '600', size: 12 },
-          bodyFont:  { family: "'Raleway', sans-serif", size: 12 },
+          bodyFont: { family: "'Raleway', sans-serif", size: 12 },
           callbacks: {
             title: items => items[0].label,
             label: item => [
@@ -806,11 +806,11 @@ function renderCompanyBar(data) {
   const grouped = {};
   data.forEach(r => {
     if (!grouped[r.COMP_NM]) grouped[r.COMP_NM] = { amt: 0, count: 0, gst: 0 };
-    grouped[r.COMP_NM].amt   += r.INVOICE_AMT;
+    grouped[r.COMP_NM].amt += r.INVOICE_AMT;
     grouped[r.COMP_NM].count += 1;
-    grouped[r.COMP_NM].gst   += r.GST_AMT;
+    grouped[r.COMP_NM].gst += r.GST_AMT;
   });
-  const sorted = Object.entries(grouped).sort((a,b) => b[1].amt - a[1].amt);
+  const sorted = Object.entries(grouped).sort((a, b) => b[1].amt - a[1].amt);
   destroyChart('company-bar');
   const ctx = document.getElementById('chart-company-bar');
   if (!ctx) return;
@@ -821,8 +821,8 @@ function renderCompanyBar(data) {
       datasets: [{
         label: 'Invoice Amount',
         data: sorted.map(e => e[1].amt),
-        backgroundColor: sorted.map((_,i) => PIE_COLORS[i % PIE_COLORS.length] + 'CC'),
-        borderColor:     sorted.map((_,i) => PIE_COLORS[i % PIE_COLORS.length]),
+        backgroundColor: sorted.map((_, i) => PIE_COLORS[i % PIE_COLORS.length] + 'CC'),
+        borderColor: sorted.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]),
         borderWidth: 1.5, borderRadius: 5,
       }]
     },
@@ -834,7 +834,7 @@ function renderCompanyBar(data) {
           backgroundColor: '#fff', borderColor: '#ece6df', borderWidth: 1,
           titleColor: C.ink, bodyColor: C.muted, padding: 13,
           titleFont: { family: "'Poppins', sans-serif", weight: '600', size: 12 },
-          bodyFont:  { family: "'Raleway', sans-serif", size: 12 },
+          bodyFont: { family: "'Raleway', sans-serif", size: 12 },
           callbacks: {
             title: items => items[0].label,
             label: item => {
@@ -923,7 +923,7 @@ async function openObservationModal(category) {
   goTo('observations');
   const titleEl = document.getElementById('obs-page-title');
   if (titleEl) titleEl.textContent = OBS_TITLES[category] || 'Observation Log';
-  
+
   await renderObsList();
 }
 
@@ -1041,18 +1041,39 @@ function showObsForm(data = null) {
             <tr><td><strong>Escalator 2</strong></td><td><input type="text" name="Escalator2" class="remark-input" value="${esc(item.Escalator2 || '')}"></td></tr>
             <tr><td><strong>Escalator 3</strong></td><td><input type="text" name="Escalator3" class="remark-input" value="${esc(item.Escalator3 || '')}"></td></tr>
             <tr><td><strong>Recommendation</strong></td><td><textarea name="Recommendation" class="remark-input" rows="2">${esc(item.Recommendation || '')}</textarea></td></tr>
+
+            <tr><td><strong>Corrective Action Plan</strong></td><td><textarea name="CorrectiveActionPlan" class="remark-input" rows="2">${esc(item.CorrectiveActionPlan || '')}</textarea></td></tr>
+
+            <tr><td><strong>Preventive Action Plan</strong></td><td><textarea name="PreventiveActionPlan" class="remark-input" rows="2">${esc(item.PreventiveActionPlan || '')}</textarea></td></tr>
+
+            <tr><td><strong>Short Action Plan</strong></td><td><input type="text" name="ShortActionPlan" class="remark-input" value="${esc(item.ShortActionPlan || '')}"></td></tr>
+
+            <tr><td><strong>Target Date Not Applicable</strong></td><td><input type="checkbox" name="TargetDateNotApplicable" ${item.TargetDateNotApplicable === 'true' || item.TargetDateNotApplicable === true ? 'checked' : ''}></td></tr>
+
+            <tr><td><strong>Target Date</strong></td><td><input type="date" name="TargetDate" class="remark-input" value="${item.TargetDate || ''}"></td></tr>
+
+            <tr><td><strong>Revised Target Date</strong></td><td><input type="date" name="RevisedTargetDate" class="remark-input" value="${item.RevisedTargetDate || ''}"></td></tr>
+
+            <tr><td><strong>Percentage Completion (Auditee)</strong></td><td><input type="number" name="PercentageCompletedAuditee" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditee || ''}"></td></tr>
+
+            <tr><td><strong>Percentage Completion (Auditor)</strong></td><td><input type="number" name="PercentageCompletedAuditor" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditor || ''}"></td></tr>
+
+            <tr><td><strong>Closure Date</strong></td><td><input type="date" name="ClosureDate" class="remark-input" value="${item.ClosureDate || ''}"></td></tr>
+
+            <tr><td><strong>Closure Reason</strong></td><td><textarea name="ClosureReason" class="remark-input" rows="2">${esc(item.ClosureReason || '')}</textarea></td></tr>
           </tbody>
         </table>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:10px">
         <button type="button" class="btn ghost sm" onclick="renderObsList()">Cancel</button>
+        <button type="button" class="btn secondary sm" onclick="saveObservation(event, ${item.id || 'null'}, true)">➕ Save & Add Row</button>
         <button type="submit" class="btn primary sm">💾 Save Observation</button>
       </div>
     </form>`;
 }
 
-async function saveObservation(event, id) {
+async function saveObservation(event, id, addAnother = false) {
   event.preventDefault();
   const form = document.getElementById('obs-form');
   if (!form) return;
@@ -1065,6 +1086,11 @@ async function saveObservation(event, id) {
   };
 
   formData.forEach((val, key) => { payload[key] = val; });
+  
+  const checkbox = form.querySelector('[name="TargetDateNotApplicable"]');
+  if (checkbox) {
+    payload['TargetDateNotApplicable'] = checkbox.checked ? 'true' : 'false';
+  }
 
   try {
     const res = await fetch('/api/observations', {
@@ -1074,7 +1100,11 @@ async function saveObservation(event, id) {
     });
     const json = await res.json();
     if (json.success) {
-      await renderObsList();
+      if (addAnother) {
+        showObsForm();
+      } else {
+        await renderObsList();
+      }
     } else {
       alert('Error saving observation: ' + (json.error || 'Unknown error'));
     }
@@ -1114,10 +1144,10 @@ function chartOptions(overrides = {}) {
       legend: {
         labels: { font: { family: "'Poppins', sans-serif", size: 11 }, color: C.ink, boxWidth: 12, padding: 14 }
       },
-      ...( overrides.plugins || {} )
+      ...(overrides.plugins || {})
     },
     scales: overrides.scales || {},
-    ...( (() => { const {plugins, scales, ...rest} = overrides; return rest; })() )
+    ...((() => { const { plugins, scales, ...rest } = overrides; return rest; })())
   };
 }
 
@@ -1126,9 +1156,9 @@ function richTooltip(getRows) {
     backgroundColor: '#fff', borderColor: '#ece6df', borderWidth: 1,
     titleColor: C.ink, bodyColor: C.muted, padding: 12,
     titleFont: { family: "'Poppins', sans-serif", weight: '600', size: 12 },
-    bodyFont:  { family: "'Raleway', sans-serif", size: 12 },
+    bodyFont: { family: "'Raleway', sans-serif", size: 12 },
     callbacks: {
-      label: function(item) {
+      label: function (item) {
         const rows = getRows(item.chart.tooltip.dataPoints);
         return rows.map(r => `  ${r.name}: ${r.value}`).flat();
       }
@@ -1160,20 +1190,20 @@ function fmtINR(v) {
 }
 function fmtINRk(v) {
   v = Math.round(+v || 0);
-  if (Math.abs(v) >= 1e7) return '₹' + (v/1e7).toFixed(2) + ' Cr';
-  if (Math.abs(v) >= 1e5) return '₹' + (v/1e5).toFixed(2) + ' L';
+  if (Math.abs(v) >= 1e7) return '₹' + (v / 1e7).toFixed(2) + ' Cr';
+  if (Math.abs(v) >= 1e5) return '₹' + (v / 1e5).toFixed(2) + ' L';
   return '₹' + v.toLocaleString('en-IN');
 }
 function fmtINRcr(v) {
   v = Math.round(+v || 0);
-  return '₹' + (v/1e7).toFixed(2).replace(/\.00$/, '') + ' Cr';
+  return '₹' + (v / 1e7).toFixed(2).replace(/\.00$/, '') + ' Cr';
 }
 function fmt0(v) { return (+v || 0).toLocaleString('en-IN'); }
-function esc(s) { return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function hexA(hex, alpha) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
