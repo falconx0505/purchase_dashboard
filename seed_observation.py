@@ -5,7 +5,7 @@ import sqlite3
 import pandas as pd
  
 # ── SETTINGS — change these two if needed ──────────────────────
-EXCEL_PATH = os.path.join(os.path.dirname(__file__), "observations_seed.xlsx")
+EXCEL_PATH = os.path.join(os.path.dirname(__file__), "observations_seed_template_updated.xlsx")
 DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
  
 VALID_CATEGORIES = {"multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code"}
@@ -23,10 +23,23 @@ ALL_FIELDS = [
     "CorrectiveActionPlan", "PreventiveActionPlan", "ShortActionPlan",
     "TargetDateNotApplicable", "TargetDate", "RevisedTargetDate",
     "PercentageCompletedAuditee", "PercentageCompletedAuditor",
-    "ClosureDate", "ClosureReason",
+    "ClosureDate", "ClosureReason", "FromDate", "ToDate",
 ]
  
  
+def normalize_observation_headers(df):
+    """Map spaced header names like 'From Date' to DB field names like 'FromDate'."""
+    canonical_map = {re.sub(r"[^a-zA-Z0-9]+", "", str(name)).lower(): name for name in ALL_FIELDS}
+    renamed = {}
+    for original in df.columns:
+        key = re.sub(r"[^a-zA-Z0-9]+", "", str(original)).lower()
+        if key in canonical_map:
+            renamed[original] = canonical_map[key]
+    if renamed:
+        df = df.rename(columns=renamed)
+    return df
+
+
 def safe_value(value):
     """Turn blank/NaN Excel cells into empty string, everything else into text."""
     if value is None or (isinstance(value, float) and pd.isna(value)):
@@ -60,7 +73,8 @@ def main():
  
     df = pd.read_excel(EXCEL_PATH, dtype=str)  # read everything as text, keep it simple
     df.columns = [str(c).strip() for c in df.columns]
- 
+    df = normalize_observation_headers(df)
+
     missing_headers = [f for f in ALL_FIELDS if f not in df.columns]
     if missing_headers:
         print("Warning: these expected columns were not found in your Excel file "

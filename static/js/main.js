@@ -54,6 +54,40 @@ async function loadData() {
   setLoading(false);
 }
 
+async function uploadObservationFile() {
+  const input = document.getElementById('observation-upload-input');
+  const status = document.getElementById('upload-observation-status');
+  if (!input || !input.files || !input.files.length) {
+    if (status) status.textContent = 'Please choose an Excel file first.';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+
+  if (status) status.textContent = 'Uploading observation file…';
+
+  try {
+    const res = await fetch('/api/observations/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || 'Upload failed');
+    }
+
+    if (status) {
+      status.textContent = `Imported ${json.inserted || 0} observation row(s). ${json.ignored_blank || 0} blank rows ignored.`;
+    }
+    input.value = '';
+    await loadData();
+  } catch (error) {
+    console.error('Observation upload failed:', error);
+    if (status) status.textContent = 'Upload failed: ' + (error.message || 'Unknown error');
+  }
+}
+
 function setLoading(visible, message = '') {
   const el = document.getElementById('data-loading');
   if (!el) return;
@@ -964,6 +998,8 @@ async function renderObsList() {
                 <th>Repeat</th>
                 <th>Frequency</th>
                 <th>Share With</th>
+                <th>From Date</th>
+                <th>To Date</th>
                 <th>Auditee</th>
                 <th>Actions</th>
               </tr>
@@ -980,6 +1016,8 @@ async function renderObsList() {
                   <td>${esc(item.RepeatObservation || '—')}</td>
                   <td>${esc(item.FollowUpFrequency || '—')}</td>
                   <td>${esc(item.ShareWith || '—')}</td>
+                  <td>${esc(item.FromDate || '—')}</td>
+                  <td>${esc(item.ToDate || '—')}</td>
                   <td>${esc(item.Auditee || '—')}</td>
                   <td>
                     <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>✏️ Edit</button>
@@ -1012,57 +1050,39 @@ function showObsForm(data = null) {
         <button type="button" class="btn ghost sm" onclick="renderObsList()">← Back to List</button>
       </div>
 
-      <div class="tbl-wrap" style="max-height:420px;overflow:auto;border:1px solid var(--line2);border-radius:6px;margin-bottom:15px">
-        <table class="tbl" style="font-size:12px;white-space:nowrap">
-          <thead>
-            <tr style="background:var(--bg)">
-              <th style="min-width:180px">Field Name</th>
-              <th style="min-width:320px">Value / Input</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td><strong>Observation Title</strong></td><td><input type="text" name="ObservationTitle" class="remark-input" value="${esc(item.ObservationTitle || '')}" required></td></tr>
-            <tr><td><strong>Observation Sub Process</strong></td><td><input type="text" name="ObservationSubProcess" class="remark-input" value="${esc(item.ObservationSubProcess || '')}"></td></tr>
-            <tr><td><strong>Repeat Observation</strong></td><td>${renderDropdown('RepeatObservation', item.RepeatObservation)}</td></tr>
-            <tr><td><strong>Observation Type</strong></td><td>${renderDropdown('ObservationType', item.ObservationType)}</td></tr>
-            <tr><td><strong>Risk Type</strong></td><td>${renderDropdown('RiskType', item.RiskType)}</td></tr>
-            <tr><td><strong>Department</strong></td><td>${renderDropdown('Department', item.Department)}</td></tr>
-            <tr><td><strong>SBU</strong></td><td>${renderDropdown('SBU', item.SBU)}</td></tr>
-            <tr><td><strong>Follow Up Frequency</strong></td><td>${renderDropdown('FollowUpFrequency', item.FollowUpFrequency)}</td></tr>
-            <tr><td><strong>Share With</strong></td><td>${renderDropdown('ShareWith', item.ShareWith)}</td></tr>
-            <tr><td><strong>Observation Description</strong></td><td><textarea name="ObservationDescription" class="remark-input" rows="2">${esc(item.ObservationDescription || '')}</textarea></td></tr>
-            <tr><td><strong>Short Observation</strong></td><td><input type="text" name="ShortObservation" class="remark-input" value="${esc(item.ShortObservation || '')}"></td></tr>
-            <tr><td><strong>Root Cause</strong></td><td><textarea name="RootCause" class="remark-input" rows="2">${esc(item.RootCause || '')}</textarea></td></tr>
-            <tr><td><strong>Impact / Concern</strong></td><td><textarea name="ImpactConcern" class="remark-input" rows="2">${esc(item.ImpactConcern || '')}</textarea></td></tr>
-            <tr><td><strong>Financial Implication</strong></td><td><input type="text" name="FinancialImplication" class="remark-input" value="${esc(item.FinancialImplication || '')}"></td></tr>
-            <tr><td><strong>Auditee</strong></td><td><input type="text" name="Auditee" class="remark-input" value="${esc(item.Auditee || '')}"></td></tr>
-            <tr><td><strong>Other Auditee</strong></td><td><input type="text" name="OtherAuditee" class="remark-input" value="${esc(item.OtherAuditee || '')}"></td></tr>
-            <tr><td><strong>Escalator 1</strong></td><td><input type="text" name="Escalator1" class="remark-input" value="${esc(item.Escalator1 || '')}"></td></tr>
-            <tr><td><strong>Escalator 2</strong></td><td><input type="text" name="Escalator2" class="remark-input" value="${esc(item.Escalator2 || '')}"></td></tr>
-            <tr><td><strong>Escalator 3</strong></td><td><input type="text" name="Escalator3" class="remark-input" value="${esc(item.Escalator3 || '')}"></td></tr>
-            <tr><td><strong>Recommendation</strong></td><td><textarea name="Recommendation" class="remark-input" rows="2">${esc(item.Recommendation || '')}</textarea></td></tr>
-
-            <tr><td><strong>Corrective Action Plan</strong></td><td><textarea name="CorrectiveActionPlan" class="remark-input" rows="2">${esc(item.CorrectiveActionPlan || '')}</textarea></td></tr>
-
-            <tr><td><strong>Preventive Action Plan</strong></td><td><textarea name="PreventiveActionPlan" class="remark-input" rows="2">${esc(item.PreventiveActionPlan || '')}</textarea></td></tr>
-
-            <tr><td><strong>Short Action Plan</strong></td><td><input type="text" name="ShortActionPlan" class="remark-input" value="${esc(item.ShortActionPlan || '')}"></td></tr>
-
-            <tr><td><strong>Target Date Not Applicable</strong></td><td><input type="checkbox" name="TargetDateNotApplicable" ${item.TargetDateNotApplicable === 'true' || item.TargetDateNotApplicable === true ? 'checked' : ''}></td></tr>
-
-            <tr><td><strong>Target Date</strong></td><td><input type="date" name="TargetDate" class="remark-input" value="${item.TargetDate || ''}"></td></tr>
-
-            <tr><td><strong>Revised Target Date</strong></td><td><input type="date" name="RevisedTargetDate" class="remark-input" value="${item.RevisedTargetDate || ''}"></td></tr>
-
-            <tr><td><strong>Percentage Completion (Auditee)</strong></td><td><input type="number" name="PercentageCompletedAuditee" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditee || ''}"></td></tr>
-
-            <tr><td><strong>Percentage Completion (Auditor)</strong></td><td><input type="number" name="PercentageCompletedAuditor" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditor || ''}"></td></tr>
-
-            <tr><td><strong>Closure Date</strong></td><td><input type="date" name="ClosureDate" class="remark-input" value="${item.ClosureDate || ''}"></td></tr>
-
-            <tr><td><strong>Closure Reason</strong></td><td><textarea name="ClosureReason" class="remark-input" rows="2">${esc(item.ClosureReason || '')}</textarea></td></tr>
-          </tbody>
-        </table>
+      <div class="obs-field-grid">
+        <div class="obs-field"><span class="obs-field-label">Observation Title</span><input type="text" name="ObservationTitle" class="remark-input" value="${esc(item.ObservationTitle || '')}" required></div>
+        <div class="obs-field"><span class="obs-field-label">Observation Sub Process</span><input type="text" name="ObservationSubProcess" class="remark-input" value="${esc(item.ObservationSubProcess || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Repeat Observation</span>${renderDropdown('RepeatObservation', item.RepeatObservation)}</div>
+        <div class="obs-field"><span class="obs-field-label">Observation Type</span>${renderDropdown('ObservationType', item.ObservationType)}</div>
+        <div class="obs-field"><span class="obs-field-label">Risk Type</span>${renderDropdown('RiskType', item.RiskType)}</div>
+        <div class="obs-field"><span class="obs-field-label">Department</span>${renderDropdown('Department', item.Department)}</div>
+        <div class="obs-field"><span class="obs-field-label">SBU</span>${renderDropdown('SBU', item.SBU)}</div>
+        <div class="obs-field"><span class="obs-field-label">Follow Up Frequency</span>${renderDropdown('FollowUpFrequency', item.FollowUpFrequency)}</div>
+        <div class="obs-field"><span class="obs-field-label">Share With</span>${renderDropdown('ShareWith', item.ShareWith)}</div>
+        <div class="obs-field"><span class="obs-field-label">Financial Implication</span><input type="text" name="FinancialImplication" class="remark-input" value="${esc(item.FinancialImplication || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Observation Description</span><textarea name="ObservationDescription" class="remark-input" rows="2">${esc(item.ObservationDescription || '')}</textarea></div>
+        <div class="obs-field"><span class="obs-field-label">Short Observation</span><input type="text" name="ShortObservation" class="remark-input" value="${esc(item.ShortObservation || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Short Action Plan</span><input type="text" name="ShortActionPlan" class="remark-input" value="${esc(item.ShortActionPlan || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Root Cause</span><textarea name="RootCause" class="remark-input" rows="2">${esc(item.RootCause || '')}</textarea></div>
+        <div class="obs-field"><span class="obs-field-label">Impact / Concern</span><textarea name="ImpactConcern" class="remark-input" rows="2">${esc(item.ImpactConcern || '')}</textarea></div>
+        <div class="obs-field"><span class="obs-field-label">Recommendation</span><textarea name="Recommendation" class="remark-input" rows="2">${esc(item.Recommendation || '')}</textarea></div>
+        <div class="obs-field"><span class="obs-field-label">Corrective Action Plan</span><textarea name="CorrectiveActionPlan" class="remark-input" rows="2">${esc(item.CorrectiveActionPlan || '')}</textarea></div>
+        <div class="obs-field"><span class="obs-field-label">Preventive Action Plan</span><textarea name="PreventiveActionPlan" class="remark-input" rows="2">${esc(item.PreventiveActionPlan || '')}</textarea></div>
+        <div class="obs-field"><span class="obs-field-label">Auditee</span><input type="text" name="Auditee" class="remark-input" value="${esc(item.Auditee || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Other Auditee</span><input type="text" name="OtherAuditee" class="remark-input" value="${esc(item.OtherAuditee || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Escalator 1</span><input type="text" name="Escalator1" class="remark-input" value="${esc(item.Escalator1 || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Escalator 2</span><input type="text" name="Escalator2" class="remark-input" value="${esc(item.Escalator2 || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Escalator 3</span><input type="text" name="Escalator3" class="remark-input" value="${esc(item.Escalator3 || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">From Date</span><input type="date" name="FromDate" class="remark-input" value="${item.FromDate || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">To Date</span><input type="date" name="ToDate" class="remark-input" value="${item.ToDate || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Target Date</span><input type="date" name="TargetDate" class="remark-input" value="${item.TargetDate || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Revised Target Date</span><input type="date" name="RevisedTargetDate" class="remark-input" value="${item.RevisedTargetDate || ''}"></div>
+        <div class="obs-field obs-field-checkbox"><input type="checkbox" name="TargetDateNotApplicable" id="obs-tdna" ${item.TargetDateNotApplicable === 'true' || item.TargetDateNotApplicable === true ? 'checked' : ''}><label for="obs-tdna" class="obs-field-label" style="margin:0">Target Date Not Applicable</label></div>
+        <div class="obs-field"><span class="obs-field-label">Percentage Completion (Auditee)</span><input type="number" name="PercentageCompletedAuditee" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditee || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Percentage Completion (Auditor)</span><input type="number" name="PercentageCompletedAuditor" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditor || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Closure Date</span><input type="date" name="ClosureDate" class="remark-input" value="${item.ClosureDate || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Closure Reason</span><textarea name="ClosureReason" class="remark-input" rows="2">${esc(item.ClosureReason || '')}</textarea></div>
       </div>
 
       <div style="display:flex;justify-content:flex-end;gap:10px">

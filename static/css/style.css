@@ -120,6 +120,12 @@ body {
   cursor: pointer; box-shadow: var(--sh);
 }
 .obs-btn:hover { background: var(--maroon); }
+.obs-card-btn {
+  border: 0; border-radius: 999px; padding: 6px 12px; background: var(--red);
+  color: #fff; font-family: var(--display); font-weight: 700; font-size: 11.5px;
+  cursor: pointer; box-shadow: var(--sh); white-space: nowrap;
+}
+.obs-card-btn:hover { background: var(--maroon); }
 .nav-tab {
   appearance: none; border: 0; background: none; cursor: pointer;
   font-family: var(--display); font-weight: 600; font-size: 12.5px;
@@ -219,8 +225,8 @@ table.tbl tbody tr:hover td { background: #faf7f3; }
 table.tbl td.r, table.tbl th.r { text-align: right; font-family: var(--num); }
 table.tbl td.c, table.tbl th.c { text-align: center; }
 table.tbl .grp { font-weight: 600; color: var(--maroon); }
-table.tbl tr.row-flag td { background: var(--flagbg); }
-table.tbl tr.row-flag:hover td { background: #f7e0de; }
+table.tbl tr.row-flag td { background: #fff; }
+table.tbl tr.row-flag:hover td { background: #faf7f3; }
 table.tbl tr.row-warn td { background: var(--warnbg); }
 .tag {
   font-family: var(--display); font-weight: 700; font-size: 9.5px;
@@ -417,6 +423,37 @@ table.tbl tr.row-warn td { background: var(--warnbg); }
   background-color: #f0fdf4 !important;
 }
 
+/* ── Observation form: two-column field layout (no row dividers) ── */
+.obs-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 32px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+.obs-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.obs-field-full { grid-column: 1 / -1; }
+.obs-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.obs-field .remark-input,
+.obs-field select.remark-input,
+.obs-field textarea.remark-input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+.obs-field-checkbox { flex-direction: row; align-items: center; gap: 8px; }
+@media (max-width: 760px) {
+  .obs-field-grid { grid-template-columns: 1fr; }
+}
+
 .remark-actions {
   display: flex;
   align-items: center;
@@ -451,5 +488,3 @@ table.tbl tr.row-warn td { background: var(--warnbg); }
   background: #fee2e2;
   color: var(--red);
 }
-
-

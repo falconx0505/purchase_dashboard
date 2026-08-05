@@ -3,10 +3,14 @@ import os
 import random
 import re
 import sqlite3
+import tempfile
 import zipfile
 from xml.etree.ElementTree import iterparse
 from flask import Flask, render_template, jsonify, request
+from werkzeug.utils import secure_filename
 import pandas as pd
+
+from seed_observation import ALL_FIELDS, VALID_CATEGORIES, safe_value, make_entity_key, row_is_completely_empty
 
 app = Flask(__name__)
 random.seed(42)
@@ -102,6 +106,8 @@ def init_db_schema(conn):
         PercentageCompletedAuditor DECIMAL(5,2),
         ClosureDate DATE,
         ClosureReason TEXT,
+        FromDate DATE,
+        ToDate DATE,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -112,6 +118,18 @@ def get_db_connection():
     conn.execute("PRAGMA foreign_keys = ON")
     init_db_schema(conn)
     return conn
+
+
+def normalize_observation_headers(df):
+    canonical_map = {re.sub(r"[^a-zA-Z0-9]+", "", str(name)).lower(): name for name in ALL_FIELDS}
+    renamed = {}
+    for original in df.columns:
+        key = re.sub(r"[^a-zA-Z0-9]+", "", str(original)).lower()
+        if key in canonical_map:
+            renamed[original] = canonical_map[key]
+    if renamed:
+        df = df.rename(columns=renamed)
+    return df
 
 def get_hygiene_remarks():
     if not os.path.exists(DB_PATH):
@@ -615,7 +633,7 @@ def save_observation():
         "CorrectiveActionPlan", "PreventiveActionPlan", "ShortActionPlan",
         "TargetDateNotApplicable", "TargetDate", "RevisedTargetDate",
         "PercentageCompletedAuditee", "PercentageCompletedAuditor",
-        "ClosureDate", "ClosureReason"
+        "ClosureDate", "ClosureReason", "FromDate", "ToDate"
     ]
     vals = [str(data.get(f, "") or "").strip() for f in fields]
 
@@ -674,6 +692,83 @@ def save_hygiene_remark():
             return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/observations/upload", methods=["POST"])
+def upload_observation_file():
+    uploaded = request.files.get("file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"success": False, "error": "No file uploaded"}), 400
+
+    filename = secure_filename(uploaded.filename)
+    if not filename.lower().endswith((".xlsx", ".xls")):
+        return jsonify({"success": False, "error": "Please upload an Excel file (.xlsx or .xls)"}), 400
+
+    temp_fd, temp_path = tempfile.mkstemp(suffix=os.path.splitext(filename)[1])
+    os.close(temp_fd)
+
+    try:
+        uploaded.save(temp_path)
+        df = pd.read_excel(temp_path, dtype=str)
+        df.columns = [str(c).strip() for c in df.columns]
+        df = normalize_observation_headers(df)
+
+        missing_headers = [field for field in ALL_FIELDS if field not in df.columns]
+        if missing_headers:
+            return jsonify({"success": False, "error": f"Missing required columns: {', '.join(missing_headers)}"}), 400
+
+        categories_in_file = sorted({safe_value(value) for value in df.get("category", []).dropna().tolist() if safe_value(value) in VALID_CATEGORIES})
+
+        inserted = 0
+        skipped = 0
+        ignored_blank = 0
+
+        with get_db_connection() as conn:
+            conn.execute("PRAGMA foreign_keys = ON")
+            for category_name in categories_in_file:
+                conn.execute("DELETE FROM observations WHERE category = ?", (category_name,))
+
+            for row_num, row in df.iterrows():
+                if row_is_completely_empty(row):
+                    ignored_blank += 1
+                    continue
+
+                category = safe_value(row.get("category"))
+                if category not in VALID_CATEGORIES:
+                    skipped += 1
+                    continue
+
+                entity_key = safe_value(row.get("entity_key"))
+                if not entity_key:
+                    entity_key = make_entity_key(safe_value(row.get("ObservationTitle")), safe_value(row.get("table_name")), row_num + 2)
+
+                values = []
+                for field in ALL_FIELDS:
+                    if field == "entity_key":
+                        values.append(entity_key)
+                    else:
+                        values.append(safe_value(row.get(field)))
+
+                columns = ", ".join(ALL_FIELDS)
+                placeholders = ", ".join(["?"] * len(ALL_FIELDS))
+                conn.execute(
+                    f"INSERT INTO observations ({columns}) VALUES ({placeholders})",
+                    values,
+                )
+                inserted += 1
+
+            conn.commit()
+
+        return jsonify({
+            "success": True,
+            "inserted": inserted,
+            "skipped": skipped,
+            "ignored_blank": ignored_blank,
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

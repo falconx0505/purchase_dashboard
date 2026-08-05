@@ -38,6 +38,7 @@
   <button class="nav-tab" data-page="ai-dashboard">🤖 AI Dashboard</button>
   <button class="nav-tab" data-page="formula">✔ Calculation Check</button>
   <button class="nav-tab" data-page="addition">➕ Addition</button>
+  <button class="nav-tab" data-page="upload-observation">📁 Upload </button>
 </nav>
 
 <!-- ── PAGES CONTAINER ────────────────────────── -->
@@ -320,6 +321,25 @@
           <span class="coming-badge">Coming Soon</span>
         </li>
       </ul>
+    </div>
+  </div>
+
+  <!-- PAGE: UPLOAD OBSERVATION FILE -->
+  <div class="page" id="page-upload-observation">
+    <div class="page-head">
+      <div class="eyebrow">Observation Import</div>
+      <h1>Upload Observation File</h1>
+      <p>Use this page to upload an Excel observation seed file directly from the dashboard.</p>
+    </div>
+    <div class="card">
+      <div style="display:grid;gap:14px;max-width:560px">
+        <label for="observation-upload-input" class="obs-field-label">Select Excel file</label>
+        <input id="observation-upload-input" type="file" accept=".xlsx,.xls" class="remark-input" style="padding:10px">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn primary" type="button" onclick="uploadObservationFile()">Upload File</button>
+          <span id="upload-observation-status" style="font-size:13px;color:var(--muted)">No file selected yet.</span>
+        </div>
+      </div>
     </div>
   </div>
 
