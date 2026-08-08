@@ -10,10 +10,62 @@ from flask import Flask, render_template, jsonify, request
 from werkzeug.utils import secure_filename
 import pandas as pd
 
-from seed_observation import ALL_FIELDS, VALID_CATEGORIES, safe_value, make_entity_key, row_is_completely_empty
+VALID_CATEGORIES = {
+    # Purchase Data Hygiene categories (original module)
+    "multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code",
+    # ── IT CONTROLS MODULE — observation categories for the 6 IT Controls cards
+    "itc_access_lwd", "itc_inactive_90", "itc_pwd_stale",
+    "itc_after_hours", "itc_failed_login", "itc_above_limit",
+    # ── HR AND PAYROLL MODULE — observation categories for the 6 HR & Payroll cards
+    "hr_dup_bank", "hr_dup_pan_aadhaar", "hr_missing_ids",
+    "hr_missing_master", "hr_same_pan",
+}
+
+# Every column the observations table actually has (excluding id/updated_at,
+# which the database fills in on its own). Excel headers for the Upload
+# feature must match these names exactly.
+ALL_FIELDS = [
+    "category", "table_name", "entity_key", "ObservationTitle",
+    "ObservationSubProcess", "RepeatObservation", "ObservationType",
+    "RiskType", "Department", "SBU", "FollowUpFrequency", "ShareWith",
+    "ObservationDescription", "ShortObservation", "RootCause",
+    "ImpactConcern", "FinancialImplication", "Auditee", "OtherAuditee",
+    "Escalator1", "Escalator2", "Escalator3", "Recommendation",
+    "CorrectiveActionPlan", "PreventiveActionPlan", "ShortActionPlan",
+    "TargetDateNotApplicable", "TargetDate", "RevisedTargetDate",
+    "PercentageCompletedAuditee", "PercentageCompletedAuditor",
+    "ClosureDate", "ClosureReason", "FromDate", "ToDate",
+]
+
+
+def safe_value(value):
+    """Turn blank/NaN Excel cells into empty string, everything else into text."""
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    text = str(value).strip()
+    return "" if text.lower() == "nan" else text
+
+
+def make_entity_key(title, table_name, row_num):
+    """Build a fallback unique reference when entity_key is left blank."""
+    base = title or table_name or f"row-{row_num}"
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", base).strip("_").lower()
+    return slug or f"row-{row_num}"
+
+
+def row_is_completely_empty(row):
+    """True if every mapped field in this Excel row is blank (e.g. a stray blank line)."""
+    return all(safe_value(row.get(field)) == "" for field in ALL_FIELDS)
+
 
 app = Flask(__name__)
 random.seed(42)
+
+# Disable static-file caching in dev so the browser always loads the latest
+# main.js / style.css (relevant for the IT Controls / HR and Payroll work,
+# since a cached old main.js would otherwise hide those pages after edits).
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
+app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # File and Database Paths
 DATA_PATH = os.path.join(os.path.dirname(__file__), "60rowdata .xlsx")

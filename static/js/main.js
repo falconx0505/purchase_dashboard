@@ -14,6 +14,8 @@ const PIE_COLORS = [
   '#2f8f5b', '#857a74', '#B45309', '#1D4ED8', '#7C3AED',
 ];
 
+document.body.classList.add('on-home');
+
 let F = { company: [], state: [], product: [], customer: [], month: [] };
 let RAW = null;
 let currentObsCategory = '';
@@ -30,6 +32,9 @@ function goTo(pageId) {
   const tab = document.querySelector(`[data-page="${pageId}"]`);
   if (page) page.classList.add('active');
   if (tab) tab.classList.add('active');
+  // 'it-controls' and 'hr-payroll' are Home-only pages (opened via the Home
+  // screen buttons, not the top-nav), so hide the top-nav on both, same as Home.
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'hr-payroll');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
 }
@@ -235,6 +240,11 @@ function removeFilter(dim, val) {
 }
 
 function renderCurrentPage(pageId) {
+  // IT CONTROLS MODULE and HR AND PAYROLL MODULE are handled before the
+  // RAW-data guard below because both render from hardcoded local data
+  // (IT_TABLES / HR_TABLES) and don't need RAW.purchase data to be loaded.
+  if (pageId === 'it-controls') { renderItControls(); return; }
+  if (pageId === 'hr-payroll') { renderHrPayroll(); return; }
   if (!RAW) return;
   switch (pageId) {
     case 'welcome': renderWelcome(); break;
@@ -246,9 +256,280 @@ function renderCurrentPage(pageId) {
     case 'ai-dashboard': renderAiDashboard(); break;
     case 'formula': renderFormula(); break;
     case 'addition': break;
+    case 'it-controls': renderItControls(); break; // unreachable (handled above), kept for safety
+    case 'hr-payroll': renderHrPayroll(); break; // unreachable (handled above), kept for safety
     case 'observations': renderObsList(); break;
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// IT CONTROLS MODULE
+// Home-screen-only page (#page-it-controls). Uses hardcoded mock data
+// (IT_EMPLOYEES / IT_TABLES) rather than RAW purchase data. Each card's
+// "Observation" button opens the shared observation log filtered to
+// that card's category (see openObservationModal / OBS_TITLES below).
+// ─────────────────────────────────────────────────────────────
+const IT_EMPLOYEES = ['Priya Sharma', 'Rohit Verma', 'Ananya Iyer', 'Karan Mehta', 'Sneha Reddy', 'Arjun Nair', 'Divya Pillai'];
+
+// Each card gives a [min, max] range instead of a fixed list, so the
+// metric values are generated randomly (and independently per card)
+// every time the IT Controls page renders, instead of always showing
+// the same hardcoded numbers.
+const IT_TABLES = [
+  {
+    id: 'access_lwd', category: 'itc_access_lwd',
+    title: 'Access After Last Working Day',
+    desc: 'System access retained after employee exit',
+    metricLabel: 'Days After Last Working Day',
+    min: 1, max: 20
+  },
+  {
+    id: 'inactive_90', category: 'itc_inactive_90',
+    title: 'Users Not Logged In for 90+ Days',
+    desc: 'Dormant accounts still active in the system',
+    metricLabel: 'Days Not Logged In',
+    min: 91, max: 400
+  },
+  {
+    id: 'pwd_stale', category: 'itc_pwd_stale',
+    title: 'Password Not Changed',
+    desc: 'Accounts exceeding password rotation policy',
+    metricLabel: 'Days Since Password Changed',
+    min: 91, max: 250
+  },
+  {
+    id: 'after_hours', category: 'itc_after_hours',
+    title: 'Login Outside Business Hours',
+    desc: 'Sign-ins recorded outside approved working hours',
+    metricLabel: 'Logins After Office Hours',
+    min: 1, max: 15
+  },
+  {
+    id: 'failed_login', category: 'itc_failed_login',
+    title: 'Multiple Failed Login Attempts',
+    desc: 'Repeated unsuccessful sign-in attempts',
+    metricLabel: 'Failed Login Attempts',
+    min: 5, max: 45
+  },
+  {
+    id: 'above_limit', category: 'itc_above_limit',
+    title: 'Approved Above Authorized Limit',
+    desc: 'Transactions approved beyond the approver\u2019s authority',
+    metricLabel: 'Transactions Above Limit',
+    min: 3, max: 35
+  }
+];
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function itControlCardHtml(t) {
+  const rowsHtml = IT_EMPLOYEES.map((name, i) => {
+    const issueId = `itc-${t.id}-${name.toLowerCase().replace(/\s+/g, '-')}`;
+    const r = {
+      ISSUE_ID: issueId,
+      CATEGORY: t.category,
+      ENTITY_KEY: name,
+      REMARK: getSavedRemark(issueId)
+    };
+    const value = randInt(t.min, t.max);
+    return `<tr><td>${esc(name)}</td><td class="r">${value}</td>${renderRemarkCell(r)}</tr>`;
+  }).join('');
+
+  return `
+    <div class="card">
+      <div class="card-h">
+        <div class="grow"><div class="ttl">${esc(t.title)}</div><div class="desc">${esc(t.desc)}</div></div>
+        <button class="obs-card-btn" type="button" onclick="openObservationModal('${t.category}')">Observation</button>
+      </div>
+      <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>Employee Name</th><th class="r">${esc(t.metricLabel)}</th><th>Remark</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
+function renderItControls() {
+  const row1 = document.getElementById('itc-row-1');
+  const row2 = document.getElementById('itc-row-2');
+  if (!row1 || !row2) return;
+  row1.innerHTML = IT_TABLES.slice(0, 3).map(itControlCardHtml).join('');
+  row2.innerHTML = IT_TABLES.slice(3, 6).map(itControlCardHtml).join('');
+}
+// ─────────────────────────────────────────────────────────────
+// END IT CONTROLS MODULE
+// ─────────────────────────────────────────────────────────────
+
+// ═════════════════════════════════════════════════════════════
+// HR AND PAYROLL MODULE (new)
+// Home-screen-only page (#page-hr-payroll), mirrors the IT Controls
+// pattern above: hardcoded mock data (HR_EMPLOYEES / HR_TABLES), one
+// card per check with its own "Observation" button + editable Remark
+// column per row (renderRemarkCell / handleRemarkAction, shared with
+// Data Hygiene and IT Controls). Data/columns for each of the 6 cards
+// are generalized via HR_TABLES[i].cols instead of a single fixed
+// metric column, since HR checks have different column shapes.
+// ═════════════════════════════════════════════════════════════
+const HR_EMPLOYEES = ['Priya Sharma', 'Rohit Verma', 'Ananya Iyer', 'Karan Mehta', 'Sneha Reddy', 'Arjun Nair', 'Divya Pillai'];
+
+// Table titles below are kept exactly as shown in the reference layout:
+// "Multiple employees using same bank account", "Duplicate PAN/Aadhaar/
+// Bank Account", "Employees without PAN/ Aadhaar Bank Account", "Missing
+// Department/Location/Grade", "Same PAN for multiple employees" (plus the
+// two pre-existing cards not shown in that layout, left as they were).
+//
+// mode: 'rows'     → table is fully described by cols/rows as-is, one
+//                     row per record (used where a single row already
+//                     lists multiple employee names together, e.g. the
+//                     bank-account / PAN duplicate tables).
+// mode: 'employee' → one row per HR_EMPLOYEES entry (default; unchanged
+//                     pattern from before), with an optional nameLabel
+//                     to relabel the employee-name column.
+const HR_TABLES = [
+  {
+    id: 'dup_bank', category: 'hr_dup_bank', mode: 'rows',
+    title: 'Multiple employees using same bank account',
+    desc: 'Same bank account number mapped to more than one employee',
+    cols: [{ label: 'Bank account number', key: 'acct' }, { label: 'Employee Name', key: 'names' }],
+    rows: [
+      { acct: '50100234567891', names: 'Priya Sharma, Rohit Verma' },
+      { acct: '50100987654321', names: 'Ananya Iyer, Karan Mehta, Sneha Reddy' },
+      { acct: '50100456789012', names: 'Arjun Nair, Divya Pillai' },
+      { acct: '50100112233445', names: 'Priya Sharma, Ananya Iyer' },
+      { acct: '50100556677889', names: 'Rohit Verma, Karan Mehta' },
+      { acct: '50100998877665', names: 'Sneha Reddy, Divya Pillai' },
+      { acct: '50100223344556', names: 'Arjun Nair, Priya Sharma' },
+    ]
+  },
+  {
+    id: 'dup_pan_aadhaar', category: 'hr_dup_pan_aadhaar', mode: 'rows',
+    title: 'Duplicate PAN/Aadhaar/Bank Account',
+    desc: 'Same statutory ID or bank account number recorded against more than one employee',
+    cols: [{ label: 'Particulars', key: 'particulars' }, { label: 'Employee Name', key: 'names' }],
+    rows: [
+      { particulars: 'PAN', names: 'Priya Sharma, Rohit Verma' },
+      { particulars: 'Aadhaar', names: 'Ananya Iyer, Karan Mehta' },
+      { particulars: 'Bank Account', names: 'Sneha Reddy, Arjun Nair' },
+      { particulars: 'PAN', names: 'Divya Pillai, Priya Sharma' },
+      { particulars: 'PAN', names: 'Rohit Verma, Sneha Reddy' },
+      { particulars: 'PAN', names: 'Karan Mehta, Ananya Iyer' },
+      { particulars: 'PAN', names: 'Arjun Nair, Divya Pillai' },
+    ]
+  },
+  {
+    id: 'missing_ids', category: 'hr_missing_ids', mode: 'employee', nameLabel: 'Name of Employee',
+    title: 'Employees without PAN/ Aadhaar Bank Account',
+    desc: 'Statutory or payment details missing from employee master',
+    cols: [{ label: 'Missing Detail', key: 'missing' }],
+    rows: [
+      { missing: 'Bank Account' },
+      { missing: 'PAN' },
+      { missing: 'Aadhaar' },
+      { missing: 'Bank Account' },
+      { missing: 'PAN' },
+      { missing: 'Aadhaar' },
+      { missing: 'Bank Account' },
+    ]
+  },
+  {
+    id: 'missing_master', category: 'hr_missing_master', mode: 'employee', nameLabel: 'Name of Employee',
+    title: 'Missing Department/Location/Grade',
+    desc: 'Core master fields left blank in the employee record',
+    cols: [{ label: 'Missing Detail', key: 'missing' }],
+    rows: [
+      { missing: 'Department Missing' },
+      { missing: 'Location Missing' },
+      { missing: 'Grade Missing' },
+      { missing: 'Department Missing' },
+      { missing: 'Location Missing' },
+      { missing: 'Grade Missing' },
+      { missing: 'Department Missing' },
+    ]
+  },
+  {
+    id: 'same_pan', category: 'hr_same_pan', mode: 'rows',
+    title: 'Same PAN for multiple employees',
+    desc: 'Same PAN number recorded against more than one employee',
+    cols: [{ label: 'Pan Number', key: 'pan' }, { label: 'Employee Name', key: 'names' }],
+    rows: [
+      { pan: 'ABCPS1234M', names: 'Priya Sharma, Rohit Verma' },
+      { pan: 'BXTRV5678K', names: 'Ananya Iyer, Karan Mehta' },
+      { pan: 'CMNPK9081L', names: 'Sneha Reddy, Arjun Nair' },
+      { pan: 'DPQRX3345F', names: 'Divya Pillai, Priya Sharma' },
+      { pan: 'EFGHT7729Q', names: 'Rohit Verma, Sneha Reddy' },
+      { pan: 'FGHIJ1122W', names: 'Karan Mehta, Ananya Iyer' },
+      { pan: 'GHTYU5566E', names: 'Arjun Nair, Divya Pillai' },
+    ]
+  }
+];
+
+function hrControlCardHtml(t) {
+  const headBtn = `<button class="obs-card-btn" type="button" onclick="openObservationModal('${t.category}')">Observation</button>`;
+  const cardHead = `
+      <div class="card-h">
+        <div class="grow"><div class="ttl">${esc(t.title)}</div><div class="desc">${esc(t.desc)}</div></div>
+        ${headBtn}
+      </div>`;
+
+  if (t.mode === 'rows') {
+    const rowsHtml = t.rows.map((data, i) => {
+      const issueId = `hr-${t.id}-${i}`;
+      const r = {
+        ISSUE_ID: issueId,
+        CATEGORY: t.category,
+        ENTITY_KEY: data.names || data.acct || data.pan || `row-${i}`,
+        REMARK: getSavedRemark(issueId)
+      };
+      const dataCells = t.cols.map(c => `<td${c.r ? ' class="r"' : ''}>${esc(data[c.key] != null ? data[c.key] : '')}</td>`).join('');
+      return `<tr>${dataCells}${renderRemarkCell(r)}</tr>`;
+    }).join('');
+    const headCells = t.cols.map(c => `<th${c.r ? ' class="r"' : ''}>${esc(c.label)}</th>`).join('');
+
+    return `
+    <div class="card">${cardHead}
+      <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl">
+        <thead><tr>${headCells}<th>Remark</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div></div>
+    </div>`;
+  }
+
+  const nameLabel = t.nameLabel || 'Employee Name';
+  const rowsHtml = HR_EMPLOYEES.map((name, i) => {
+    const data = t.rows[i] || {};
+    const issueId = `hr-${t.id}-${name.toLowerCase().replace(/\s+/g, '-')}`;
+    const r = {
+      ISSUE_ID: issueId,
+      CATEGORY: t.category,
+      ENTITY_KEY: name,
+      REMARK: getSavedRemark(issueId)
+    };
+    const dataCells = t.cols.map(c => `<td${c.r ? ' class="r"' : ''}>${esc(data[c.key] != null ? data[c.key] : '')}</td>`).join('');
+    return `<tr><td>${esc(name)}</td>${dataCells}${renderRemarkCell(r)}</tr>`;
+  }).join('');
+
+  const headCells = t.cols.map(c => `<th${c.r ? ' class="r"' : ''}>${esc(c.label)}</th>`).join('');
+
+  return `
+    <div class="card">${cardHead}
+      <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>${esc(nameLabel)}</th>${headCells}<th>Remark</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
+function renderHrPayroll() {
+  const row1 = document.getElementById('hr-row-1');
+  const row2 = document.getElementById('hr-row-2');
+  if (!row1 || !row2) return;
+  row1.innerHTML = HR_TABLES.slice(0, 3).map(hrControlCardHtml).join('');
+  row2.innerHTML = HR_TABLES.slice(3, 5).map(hrControlCardHtml).join('');
+}
+// ═════════════════════════════════════════════════════════════
+// END HR AND PAYROLL MODULE
+// ═════════════════════════════════════════════════════════════
 
 function renderWelcome() {
   const modules = [
@@ -926,11 +1207,25 @@ function renderFormula() {
 // OBSERVATION MODAL LOGIC & TABLE RENDERING
 // ─────────────────────────────────────────────────────────────
 const OBS_TITLES = {
+  // Purchase Data Hygiene categories
   'multi_tax': 'Multiple Tax Code Observations',
   'prod_gst': 'Same Product, Multiple GST Rate Observations',
   'dup_cust': 'Duplicate Customer Name Observations',
   'prod_name': 'Product Name Check Observations',
-  'prod_code': 'Product Code Check Observations'
+  'prod_code': 'Product Code Check Observations',
+  // ── IT CONTROLS MODULE categories
+  'itc_access_lwd': 'Access After Last Working Day Observations',
+  'itc_inactive_90': 'Users Not Logged In for 90+ Days Observations',
+  'itc_pwd_stale': 'Password Not Changed Observations',
+  'itc_after_hours': 'Login Outside Business Hours Observations',
+  'itc_failed_login': 'Multiple Failed Login Attempts Observations',
+  'itc_above_limit': 'Approved Above Authorized Limit Observations',
+  // ── HR AND PAYROLL MODULE categories
+  'hr_dup_bank': 'Multiple Employees – Same Bank Account Observations',
+  'hr_dup_pan_aadhaar': 'Duplicate PAN / Aadhaar Number Observations',
+  'hr_missing_ids': 'Employees Without PAN / Aadhaar / Bank Details Observations',
+  'hr_missing_master': 'Missing Department / Location / Grade Observations',
+  'hr_same_pan': 'Same PAN For Multiple Employees Observations'
 };
 
 const DROPDOWNS = {
@@ -961,8 +1256,17 @@ async function openObservationModal(category) {
   await renderObsList();
 }
 
+function obsBackTarget() {
+  // Routes the observation log's Back button to whichever module opened
+  // it, based on the category prefix: 'itc_' → IT Controls (added),
+  // 'hr_' → HR and Payroll (new), anything else → Data Hygiene (original).
+  if (currentObsCategory && currentObsCategory.startsWith('itc_')) return 'it-controls';
+  if (currentObsCategory && currentObsCategory.startsWith('hr_')) return 'hr-payroll';
+  return 'hygiene';
+}
+
 function closeObservationModal() {
-  goTo('hygiene');
+  goTo(obsBackTarget());
 }
 
 async function renderObsList() {
