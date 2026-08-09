@@ -56,7 +56,19 @@
       <!-- HR AND PAYROLL MODULE: opens the HR and Payroll page (#page-hr-payroll) -->
       <button class="home-btn" type="button" onclick="goTo('hr-payroll')">HR and Payroll</button>
       <button class="home-btn" type="button">Audit Trial</button>
-      <button class="home-btn" type="button">Loan and Repayment Schedule</button>
+      <!-- LOAN AND REPAYMENT SCHEDULE MODULE: opens the Loan and Repayment
+           Schedule page (#page-loan-repayment). This page needs no workbook
+           data (RAW) at all, so this button must keep working even while
+           the full-screen "Loading dashboard data…" overlay (#data-loading,
+           z-index:1000) is up — e.g. while /api/data is slow, failing, or
+           the workbook can't be read. That overlay sits on top of the
+           whole page and otherwise physically intercepts the click before
+           it ever reaches this button (the page looks normal underneath,
+           so the click silently appears to do nothing). id="loan-repayment-btn"
+           + the matching CSS rule in style.css raises just this one button
+           above the overlay so it always receives clicks; openLoanRepayment()
+           then also force-hides the overlay before navigating. -->
+      <button class="home-btn" id="loan-repayment-btn" type="button" onclick="openLoanRepayment()">Loan and Repayment Schedule</button>
       <button class="home-btn" type="button" onclick="goTo('welcome')">Purchase Control</button>
     </div>
   </div>
@@ -83,6 +95,42 @@
   <div class="grid g3" style="margin-bottom:18px" id="itc-row-1"></div>
   <div class="section-label">Activity Monitoring Checks</div>
   <div class="grid g3" id="itc-row-2"></div>
+</div>
+
+<!-- PAGE: LOAN AND REPAYMENT SCHEDULE -->
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE: LOAN AND REPAYMENT SCHEDULE MODULE
+     Rendered by renderLoanRepayment() in main.js. Reached only from
+     the Home screen "Loan and Repayment Schedule" button (no top-nav
+     tab, no filters, no Observation buttons — plain read-only tables).
+     Three tables (As per Calculation / As per Bank / Difference) sit
+     side by side with no internal scrollbars; only the page itself
+     scrolls, so all three stay aligned row-for-row as the user scrolls.
+═══════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-loan-repayment" style="max-width:100%;margin:0 auto;padding:0 26px;">
+  <!-- Back navigation: Loan and Repayment Schedule page → Home -->
+  <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+  <div class="page-head">
+    <div class="eyebrow">Loan Monitoring</div>
+    <h1>Loan and Repayment Schedule</h1>
+    <p>Month-wise repayment schedule compared as per calculation, as per bank, and the difference between the two.</p>
+  </div>
+  <div class="loan-filter-bar">
+    <div class="loan-filter-group">
+      <label for="loan-filter-type">Loan Type</label>
+      <select id="loan-filter-type" class="remark-input" onchange="renderLoanRepayment()">
+        <option value="">All Loan Types</option>
+      </select>
+    </div>
+    <div class="loan-filter-group">
+      <label for="loan-filter-location">Location</label>
+      <select id="loan-filter-location" class="remark-input" onchange="renderLoanRepayment()">
+        <option value="">All Locations</option>
+      </select>
+    </div>
+  </div>
+  <div class="loan-tbl-title">Repayment Schedule — As per Calculation, As per Bank &amp; Difference</div>
+  <div class="tbl-wrap-flat"><table class="tbl tbl-compact loan-combined-tbl" id="loan-tbl-combined"></table></div>
 </div>
 
 <div class="wrap">

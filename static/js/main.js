@@ -32,9 +32,10 @@ function goTo(pageId) {
   const tab = document.querySelector(`[data-page="${pageId}"]`);
   if (page) page.classList.add('active');
   if (tab) tab.classList.add('active');
-  // 'it-controls' and 'hr-payroll' are Home-only pages (opened via the Home
-  // screen buttons, not the top-nav), so hide the top-nav on both, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'hr-payroll');
+  // 'it-controls', 'hr-payroll' and 'loan-repayment' are Home-only pages
+  // (opened via the Home screen buttons, not the top-nav), so hide the
+  // top-nav on all of them, same as Home.
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'hr-payroll' || pageId === 'loan-repayment');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
 }
@@ -240,11 +241,16 @@ function removeFilter(dim, val) {
 }
 
 function renderCurrentPage(pageId) {
-  // IT CONTROLS MODULE and HR AND PAYROLL MODULE are handled before the
-  // RAW-data guard below because both render from hardcoded local data
-  // (IT_TABLES / HR_TABLES) and don't need RAW.purchase data to be loaded.
+  // IT CONTROLS MODULE, HR AND PAYROLL MODULE, and LOAN AND REPAYMENT
+  // SCHEDULE MODULE are handled before the RAW-data guard below because
+  // all three render from hardcoded local data (IT_TABLES / HR_TABLES /
+  // LOAN_CALC_ROWS+LOAN_BANK_ROWS+LOAN_DIFF_ROWS) and don't need
+  // RAW.purchase data to be loaded.
   if (pageId === 'it-controls') { renderItControls(); return; }
   if (pageId === 'hr-payroll') { renderHrPayroll(); return; }
+  // Loan and Repayment Schedule: routes to renderLoanRepayment(), added
+  // alongside the two lines above for the same Home-only, no-RAW-needed reason.
+  if (pageId === 'loan-repayment') { renderLoanRepayment(); return; }
   if (!RAW) return;
   switch (pageId) {
     case 'welcome': renderWelcome(); break;
@@ -529,6 +535,413 @@ function renderHrPayroll() {
 }
 // ═════════════════════════════════════════════════════════════
 // END HR AND PAYROLL MODULE
+// ═════════════════════════════════════════════════════════════
+
+// ═════════════════════════════════════════════════════════════
+// LOAN AND REPAYMENT SCHEDULE MODULE
+// Reached only from the Home screen "Loan and Repayment Schedule"
+// button (no top-nav tab). No filters, no Observation button — a
+// plain read-only, three-table comparison of the repayment schedule
+// exactly as it appears in the source workbook's "Loan part" sheet:
+// As per Calculation, As per Bank, and the Difference between them.
+// Row order/columns/values are copied as-is; any empty Difference
+// cell is shown as 0 rather than left blank.
+// ═════════════════════════════════════════════════════════════
+
+// Loan Type / Location per borrower — not present in the source workbook,
+// so these are placeholder tags for the filter bar until real values are
+// supplied. Update this map when the actual loan type/location per
+// borrower is available; it does not affect any figures in the tables.
+const LOAN_META = {
+  'Ram':      { type: 'Home Loan',     location: 'Bangalore' },
+  'Shyam':    { type: 'Vehicle Loan',  location: 'Mumbai' },
+  'Pranjali': { type: 'Personal Loan', location: 'Delhi' },
+};
+const LOAN_TYPE_OPTIONS = ['Home Loan', 'Vehicle Loan', 'Personal Loan', 'Business Loan', 'Education Loan'];
+const LOAN_LOCATION_OPTIONS = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Pune'];
+
+function loanFilterOptionsInit() {
+  const typeSel = document.getElementById('loan-filter-type');
+  const locSel = document.getElementById('loan-filter-location');
+  if (typeSel && typeSel.options.length <= 1) {
+    LOAN_TYPE_OPTIONS.forEach(t => typeSel.insertAdjacentHTML('beforeend', `<option value="${esc(t)}">${esc(t)}</option>`));
+  }
+  if (locSel && locSel.options.length <= 1) {
+    LOAN_LOCATION_OPTIONS.forEach(l => locSel.insertAdjacentHTML('beforeend', `<option value="${esc(l)}">${esc(l)}</option>`));
+  }
+}
+
+// Each row: [Person Name, Month, Opening Balance, Interest, Principal, EMI, Closing Balance, Interest Rate, Other Charge]
+const LOAN_CALC_ROWS = [
+  ["Ram",1,2000000,21667,73417,95084,1926583,0.13,null],
+  ["Ram",2,1926583,20871,74213,95084,1852370,0.13,null],
+  ["Ram",3,1852370,20109,74975,95084,1777395,0.13,null],
+  ["Ram",4,1777395,19306,75778,95084,1701617,0.13,null],
+  ["Ram",5,1701617,18434,76650,95084,1624967,0.13,null],
+  ["Ram",6,1624967,17604,77480,95084,1547487,0.13,null],
+  ["Ram",7,1547487,16765,78319,95084,1469168,0.13,null],
+  ["Ram",8,1469168,15916,79168,95084,1390000,0.13,null],
+  ["Ram",9,1390000,15058,80026,95084,1309974,0.13,null],
+  ["Ram",10,1309974,14192,80892,95084,1229082,0.13,null],
+  ["Ram",11,1229082,13315,81769,95084,1147313,0.13,null],
+  ["Ram",12,1147313,12430,82654,95084,1064659,0.13,null],
+  ["Ram",13,1064659,11533,83551,95084,981108,0.13,null],
+  ["Ram",14,981108,10629,84455,95084,896653,0.13,400],
+  ["Ram",15,896653,9714,85370,95084,811283,0.13,null],
+  ["Ram",16,811283,8789,86295,95084,724988,0.13,null],
+  ["Ram",17,724988,7854,87230,95084,637758,0.13,null],
+  ["Ram",18,637758,6909,88175,95084,549583,0.13,null],
+  ["Ram",19,549583,5954,89130,95084,460453,0.13,null],
+  ["Ram",20,460453,4988,90096,95084,370357,0.13,null],
+  ["Ram",21,370357,4020,91064,95084,279293,0.13,null],
+  ["Ram",22,279293,3026,92058,95084,187235,0.13,null],
+  ["Ram",23,187235,2029,93055,95084,94180,0.13,null],
+  ["Ram",24,94180,1020,94064,95084,0,0.13,null],
+  ["Shyam",1,5500000,32083,76823,108907,5423177,0.07,null],
+  ["Shyam",2,5423177,31635,77271,108907,5345905,0.07,null],
+  ["Shyam",3,5345905,31184,77722,108907,5268183,0.07,null],
+  ["Shyam",4,5268183,30731,78176,108907,5190008,0.07,null],
+  ["Shyam",5,5190008,30275,78632,108907,5111376,0.07,null],
+  ["Shyam",6,5111376,29816,79090,108907,5032286,0.07,null],
+  ["Shyam",7,5032286,29355,79552,108907,4952734,0.07,null],
+  ["Shyam",8,4952734,28891,80016,108907,4872719,0.07,null],
+  ["Shyam",9,4872719,28424,80482,108907,4792236,0.07,null],
+  ["Shyam",10,4792236,27955,80952,108907,4711284,0.07,null],
+  ["Shyam",11,4711284,27482,81424,108907,4629860,0.07,null],
+  ["Shyam",12,4629860,27008,81899,108907,4547961,0.07,null],
+  ["Shyam",13,4547961,26530,82377,108907,4465584,0.07,null],
+  ["Shyam",14,4465584,26049,82857,108907,4382727,0.07,null],
+  ["Shyam",15,4382727,25566,83341,108907,4299386,0.07,null],
+  ["Shyam",16,4299386,25080,83827,108907,4215560,0.07,null],
+  ["Shyam",17,4215560,24591,84316,108907,4131244,0.07,null],
+  ["Shyam",18,4131244,24099,84808,108907,4046436,0.07,null],
+  ["Shyam",19,4046436,23604,85302,108907,3961134,0.07,null],
+  ["Shyam",20,3961134,23107,85800,108907,3875334,0.07,null],
+  ["Shyam",21,3875334,22606,86300,108907,3789033,0.07,null],
+  ["Shyam",22,3789033,22103,86804,108907,3702229,0.07,null],
+  ["Shyam",23,3702229,21596,87310,108907,3614919,0.07,null],
+  ["Shyam",24,3614919,21087,87820,108907,3527099,0.07,null],
+  ["Shyam",25,3527099,20575,88332,108907,3438768,0.07,null],
+  ["Shyam",26,3438768,20059,88847,108907,3349921,0.07,null],
+  ["Shyam",27,3349921,19541,89365,108907,3260555,0.07,null],
+  ["Shyam",28,3260555,19020,89887,108907,3170668,0.07,null],
+  ["Shyam",29,3170668,18496,90411,108907,3080257,0.07,null],
+  ["Shyam",30,3080257,17968,90938,108907,2989319,0.07,null],
+  ["Shyam",31,2989319,17438,91469,108907,2897850,0.07,null],
+  ["Shyam",32,2897850,16904,92002,108907,2805848,0.07,null],
+  ["Shyam",33,2805848,16367,92539,108907,2713308,0.07,null],
+  ["Shyam",34,2713308,15828,93079,108907,2620230,0.07,null],
+  ["Shyam",35,2620230,15285,93622,108907,2526608,0.07,null],
+  ["Shyam",36,2526608,14739,94168,108907,2432440,0.07,null],
+  ["Shyam",37,2432440,14189,94717,108907,2337722,0.07,null],
+  ["Shyam",38,2337722,13637,95270,108907,2242452,0.07,null],
+  ["Shyam",39,2242452,13081,95826,108907,2146627,0.07,null],
+  ["Shyam",40,2146627,12522,96385,108907,2050242,0.07,null],
+  ["Shyam",41,2050242,11960,96947,108907,1953295,0.07,null],
+  ["Shyam",42,1953295,11394,97512,108907,1855783,0.07,null],
+  ["Shyam",43,1855783,10825,98081,108907,1757702,0.07,null],
+  ["Shyam",44,1757702,10253,98653,108907,1659048,0.07,null],
+  ["Shyam",45,1659048,9678,99229,108907,1559820,0.07,null],
+  ["Shyam",46,1559820,9099,99808,108907,1460012,0.07,null],
+  ["Shyam",47,1460012,8517,100390,108907,1359622,0.07,null],
+  ["Shyam",48,1359622,7931,100975,108907,1258647,0.07,null],
+  ["Shyam",49,1258647,7342,101564,108907,1157082,0.07,null],
+  ["Shyam",50,1157082,6750,102157,108907,1054925,0.07,null],
+  ["Shyam",51,1054925,6154,102753,108907,952172,0.07,null],
+  ["Shyam",52,952172,5554,103352,108907,848820,0.07,null],
+  ["Shyam",53,848820,4951,103955,108907,744865,0.07,null],
+  ["Shyam",54,744865,4345,104562,108907,640303,0.07,null],
+  ["Shyam",55,640303,3735,105171,108907,535132,0.07,null],
+  ["Shyam",56,535132,3122,105785,108907,4,0.07,null],
+  ["Pranjali",1,500000,2917,48701,51618,451299,0.07,null],
+  ["Pranjali",2,451299,2633,48986,51618,402313,0.07,null],
+  ["Pranjali",3,402313,2347,49271,51618,353042,0.07,null],
+  ["Pranjali",4,353042,2059,49559,51618,303483,0.07,null],
+  ["Pranjali",5,303483,1770,49848,51618,253635,0.07,null],
+  ["Pranjali",6,253635,2536,49723,52259,203912,0.12,null],
+  ["Pranjali",7,203912,2039,50220,52259,153693,0.12,null],
+  ["Pranjali",8,153693,1537,50722,52259,102971,0.12,null],
+  ["Pranjali",9,102971,1030,51229,52259,51741,0.12,null],
+  ["Pranjali",10,51741,517,51741,52259,0,0.12,null],
+];
+
+// Each row: [Person Name, Month, Opening Balance, Interest, Principal, EMI, Closing Balance, Interest Rate]
+const LOAN_BANK_ROWS = [
+  ["Ram",1,2000000,21667,73417,95084,1926583,0.13],
+  ["Ram",2,1926583,20871,74213,95084,1852370,0.13],
+  ["Ram",3,1852370,20109,74975,95084,1777395,0.13],
+  ["Ram",4,1777395,19306,75778,95084,1701617,0.13],
+  ["Ram",5,1701617,18434,76650,95084,1624967,0.13],
+  ["Ram",6,1624967,17604,77480,95084,1547487,0.13],
+  ["Ram",7,1547487,16765,78319,95084,1469168,0.13],
+  ["Ram",8,1469168,15916,79168,95084,1390000,0.13],
+  ["Ram",9,1390000,15058,80026,95084,1309974,0.13],
+  ["Ram",10,1309974,14192,80892,95084,1229082,0.13],
+  ["Ram",11,1229082,13315,81769,95084,1147313,0.13],
+  ["Ram",12,1147313,12430,82654,95084,1064659,0.13],
+  ["Ram",13,1064659,11533,83551,95084,981108,0.13],
+  ["Ram",14,981108,10629,84455,95084,896653,0.14],
+  ["Ram",15,896653,10000,85370,95084,811283,0.13],
+  ["Ram",16,811283,8789,86295,95084,724988,0.13],
+  ["Ram",17,724988,7854,87230,95084,637758,0.13],
+  ["Ram",18,637758,6909,88175,95084,549583,0.13],
+  ["Ram",19,549583,5954,89130,95084,460453,0.13],
+  ["Ram",20,460453,4988,90096,95084,370357,0.13],
+  ["Ram",21,370357,4020,91064,95084,279293,0.13],
+  ["Ram",22,279293,3026,92058,95084,187235,0.13],
+  ["Ram",23,187235,2029,93055,95084,94180,0.13],
+  ["Ram",24,94180,1020,94064,95084,0,0.13],
+  ["Shyam",1,5500000,32083,76823,108907,5423177,0.07],
+  ["Shyam",2,5423177,31635,77271,108907,5345905,0.07],
+  ["Shyam",3,5345905,31184,77722,108907,5268183,0.07],
+  ["Shyam",4,5268183,30731,78176,108907,5190008,0.07],
+  ["Shyam",5,5190008,30275,78632,108907,5111376,0.07],
+  ["Shyam",6,5111376,29816,79090,108907,5032286,0.07],
+  ["Shyam",7,5032286,29355,79552,108907,4952734,0.07],
+  ["Shyam",8,4952734,28891,80016,108907,4872719,0.07],
+  ["Shyam",9,4872719,28424,80482,108907,4792236,0.07],
+  ["Shyam",10,4792236,27955,80952,108907,4711284,0.07],
+  ["Shyam",11,4711284,27482,81424,108907,4629860,0.07],
+  ["Shyam",12,4629860,27008,81899,108907,4547961,0.07],
+  ["Shyam",13,4547961,26530,82377,108907,4465584,0.07],
+  ["Shyam",14,4465584,26049,82857,108907,4382727,0.07],
+  ["Shyam",15,4382727,25566,83341,108907,4299386,0.07],
+  ["Shyam",16,4299386,25080,83827,108907,4215560,0.07],
+  ["Shyam",17,4215560,24591,84316,108907,4131244,0.07],
+  ["Shyam",18,4131244,24099,84808,108907,4046436,0.07],
+  ["Shyam",19,4046436,23604,85302,108907,3961134,0.07],
+  ["Shyam",20,3961134,23107,85800,108907,3875334,0.07],
+  ["Shyam",21,3875334,22606,86300,108907,3789033,0.07],
+  ["Shyam",22,3789033,22103,86804,108907,3702229,0.07],
+  ["Shyam",23,3702229,21596,87310,108907,3614919,0.07],
+  ["Shyam",24,3614919,21087,87820,108907,3527099,0.07],
+  ["Shyam",25,3527099,20575,88332,108907,3438768,0.07],
+  ["Shyam",26,3438768,20059,88847,108907,3349921,0.07],
+  ["Shyam",27,3349921,19541,89365,108907,3260555,0.07],
+  ["Shyam",28,3260555,19020,89887,108907,3170668,0.07],
+  ["Shyam",29,3170668,18496,90411,108907,3080257,0.07],
+  ["Shyam",30,3080257,17968,90938,108907,2989319,0.07],
+  ["Shyam",31,2989319,17438,91469,108907,2897850,0.07],
+  ["Shyam",32,2897850,16904,92002,108907,2805848,0.07],
+  ["Shyam",33,2805848,16367,92539,108907,2713308,0.07],
+  ["Shyam",34,2713308,15828,93079,108907,2620230,0.07],
+  ["Shyam",35,2620230,15285,93622,108907,2526608,0.07],
+  ["Shyam",36,2526608,14739,94168,108907,2432440,0.07],
+  ["Shyam",37,2432440,14189,94717,108907,2337722,0.07],
+  ["Shyam",38,2337722,13637,95270,108907,2242452,0.07],
+  ["Shyam",39,2242452,13081,95826,108907,2146627,0.07],
+  ["Shyam",40,2146627,12522,96385,108907,2050242,0.07],
+  ["Shyam",41,2050242,11960,96947,108907,1953295,0.07],
+  ["Shyam",42,1953295,11394,97512,108907,1855783,0.07],
+  ["Shyam",43,1855783,10825,98081,108907,1757702,0.07],
+  ["Shyam",44,1757702,10253,98653,108907,1659048,0.07],
+  ["Shyam",45,1659048,9678,99229,108907,1559820,0.07],
+  ["Shyam",46,1559820,9099,99808,108907,1460012,0.07],
+  ["Shyam",47,1460012,8517,100390,108907,1359622,0.07],
+  ["Shyam",48,1359622,7931,100975,108907,1258647,0.07],
+  ["Shyam",49,1258647,7342,101564,108907,1157082,0.07],
+  ["Shyam",50,1157082,6750,102157,108907,1054925,0.07],
+  ["Shyam",51,1054925,6154,102753,108907,952172,0.07],
+  ["Shyam",52,952172,5554,103352,108907,848820,0.07],
+  ["Shyam",53,848820,4951,103955,108907,744865,0.07],
+  ["Shyam",54,744865,4345,104562,108907,640303,0.07],
+  ["Shyam",55,640303,3735,105171,108907,535132,0.07],
+  ["Shyam",56,535132,3122,105785,108907,4,0.07],
+  ["Pranjali",1,500000,2917,48701,51618,451299,0.07],
+  ["Pranjali",2,451299,2633,48986,51618,402313,0.07],
+  ["Pranjali",3,402313,2347,49271,51618,353042,0.07],
+  ["Pranjali",4,353042,2059,49559,51618,303483,0.07],
+  ["Pranjali",5,303483,1770,49848,51618,253635,0.07],
+  ["Pranjali",6,253635,3000,49723,52259,203912,0.12],
+  ["Pranjali",7,203912,2039,50220,52259,153693,0.12],
+  ["Pranjali",8,153693,1537,50722,52259,102971,0.12],
+  ["Pranjali",9,102971,1030,51229,52259,51741,0.12],
+  ["Pranjali",10,51741,517,51741,52259,0,0.12],
+];
+
+// Each row: [Opening Balance, Interest, Principal, EMI, Closing Balance, Interest Rate] — aligned to the same
+// row index as LOAN_CALC_ROWS / LOAN_BANK_ROWS above. Empty cells are rendered as 0.
+const LOAN_DIFF_ROWS = [
+  [0,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,0.01],
+  [null,286,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,464,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+  [null,null,null,null,null,null],
+];
+
+function loanMoney(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  return fmtINR(v);
+}
+function loanPct(v) {
+  if (v === null || v === undefined || v === '') return '—';
+  return Math.round(v * 100) + '%';
+}
+function loanDiffMoney(v) {
+  return fmtINR(v || 0);
+}
+function loanDiffPct(v) {
+  return Math.round((v || 0) * 100) + '%';
+}
+
+// Entry point for the Home screen's "Loan and Repayment Schedule" button.
+// This page only needs the hardcoded LOAN_CALC_ROWS/LOAN_BANK_ROWS/
+// LOAN_DIFF_ROWS data below, never RAW, so it must not be blocked by the
+// "Loading dashboard data…" overlay while /api/data is pending, slow, or
+// failing — that overlay covers the whole screen and swallows clicks even
+// though the page underneath still looks normal, which made this button
+// appear to do nothing. Force-hiding the overlay first, then navigating,
+// guarantees this button always works regardless of workbook load state.
+function openLoanRepayment() {
+  setLoading(false);
+  goTo('loan-repayment');
+}
+
+function renderLoanRepayment() {
+  const combinedTbl = document.getElementById('loan-tbl-combined');
+  if (!combinedTbl) return;
+
+  loanFilterOptionsInit();
+  const typeFilter = (document.getElementById('loan-filter-type') || {}).value || '';
+  const locFilter = (document.getElementById('loan-filter-location') || {}).value || '';
+
+  const head = `<thead>
+    <tr>
+      <th class="grp-head" colspan="9">As per Calculation</th>
+      <th class="grp-head div-l" colspan="6">As per Bank</th>
+      <th class="grp-head div-l" colspan="6">Difference</th>
+    </tr>
+    <tr>
+      <th>Person Name</th><th>Month</th><th class="r">Opening Balance</th><th class="r">Interest</th>
+      <th class="r" style="white-space:nowrap;">Principal</th><th class="r">EMI</th><th class="r">Closing Balance</th>
+      <th class="r">Interest Rate</th><th class="r">Other Charge</th>
+      <th class="r div-l">Opening Balance</th><th class="r">Interest</th>
+      <th class="r" style="white-space:nowrap;">Principal</th><th class="r">EMI</th><th class="r">Closing Balance</th>
+      <th class="r">Interest Rate</th>
+      <th class="r div-l">Opening Balance</th><th class="r">Interest</th>
+      <th class="r" style="white-space:nowrap;">Principal</th><th class="r">EMI</th><th class="r">Closing Balance</th>
+      <th class="r">Interest Rate</th>
+    </tr>
+  </thead>`;
+
+  const diffCell = (v, fmt, extraClass) => {
+    const hit = v !== null && v !== undefined && v !== '' && v !== 0;
+    const cls = ['r', hit ? 'diff-hit' : '', extraClass || ''].filter(Boolean).join(' ');
+    return `<td class="${cls}">${fmt(v)}</td>`;
+  };
+
+  const body = LOAN_CALC_ROWS.map((calc, i) => {
+    const bank = LOAN_BANK_ROWS[i] || [];
+    const diff = LOAN_DIFF_ROWS[i] || [];
+    const meta = LOAN_META[calc[0]] || {};
+    if (typeFilter && meta.type !== typeFilter) return '';
+    if (locFilter && meta.location !== locFilter) return '';
+    return `<tr>
+      <td>${esc(calc[0])}</td><td class="r">${calc[1]}</td><td class="r">${loanMoney(calc[2])}</td>
+      <td class="r">${loanMoney(calc[3])}</td><td class="r">${loanMoney(calc[4])}</td><td class="r">${loanMoney(calc[5])}</td>
+      <td class="r">${loanMoney(calc[6])}</td><td class="r">${loanPct(calc[7])}</td>
+      <td class="r">${calc[8] === null || calc[8] === undefined ? '—' : loanMoney(calc[8])}</td>
+      <td class="r div-l">${loanMoney(bank[2])}</td><td class="r">${loanMoney(bank[3])}</td>
+      <td class="r">${loanMoney(bank[4])}</td><td class="r">${loanMoney(bank[5])}</td>
+      <td class="r">${loanMoney(bank[6])}</td><td class="r">${loanPct(bank[7])}</td>
+      ${diffCell(diff[0], loanDiffMoney, 'div-l')}
+      ${diffCell(diff[1], loanDiffMoney)}
+      ${diffCell(diff[2], loanDiffMoney)}
+      ${diffCell(diff[3], loanDiffMoney)}
+      ${diffCell(diff[4], loanDiffMoney)}
+      ${diffCell(diff[5], loanDiffPct)}
+    </tr>`;
+  }).join('');
+
+  combinedTbl.innerHTML = head + `<tbody>${body}</tbody>`;
+}
+// ═════════════════════════════════════════════════════════════
+// END LOAN AND REPAYMENT SCHEDULE MODULE
 // ═════════════════════════════════════════════════════════════
 
 function renderWelcome() {
