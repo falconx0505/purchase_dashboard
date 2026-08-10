@@ -32,10 +32,10 @@ function goTo(pageId) {
   const tab = document.querySelector(`[data-page="${pageId}"]`);
   if (page) page.classList.add('active');
   if (tab) tab.classList.add('active');
-  // 'it-controls', 'hr-payroll' and 'loan-repayment' are Home-only pages
+  // 'it-controls', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'hr-payroll' || pageId === 'loan-repayment');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
 }
@@ -94,6 +94,7 @@ async function uploadObservationFile() {
   }
 }
 
+// AUDIT TRAIL PAGE: the backend loads the workbook directly from disk, so the frontend no longer needs an upload control.
 function setLoading(visible, message = '') {
   const el = document.getElementById('data-loading');
   if (!el) return;
@@ -240,6 +241,185 @@ function removeFilter(dim, val) {
   renderCurrentPage(currentPage());
 }
 
+async function loadAuditTrailData() {
+  try {
+    const res = await fetch('/api/audit-trail', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Audit trail service returned ${res.status}`);
+    const payload = await res.json();
+    window.auditTrailData = payload;
+    window.auditTrailFilters = {};
+    renderAuditTrailPage();
+  } catch (error) {
+    console.error('Unable to load audit trail data:', error);
+    const status = document.getElementById('audit-trail-upload-status');
+    if (status) status.textContent = 'Unable to load audit trail data.';
+  }
+}
+
+function renderAuditTrailPage() {
+  // AUDIT TRAIL PAGE: render grouped tables and filter dropdowns from the backend payload.
+  const payload = window.auditTrailData || { rows: [], filters: {}, summary: {} };
+  const filtersHost = document.getElementById('audit-trail-filters');
+  const summaryHost = document.getElementById('audit-trail-summary');
+  const tablesHost = document.getElementById('audit-trail-tables');
+  if (!filtersHost || !summaryHost || !tablesHost) return;
+
+  const allRows = payload.rows || [];
+  const filterState = window.auditTrailFilters || {};
+
+  const ALL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const ALL_QUANTITIES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+
+  const years = payload.filters?.year?.length ? payload.filters.year : Array.from(new Set(allRows.map(r => r.Year).filter(Boolean))).sort();
+  const quantities = ALL_QUANTITIES;
+  const monthNames = ALL_MONTHS;
+  const vendors = Array.from(new Set(allRows.map(r => r.VendorName).filter(Boolean))).sort();
+
+  const filterFields = [
+    { key: 'year', label: 'Year', values: years, rowKey: 'Year' },
+    { key: 'quantity', label: 'Quantity', values: quantities, rowKey: 'Quantity' },
+    { key: 'monthName', label: 'Month Name', values: monthNames, rowKey: 'MonthName' },
+    { key: 'vendorName', label: 'Vendor Name', values: vendors, rowKey: 'VendorName' },
+  ];
+
+  filtersHost.innerHTML = filterFields.map(field => `
+    <div>
+      <label style="display:block;font-size:12px;margin-bottom:6px;color:var(--muted)">${esc(field.label)}</label>
+      <select class="remark-input" style="width:100%" onchange="setAuditTrailFilter('${field.key}', this.value)">
+        <option value="">All ${esc(field.label)}s</option>
+        ${field.values.map(v => `<option value="${esc(v)}" ${filterState[field.key] === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}
+      </select>
+    </div>`).join('');
+
+  const filteredRows = allRows.filter(row => {
+    for (const field of filterFields) {
+      const selected = filterState[field.key];
+      if (selected && String(row[field.rowKey] || '') !== String(selected)) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const activeFilterCount = Object.keys(filterState).length;
+  summaryHost.innerHTML = `
+    <div class="filter-strip">
+      <span class="filter-strip-label">Summary:</span>
+      <span class="fchip">Matching Rows: ${filteredRows.length} / ${allRows.length}</span>
+      ${activeFilterCount > 0 ? `<span class="fchip" style="background:var(--peach)">Active Filters: ${activeFilterCount}</span>` : ''}
+      <button class="btn ghost sm" onclick="resetAuditTrailFilters()">Clear filters</button>
+    </div>`;
+
+  // 1. Dynamic Vendor Summary Table
+  const vendorGroups = {};
+  filteredRows.forEach(row => {
+    const vName = String(row.VendorName || '').trim();
+    if (!vName) return;
+    if (!vendorGroups[vName]) {
+      vendorGroups[vName] = { vendorName: vName, banklCount: 0, financialServicesOutsourcingCount: 0, panNumberCount: 0, servicesCount: 0, grandTotal: 0 };
+    }
+    const fc = String(row.FieldChanged || '').toLowerCase().trim();
+    if (fc === 'bankl') vendorGroups[vName].banklCount++;
+    else if (fc === 'financial services outsourcing') vendorGroups[vName].financialServicesOutsourcingCount++;
+    else if (fc === 'pan number') vendorGroups[vName].panNumberCount++;
+    else if (fc === 'services') vendorGroups[vName].servicesCount++;
+    vendorGroups[vName].grandTotal++;
+  });
+
+  const vendorRowsHtml = Object.keys(vendorGroups).sort().map(k => vendorGroups[k]).map(row => `
+    <tr>
+      <td style="font-weight:600">${esc(row.vendorName)}</td>
+      <td>${esc(row.banklCount)}</td>
+      <td>${esc(row.financialServicesOutsourcingCount)}</td>
+      <td>${esc(row.panNumberCount)}</td>
+      <td>${esc(row.servicesCount)}</td>
+      <td style="font-weight:600">${esc(row.grandTotal)}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No records match selected filters.</td></tr>';
+
+  // 2. Dynamic Field Description Table (Replaces Field Risk Summary)
+  const fieldDescGroups = {};
+  filteredRows.forEach(row => {
+    let desc = String(row.FieldDescription || '').trim();
+    if (!desc || desc === 'Unspecified') {
+      desc = String(row.FieldChanged || '').trim() || 'Unspecified';
+    }
+    if (!fieldDescGroups[desc]) {
+      fieldDescGroups[desc] = { fieldDescription: desc, highRiskCount: 0, lowRiskCount: 0, grandTotal: 0 };
+    }
+    const r = String(row.Risk || '').toLowerCase().trim();
+    if (r === 'high') {
+      fieldDescGroups[desc].highRiskCount++;
+    } else {
+      fieldDescGroups[desc].lowRiskCount++;
+    }
+    fieldDescGroups[desc].grandTotal++;
+  });
+
+  const fieldDescRowsHtml = Object.keys(fieldDescGroups).sort().map(k => fieldDescGroups[k]).map(row => `
+    <tr>
+      <td style="font-weight:600">${esc(row.fieldDescription)}</td>
+      <td><span class="tag ${row.highRiskCount > 0 ? 'flag' : 'ok'}">${esc(row.highRiskCount)}</span></td>
+      <td>${esc(row.lowRiskCount)}</td>
+      <td style="font-weight:600">${esc(row.grandTotal)}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No records match selected filters.</td></tr>';
+
+  // 3. Detailed Audit Log Table
+  const detailRowsHtml = filteredRows.map(row => `
+    <tr>
+      <td>${esc(row.VendorNo || '—')}</td>
+      <td><strong>${esc(row.VendorName || '—')}</strong></td>
+      <td>${esc(row.FieldChanged || '—')}</td>
+      <td>${esc(row.FieldDescription || '—')}</td>
+      <td><span class="tag ${row.Indicator === 'Deleted' ? 'flag' : row.Indicator === 'Inserted' ? 'ok' : ''}">${esc(row.Indicator || '—')}</span></td>
+      <td>${esc(row.OldValue || '—')}</td>
+      <td>${esc(row.NewValue || '—')}</td>
+      <td>${esc(row.ChangedBy || '—')}</td>
+      <td><span class="tag ${String(row.Risk || '').toLowerCase() === 'high' ? 'flag' : 'ok'}">${esc(row.Risk || '—')}</span></td>
+      <td>${esc(row.Year || '—')}</td>
+      <td>${esc(row.Quantity || '—')}</td>
+      <td>${esc(row.MonthName || '—')}</td>
+    </tr>`).join('') || '<tr><td colspan="12" style="text-align:center;color:var(--muted)">No records match selected filters.</td></tr>';
+
+  tablesHost.innerHTML = `
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-h"><div class="grow"><div class="ttl">Vendor Summary</div><div class="desc">Vendor-wise change counts (BANKL, Financial Services Outsourcing, PAN Number, Services) based on active filters</div></div></div>
+      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl">
+        <thead><tr><th>Vendor</th><th>BANKL</th><th>Financial Services Outsourcing</th><th>PAN Number</th><th>Services</th><th>Grand Total</th></tr></thead>
+        <tbody>${vendorRowsHtml}</tbody>
+      </table></div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-h"><div class="grow"><div class="ttl">Field Description Summary</div><div class="desc">Summary breakdown by Field Description with High/Low risk breakdown based on active filters</div></div></div>
+      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl">
+        <thead><tr><th>Field Description</th><th>High Risk</th><th>Low/Medium Risk</th><th>Grand Total</th></tr></thead>
+        <tbody>${fieldDescRowsHtml}</tbody>
+      </table></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="grow"><div class="ttl">Detailed Audit Trail Log</div><div class="desc">Individual audit record details matching active filters (${filteredRows.length} record(s))</div></div></div>
+      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" style="white-space:nowrap">
+        <thead><tr><th>Vendor No</th><th>Vendor Name</th><th>Field Changed</th><th>Field Description</th><th>Indicator</th><th>Old Value</th><th>New Value</th><th>Changed By</th><th>Risk</th><th>Year</th><th>Qty</th><th>Month</th></tr></thead>
+        <tbody>${detailRowsHtml}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
+function titleCaseKey(key) {
+  const map = { year: 'Year', quantity: 'Quantity', monthName: 'MonthName' };
+  return map[key] || key;
+}
+
+function setAuditTrailFilter(key, value) {
+  window.auditTrailFilters = window.auditTrailFilters || {};
+  if (value) window.auditTrailFilters[key] = value; else delete window.auditTrailFilters[key];
+  renderAuditTrailPage();
+}
+
+function resetAuditTrailFilters() {
+  window.auditTrailFilters = {};
+  renderAuditTrailPage();
+}
+
 function renderCurrentPage(pageId) {
   // IT CONTROLS MODULE, HR AND PAYROLL MODULE, and LOAN AND REPAYMENT
   // SCHEDULE MODULE are handled before the RAW-data guard below because
@@ -251,6 +431,9 @@ function renderCurrentPage(pageId) {
   // Loan and Repayment Schedule: routes to renderLoanRepayment(), added
   // alongside the two lines above for the same Home-only, no-RAW-needed reason.
   if (pageId === 'loan-repayment') { renderLoanRepayment(); return; }
+  // AUDIT TRAIL PAGE: this page uses its own backend endpoint and should render
+  // even before the main purchase workbook has finished loading.
+  if (pageId === 'audit-trail') { loadAuditTrailData(); return; }
   if (!RAW) return;
   switch (pageId) {
     case 'welcome': renderWelcome(); break;
@@ -261,6 +444,7 @@ function renderCurrentPage(pageId) {
     case 'purchase': renderPurchase(); break;
     case 'ai-dashboard': renderAiDashboard(); break;
     case 'formula': renderFormula(); break;
+    case 'audit-trail': (async () => { await loadAuditTrailData(); })(); break;
     case 'addition': break;
     case 'it-controls': renderItControls(); break; // unreachable (handled above), kept for safety
     case 'hr-payroll': renderHrPayroll(); break; // unreachable (handled above), kept for safety
@@ -1216,6 +1400,14 @@ function renderHygiene() {
       };
     });
 
+  window.hygieneFilteredData = {
+    multi_tax: multiTax,
+    prod_gst: prodGstIssues,
+    dup_cust: dupCustomers,
+    prod_name: prodNameIssues,
+    prod_code: prodCodeCheck
+  };
+
   fillTable('tbl-multi-tax', multiTax, r => `
     <tr class="${r.COUNT > 30 ? 'row-flag' : ''}">
       <td>${esc(fmtPercentList(r.GST_RATE))}</td>
@@ -1254,6 +1446,107 @@ function renderHygiene() {
       <td class="c"><span class="tag flag">Not in Master</span></td>
       ${renderRemarkCell(r)}
     </tr>`);
+}
+
+function downloadHygieneExcel(category) {
+  if (!window.hygieneFilteredData || !window.hygieneFilteredData[category]) {
+    alert('No filtered data available for export.');
+    return;
+  }
+
+  const categoryConfigs = {
+    'multi_tax': {
+      filename: 'Multiple_Tax_Code_Hygiene_Report',
+      headers: [
+        { label: 'GST Rate (%)', key: 'GST_RATE' },
+        { label: 'Tax Description', key: 'TAX_DESC' },
+        { label: 'Count', key: 'COUNT' },
+        { label: 'Remark', key: 'REMARK' }
+      ]
+    },
+    'prod_gst': {
+      filename: 'Same_Product_Multiple_GST_Rate_Hygiene_Report',
+      headers: [
+        { label: 'Product Name', key: 'PROD_NM' },
+        { label: 'GST Rate (%)', key: 'GST_RATE' },
+        { label: 'Count', key: 'COUNT' },
+        { label: 'Remark', key: 'REMARK' }
+      ]
+    },
+    'dup_cust': {
+      filename: 'Duplicate_Customer_Name_Hygiene_Report',
+      headers: [
+        { label: 'Customer Name', key: 'CUST_NM' },
+        { label: 'Customer Code', key: 'CUST_CD' },
+        { label: 'Count', key: 'COUNT' },
+        { label: 'Remark', key: 'REMARK' }
+      ]
+    },
+    'prod_name': {
+      filename: 'Product_Name_Check_Hygiene_Report',
+      headers: [
+        { label: 'Product Name', key: 'PROD_NM' },
+        { label: 'Product Code', key: 'PROD_CODE' },
+        { label: 'Count', key: 'COUNT' },
+        { label: 'Remark', key: 'REMARK' }
+      ]
+    },
+    'prod_code': {
+      filename: 'Product_Code_Check_Hygiene_Report',
+      headers: [
+        { label: 'Product Code', key: 'PROD_CODE' },
+        { label: 'Status', key: 'STATUS' },
+        { label: 'Remark', key: 'REMARK' }
+      ]
+    }
+  };
+
+  const config = categoryConfigs[category];
+  if (!config) return;
+
+  const dataRows = window.hygieneFilteredData[category];
+  if (!dataRows || dataRows.length === 0) {
+    alert('No records found for current filter settings.');
+    return;
+  }
+
+  const escapeXml = v => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  const headerCellsXml = config.headers.map(h => `<Cell><Data ss:Type="String">${escapeXml(h.label)}</Data></Cell>`).join('');
+  const rowXmlList = dataRows.map(r => {
+    const cells = config.headers.map(h => {
+      const val = r[h.key] != null ? r[h.key] : (h.key === 'STATUS' ? 'Not in Master' : '');
+      const isNum = typeof val === 'number';
+      const dataType = isNum ? 'Number' : 'String';
+      return `<Cell><Data ss:Type="${dataType}">${escapeXml(val)}</Data></Cell>`;
+    }).join('');
+    return `<Row>${cells}</Row>`;
+  }).join('');
+
+  const excelDoc = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+ <Worksheet ss:Name="Data Hygiene Report">
+  <Table>
+   <Row>${headerCellsXml}</Row>
+   ${rowXmlList}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+  const blob = new Blob([excelDoc], { type: 'application/vnd.ms-excel' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${config.filename}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function renderPoSummary() {

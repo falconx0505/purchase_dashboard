@@ -112,6 +112,31 @@ def parse_excel_dates(values):
         parsed.loc[text_rows] = pd.to_datetime(raw.loc[text_rows], format="mixed", errors="coerce")
     return parsed
 
+
+def ensure_audit_trail_schema(conn):
+    try:
+        existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(audit_trail_records)")}
+    except Exception:
+        existing_columns = set()
+
+    for column_name, column_type in [
+        ("vendor_no", "TEXT"),
+        ("vendor_name", "TEXT"),
+        ("field_changed", "TEXT"),
+        ("field_description", "TEXT"),
+        ("indicator", "TEXT"),
+        ("old_value", "TEXT"),
+        ("new_value", "TEXT"),
+        ("changed_by", "TEXT"),
+        ("risk", "TEXT"),
+        ("year", "TEXT"),
+        ("quantity", "TEXT"),
+        ("month_name", "TEXT"),
+    ]:
+        if column_name not in existing_columns:
+            conn.execute(f"ALTER TABLE audit_trail_records ADD COLUMN {column_name} {column_type}")
+
+
 def init_db_schema(conn):
     conn.execute("""
     CREATE TABLE IF NOT EXISTS hygiene_remarks (
@@ -122,6 +147,33 @@ def init_db_schema(conn):
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    # AUDIT TRAIL PAGE: store imported Excel rows so the page can load them from the backend.
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS audit_trail_records (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        process TEXT,
+        control TEXT,
+        status TEXT,
+        owner TEXT,
+        department TEXT,
+        remarks TEXT,
+        vendor_no TEXT,
+        vendor_name TEXT,
+        field_changed TEXT,
+        field_description TEXT,
+        indicator TEXT,
+        old_value TEXT,
+        new_value TEXT,
+        changed_by TEXT,
+        risk TEXT,
+        year TEXT,
+        quantity TEXT,
+        month_name TEXT,
+        source_file TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    ensure_audit_trail_schema(conn)
     conn.execute("""
     CREATE TABLE IF NOT EXISTS observations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -182,6 +234,279 @@ def normalize_observation_headers(df):
     if renamed:
         df = df.rename(columns=renamed)
     return df
+
+
+# AUDIT TRAIL PAGE: normalize incoming Excel headers so the backend accepts common name variants.
+AUDIT_TRAIL_ALIASES = {
+    "process": "process",
+    "module": "process",
+    "category": "process",
+    "control": "control",
+    "controlname": "control",
+    "controlid": "control",
+    "status": "status",
+    "statusname": "status",
+    "owner": "owner",
+    "assignedto": "owner",
+    "responsibleowner": "owner",
+    "department": "department",
+    "team": "department",
+    "remarks": "remarks",
+    "comments": "remarks",
+    "notes": "remarks",
+}
+
+
+def normalize_audit_header(name):
+    return re.sub(r"[^a-z0-9]+", "", str(name).strip().lower())
+
+
+def normalize_audit_row(row):
+    normalized = {}
+    for key, value in row.items():
+        normalized_key = normalize_audit_header(key)
+        if normalized_key in AUDIT_TRAIL_ALIASES:
+            normalized[AUDIT_TRAIL_ALIASES[normalized_key]] = safe_value(value)
+
+    # AUDIT TRAIL PAGE: use the workbook's real backend columns when present so the page works
+    # with the actual audit-trail Excel file without needing a frontend upload step.
+    if "process" not in normalized and "Process" not in normalized:
+        mapped_process = safe_value(row.get("Vendor Name")) or safe_value(row.get("Vendor No")) or "Unspecified"
+        normalized["process"] = mapped_process
+    if "control" not in normalized and "Control" not in normalized:
+        mapped_control = safe_value(row.get("Field Changed")) or safe_value(row.get("Field Description")) or "Unspecified"
+        normalized["control"] = mapped_control
+    if "status" not in normalized and "Status" not in normalized:
+        normalized["status"] = safe_value(row.get("Indicator")) or "Unspecified"
+    if "owner" not in normalized and "Owner" not in normalized:
+        normalized["owner"] = safe_value(row.get("Changed By")) or "Unspecified"
+    if "department" not in normalized and "Department" not in normalized:
+        normalized["department"] = safe_value(row.get("Risk")) or "Unspecified"
+    if "remarks" not in normalized and "Remarks" not in normalized:
+        normalized["remarks"] = safe_value(row.get("Old Value")) + " -> " + safe_value(row.get("New Value"))
+
+    if "fielddescription" not in normalized and "FieldDescription" not in normalized:
+        normalized["fielddescription"] = safe_value(row.get("Field Description")) or safe_value(row.get("FieldDescription")) or "Unspecified"
+    if "vendorno" not in normalized and "VendorNo" not in normalized:
+        normalized["vendorno"] = safe_value(row.get("Vendor No")) or safe_value(row.get("VendorNo")) or "Unspecified"
+    if "vendorname" not in normalized and "VendorName" not in normalized:
+        v_raw = safe_value(row.get("Vendor Name")) or safe_value(row.get("VendorName")) or "Unspecified"
+        if v_raw.lower() == "axis bank":
+            normalized["vendorname"] = "Axis Bank"
+        elif v_raw.lower() == "qatar bank":
+            normalized["vendorname"] = "Qatar Bank"
+        elif v_raw.lower() == "hdfc bank limited":
+            normalized["vendorname"] = "HDFC Bank Limited"
+        elif v_raw and v_raw != "Unspecified":
+            normalized["vendorname"] = v_raw.title()
+        else:
+            normalized["vendorname"] = "Unspecified"
+    if "fieldchanged" not in normalized and "FieldChanged" not in normalized:
+        normalized["fieldchanged"] = safe_value(row.get("Field Changed")) or safe_value(row.get("FieldChanged")) or "Unspecified"
+    if "indicator" not in normalized and "Indicator" not in normalized:
+        normalized["indicator"] = safe_value(row.get("Indicator")) or "Unspecified"
+    if "oldvalue" not in normalized and "OldValue" not in normalized:
+        normalized["oldvalue"] = safe_value(row.get("Old Value")) or "Unspecified"
+    if "newvalue" not in normalized and "NewValue" not in normalized:
+        normalized["newvalue"] = safe_value(row.get("New Value")) or "Unspecified"
+    if "changedby" not in normalized and "ChangedBy" not in normalized:
+        normalized["changedby"] = safe_value(row.get("Changed By")) or "Unspecified"
+    if "risk" not in normalized and "Risk" not in normalized:
+        normalized["risk"] = safe_value(row.get("Risk")) or "Unspecified"
+    if "year" not in normalized and "Year" not in normalized:
+        normalized["year"] = safe_value(row.get("Year")) or safe_value(row.get("Month Year")) or "Unspecified"
+    if "quantity" not in normalized and "Quantity" not in normalized:
+        normalized["quantity"] = safe_value(row.get("Qty")) or safe_value(row.get("Quantity")) or "Unspecified"
+    if "monthname" not in normalized and "MonthName" not in normalized:
+        normalized["monthname"] = safe_value(row.get("Month Name")) or safe_value(row.get("Month")) or "Unspecified"
+
+    if "year" in normalized and normalized["year"] and normalized["year"] != "Unspecified":
+        normalized["year"] = str(normalized["year"]).strip()
+    if "quantity" in normalized and normalized["quantity"] and normalized["quantity"] != "Unspecified":
+        normalized["quantity"] = str(normalized["quantity"]).strip()
+    if "monthname" in normalized and normalized["monthname"] and normalized["monthname"] != "Unspecified":
+        normalized["monthname"] = str(normalized["monthname"]).strip()
+
+    if not normalized:
+        return {}
+    return {
+        "Process": safe_value(normalized.get("process")) or "Unspecified",
+        "Control": safe_value(normalized.get("control")) or "Unspecified",
+        "Status": safe_value(normalized.get("status")) or "Unspecified",
+        "Owner": safe_value(normalized.get("owner")) or "Unspecified",
+        "Department": safe_value(normalized.get("department")) or "Unspecified",
+        "Remarks": safe_value(normalized.get("remarks")),
+        "VendorNo": safe_value(normalized.get("vendorno")) or "Unspecified",
+        "VendorName": safe_value(normalized.get("vendorname")) or "Unspecified",
+        "FieldChanged": safe_value(normalized.get("fieldchanged")) or "Unspecified",
+        "FieldDescription": safe_value(normalized.get("fielddescription")) or "Unspecified",
+        "Indicator": safe_value(normalized.get("indicator")) or "Unspecified",
+        "OldValue": safe_value(normalized.get("oldvalue")) or "Unspecified",
+        "NewValue": safe_value(normalized.get("newvalue")) or "Unspecified",
+        "ChangedBy": safe_value(normalized.get("changedby")) or "Unspecified",
+        "Risk": safe_value(normalized.get("risk")) or "Unspecified",
+        "Year": safe_value(normalized.get("year")) or "Unspecified",
+        "Quantity": safe_value(normalized.get("quantity")) or "Unspecified",
+        "MonthName": safe_value(normalized.get("monthname")) or "Unspecified",
+    }
+
+
+def parse_audit_trail_rows(df):
+    rows = []
+    for _, row in df.iterrows():
+        normalized = normalize_audit_row(row)
+        if not normalized or not any(normalized.values()):
+            continue
+        rows.append(normalized)
+    return rows
+
+
+def save_audit_trail_rows(rows, source_file):
+    with get_db_connection() as conn:
+        conn.execute("DELETE FROM audit_trail_records")
+        for row in rows:
+            conn.execute(
+                "INSERT INTO audit_trail_records (process, control, status, owner, department, remarks, vendor_no, vendor_name, field_changed, field_description, indicator, old_value, new_value, changed_by, risk, year, quantity, month_name, source_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    row.get("process", ""),
+                    row.get("control", ""),
+                    row.get("status", ""),
+                    row.get("owner", ""),
+                    row.get("department", ""),
+                    row.get("remarks", ""),
+                    row.get("VendorNo", ""),
+                    row.get("VendorName", ""),
+                    row.get("FieldChanged", ""),
+                    row.get("FieldDescription", ""),
+                    row.get("Indicator", ""),
+                    row.get("OldValue", ""),
+                    row.get("NewValue", ""),
+                    row.get("ChangedBy", ""),
+                    row.get("Risk", ""),
+                    row.get("Year", ""),
+                    row.get("Quantity", ""),
+                    row.get("MonthName", ""),
+                    source_file,
+                ),
+            )
+        conn.commit()
+
+
+def get_audit_trail_rows():
+    default_path = os.path.join(os.path.dirname(__file__), "audittrailmasterdata.xlsx")
+    if os.path.exists(default_path):
+        try:
+            df = pd.read_excel(default_path, dtype=str)
+            rows = parse_audit_trail_rows(df)
+            if rows:
+                save_audit_trail_rows(rows, os.path.basename(default_path))
+                return rows
+        except Exception as exc:
+            print("Error reading audit trail workbook:", exc)
+
+    try:
+        with get_db_connection() as conn:
+            rows = conn.execute("SELECT process, control, status, owner, department, remarks, vendor_no, vendor_name, field_changed, field_description, indicator, old_value, new_value, changed_by, risk, year, quantity, month_name FROM audit_trail_records ORDER BY id").fetchall()
+            if rows:
+                mapped_rows = []
+                for row in rows:
+                    mapped_rows.append({
+                        "Process": row["process"] or "",
+                        "Control": row["control"] or "",
+                        "Status": row["status"] or "",
+                        "Owner": row["owner"] or "",
+                        "Department": row["department"] or "",
+                        "Remarks": row["remarks"] or "",
+                        "VendorNo": row["vendor_no"] or "",
+                        "VendorName": row["vendor_name"] or "",
+                        "FieldChanged": row["field_changed"] or "",
+                        "FieldDescription": row["field_description"] or "",
+                        "Indicator": row["indicator"] or "",
+                        "OldValue": row["old_value"] or "",
+                        "NewValue": row["new_value"] or "",
+                        "ChangedBy": row["changed_by"] or "",
+                        "Risk": row["risk"] or "",
+                        "Year": row["year"] or "",
+                        "Quantity": row["quantity"] or "",
+                        "MonthName": row["month_name"] or "",
+                    })
+                return mapped_rows
+    except Exception as exc:
+        print("Error reading audit trail rows:", exc)
+
+    return []
+
+
+def build_audit_trail_payload(rows):
+    normalized_rows = []
+    for row in rows:
+        normalized_row = normalize_audit_row(row)
+        if normalized_row:
+            normalized_rows.append(normalized_row)
+
+    from collections import Counter
+
+    vendor_groups = {}
+    for row in normalized_rows:
+        vendor_name = (row.get("VendorName") or "").strip()
+        vendor_key = "HDFC" if "hdfc" in vendor_name.lower() else "Axis" if "axis" in vendor_name.lower() else "Qatar" if "qatar" in vendor_name.lower() else "Other"
+        if vendor_key not in vendor_groups:
+            vendor_groups[vendor_key] = {
+                "vendorName": vendor_key,
+                "banklCount": 0,
+                "financialServicesOutsourcingCount": 0,
+                "panNumberCount": 0,
+                "servicesCount": 0,
+                "grandTotal": 0,
+            }
+        group = vendor_groups[vendor_key]
+        field_changed = (row.get("FieldChanged") or "").strip()
+        if field_changed.lower() == "bankl":
+            group["banklCount"] += 1
+        if field_changed.lower() == "financial services outsourcing":
+            group["financialServicesOutsourcingCount"] += 1
+        if field_changed.lower() == "pan number":
+            group["panNumberCount"] += 1
+        if field_changed.lower() == "services":
+            group["servicesCount"] += 1
+        group["grandTotal"] = group["banklCount"] + group["financialServicesOutsourcingCount"] + group["panNumberCount"] + group["servicesCount"]
+
+    field_description_groups = {}
+    for row in normalized_rows:
+        field_desc = (row.get("FieldDescription") or "").strip()
+        if not field_desc or field_desc == "Unspecified":
+            field_desc = (row.get("FieldChanged") or "").strip() or "Unspecified"
+        if field_desc not in field_description_groups:
+            field_description_groups[field_desc] = {
+                "fieldDescription": field_desc,
+                "highRiskCount": 0,
+                "lowRiskCount": 0,
+                "grandTotal": 0,
+            }
+        group = field_description_groups[field_desc]
+        risk = (row.get("Risk") or "").strip().lower()
+        if risk == "high":
+            group["highRiskCount"] += 1
+        else:
+            group["lowRiskCount"] += 1
+        group["grandTotal"] = group["highRiskCount"] + group["lowRiskCount"]
+
+    return {
+        "rows": normalized_rows,
+        "vendorSummaryTable": [vendor_groups[key] for key in ["HDFC", "Axis", "Qatar"] if key in vendor_groups],
+        "fieldDescriptionSummaryTable": [field_description_groups[key] for key in sorted(field_description_groups.keys())],
+        "summary": {
+            "total_rows": len(normalized_rows),
+            "status_count": dict(Counter(row["Status"] for row in normalized_rows)),
+            "owner_count": dict(Counter(row["Owner"] for row in normalized_rows)),
+        },
+        "filters": {
+            "year": sorted({row["Year"] for row in normalized_rows if row.get("Year")}),
+            "quantity": sorted({row["Quantity"] for row in normalized_rows if row.get("Quantity")}),
+            "monthName": sorted({row["MonthName"] for row in normalized_rows if row.get("MonthName")}),
+        },
+    }
+
 
 def get_hygiene_remarks():
     if not os.path.exists(DB_PATH):
@@ -656,6 +981,39 @@ def get_data():
         "bank_summary": bank_summary,
         "pay_summary": pay_summary,
     })
+
+# AUDIT TRAIL PAGE: backend endpoints for loading grouped audit-trail data and uploading Excel workbooks.
+@app.route("/api/audit-trail", methods=["GET"])
+def get_audit_trail_data():
+    rows = get_audit_trail_rows()
+    return jsonify(build_audit_trail_payload(rows))
+
+
+@app.route("/api/audit-trail/upload", methods=["POST"])
+def upload_audit_trail_file():
+    uploaded = request.files.get("file")
+    if not uploaded or not uploaded.filename:
+        return jsonify({"success": False, "error": "No file uploaded"}), 400
+
+    filename = secure_filename(uploaded.filename)
+    if not filename.lower().endswith((".xlsx", ".xls")):
+        return jsonify({"success": False, "error": "Please upload an Excel file (.xlsx or .xls)"}), 400
+
+    temp_fd, temp_path = tempfile.mkstemp(suffix=os.path.splitext(filename)[1])
+    os.close(temp_fd)
+
+    try:
+        uploaded.save(temp_path)
+        df = pd.read_excel(temp_path, dtype=str)
+        rows = parse_audit_trail_rows(df)
+        save_audit_trail_rows(rows, filename)
+        return jsonify({"success": True, "rows": len(rows), "file": filename})
+    except Exception as exc:
+        return jsonify({"success": False, "error": str(exc)}), 500
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
 
 # ── OBSERVATIONS ENDPOINTS ──────────────────────────────────────
 @app.route("/api/observations", methods=["GET"])

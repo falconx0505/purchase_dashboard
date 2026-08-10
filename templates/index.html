@@ -1,81 +1,136 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Purchase Internal Control Dashboard</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/style.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Purchase Internal Control Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Raleway:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
+
 <body>
 
-<!-- ── HEADER ─────────────────────────────────── -->
-<header class="hdr">
-  <a class="hdr-brand" href="#" onclick="goTo('home'); return false;">
-    <img src="/static/images/logo.png" alt="LASER logo" class="hdr-logo-mark" />
-    <span class="hdr-brand-text">
-      <span class="hdr-logo">LASER</span>
-    </span>
-  </a>
-  <div class="hdr-right">
-    <div class="chip"><span class="dot"></span> FY 2026–27</div>
+  <!-- ── HEADER ─────────────────────────────────── -->
+  <header class="hdr">
+    <a class="hdr-brand" href="#" onclick="goTo('home'); return false;">
+      <img src="/static/images/logo.png" alt="LASER logo" class="hdr-logo-mark" />
+      <span class="hdr-brand-text">
+        <span class="hdr-logo">LASER</span>
+      </span>
+    </a>
+    <div class="hdr-right">
+      <div class="chip"><span class="dot"></span> FY 2026–27</div>
+    </div>
+  </header>
+  <div class="hdr-accent"></div>
+
+  <!-- ── TOP NAV ────────────────────────────────── -->
+  <nav class="topnav" id="topnav">
+    <button class="nav-tab" data-page="welcome">🏠 Welcome</button>
+    <button class="nav-tab" data-page="filters">⚙ Filters</button>
+    <button class="nav-tab" data-page="hygiene">🔍 Data Hygiene</button>
+    <button class="nav-tab" data-page="po-summary">📊 PO vs Invoice vs GRN vs Bank</button>
+    <button class="nav-tab" data-page="po-detail">📋 PO Detail</button>
+    <button class="nav-tab" data-page="purchase">🛒 Purchase</button>
+    <button class="nav-tab" data-page="ai-dashboard">🤖 AI Dashboard</button>
+    <button class="nav-tab" data-page="formula">✔ Calculation Check</button>
+    <button class="nav-tab" data-page="addition">➕ Addition</button>
+    <button class="nav-tab" data-page="upload-observation">📁 Upload </button>
+  </nav>
+
+  <!-- ── PAGES CONTAINER ────────────────────────── -->
+  <div id="data-loading" class="data-loading" role="status" aria-live="polite">
+    <div class="loading-card"><span class="loading-spinner"></span><span class="loading-message">Loading dashboard
+        data…</span></div>
   </div>
-</header>
-<div class="hdr-accent"></div>
 
-<!-- ── TOP NAV ────────────────────────────────── -->
-<nav class="topnav" id="topnav">
-  <button class="nav-tab" data-page="welcome">🏠 Welcome</button>
-  <button class="nav-tab" data-page="filters">⚙ Filters</button>
-  <button class="nav-tab" data-page="hygiene">🔍 Data Hygiene</button>
-  <button class="nav-tab" data-page="po-summary">📊 PO vs Invoice vs GRN vs Bank</button>
-  <button class="nav-tab" data-page="po-detail">📋 PO Detail</button>
-  <button class="nav-tab" data-page="purchase">🛒 Purchase</button>
-  <button class="nav-tab" data-page="ai-dashboard">🤖 AI Dashboard</button>
-  <button class="nav-tab" data-page="formula">✔ Calculation Check</button>
-  <button class="nav-tab" data-page="addition">➕ Addition</button>
-  <button class="nav-tab" data-page="upload-observation">📁 Upload </button>
-</nav>
-
-<!-- ── PAGES CONTAINER ────────────────────────── -->
-<div id="data-loading" class="data-loading" role="status" aria-live="polite">
-  <div class="loading-card"><span class="loading-spinner"></span><span class="loading-message">Loading dashboard data…</span></div>
-</div>
-
-<!-- PAGE: HOME (landing) -->
-<div class="page active" id="page-home">
-  <div class="home-wrap">
-    <h1 class="app-name">Enterprise Control Suite</h1>
-    <p class="app-sub">Select a module to open its dashboard.</p>
-    <div class="home-buttons">
-      <!-- IT CONTROLS MODULE: opens the IT Controls page (#page-it-controls) -->
-      <button class="home-btn" type="button" onclick="goTo('it-controls')">IT Controls</button>
-      <!-- HR AND PAYROLL MODULE: opens the HR and Payroll page (#page-hr-payroll) -->
-      <button class="home-btn" type="button" onclick="goTo('hr-payroll')">HR and Payroll</button>
-      <button class="home-btn" type="button">Audit Trial</button>
-      <!-- LOAN AND REPAYMENT SCHEDULE MODULE: opens the Loan and Repayment
-           Schedule page (#page-loan-repayment). This page needs no workbook
-           data (RAW) at all, so this button must keep working even while
-           the full-screen "Loading dashboard data…" overlay (#data-loading,
-           z-index:1000) is up — e.g. while /api/data is slow, failing, or
-           the workbook can't be read. That overlay sits on top of the
-           whole page and otherwise physically intercepts the click before
-           it ever reaches this button (the page looks normal underneath,
-           so the click silently appears to do nothing). id="loan-repayment-btn"
-           + the matching CSS rule in style.css raises just this one button
-           above the overlay so it always receives clicks; openLoanRepayment()
-           then also force-hides the overlay before navigating. -->
-      <button class="home-btn" id="loan-repayment-btn" type="button" onclick="openLoanRepayment()">Loan and Repayment Schedule</button>
-      <button class="home-btn" type="button" onclick="goTo('welcome')">Purchase Control</button>
+  <!-- PAGE: HOME (landing) -->
+  <div class="page active" id="page-home">
+    <div class="home-wrap">
+      <h1 class="app-name">Enterprise Control Suite</h1>
+      <p class="app-sub">Select a module from the summary table below to open its control dashboard.</p>
+      <div class="card home-table-card">
+        <div class="card-b no-pad">
+          <div class="tbl-wrap-full">
+            <table class="tbl home-modules-tbl">
+              <thead>
+                <tr>
+                  <th class="c">Sr No</th>
+                  <th>Name</th>
+                  <th class="c">Control Number</th>
+                  <th class="c">Count of Error</th>
+                  <th class="c">Remarks Provide</th>
+                  <th class="c">pending</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="c num font-bold">1</td>
+                  <td>
+                    <button class="home-table-btn" type="button" onclick="goTo('it-controls')">IT Control</button>
+                  </td>
+                  <td class="c num font-bold">6</td>
+                  <td class="c num"><span class="tag flag">5</span></td>
+                  <td class="c num">3</td>
+                  <td class="c num"><span class="tag warn">2</span></td>
+                </tr>
+                <tr>
+                  <td class="c num font-bold">2</td>
+                  <td>
+                    <button class="home-table-btn" type="button" onclick="goTo('hr-payroll')">HR management</button>
+                  </td>
+                  <td class="c num font-bold">5</td>
+                  <td class="c num"><span class="tag flag">3</span></td>
+                  <td class="c num">2</td>
+                  <td class="c num"><span class="tag warn">1</span></td>
+                </tr>
+                <tr>
+                  <td class="c num font-bold">3</td>
+                  <td>
+                    <button class="home-table-btn" type="button" onclick="goTo('audit-trail')">Audit trial</button>
+                  </td>
+                  <td class="c num font-bold">3</td>
+                  <td class="c num"><span class="tag flag">7</span></td>
+                  <td class="c num">5</td>
+                  <td class="c num"><span class="tag warn">2</span></td>
+                </tr>
+                <tr>
+                  <td class="c num font-bold">4</td>
+                  <td>
+                    <button class="home-table-btn" id="loan-repayment-btn" type="button"
+                      onclick="openLoanRepayment()">Loan and repayment schedule</button>
+                  </td>
+                  <td class="c num font-bold">1</td>
+                  <td class="c num"><span class="tag flag">6</span></td>
+                  <td class="c num">2</td>
+                  <td class="c num"><span class="tag warn">4</span></td>
+                </tr>
+                <tr>
+                  <td class="c num font-bold">5</td>
+                  <td>
+                    <button class="home-table-btn" type="button" onclick="goTo('welcome')">Purchase</button>
+                  </td>
+                  <td class="c num font-bold">20</td>
+                  <td class="c num"><span class="tag flag">11</span></td>
+                  <td class="c num">2</td>
+                  <td class="c num"><span class="tag warn">9</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- PAGE: IT CONTROLS -->
-<!-- ══════════════════════════════════════════════════════════════
+  <!-- PAGE: IT CONTROLS -->
+  <!-- ══════════════════════════════════════════════════════════════
      PAGE: IT CONTROLS MODULE
      Rendered by renderItControls() in main.js. Reached only from the
      Home screen "IT Controls" button (no top-nav tab). Includes its
@@ -83,22 +138,22 @@
      padding matches .wrap so content isn't flush against the screen
      edges (this page sits outside .wrap in the DOM).
 ═══════════════════════════════════════════════════════════════ -->
-<div class="page" id="page-it-controls" style="max-width:1360px;margin:0 auto;padding:0 26px;">
-  <!-- Back navigation: IT Controls page → Home -->
-  <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-  <div class="page-head">
-    <div class="eyebrow">IT General Controls</div>
-    <h1>IT Controls</h1>
-    <p>Access management, authentication, and activity monitoring checks.</p>
+  <div class="page" id="page-it-controls" style="max-width:1360px;margin:0 auto;padding:0 26px;">
+    <!-- Back navigation: IT Controls page → Home -->
+    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+    <div class="page-head">
+      <div class="eyebrow">IT General Controls</div>
+      <h1>IT Controls</h1>
+      <p>Access management, authentication, and activity monitoring checks.</p>
+    </div>
+    <div class="section-label">Access &amp; Authentication Checks</div>
+    <div class="grid g3" style="margin-bottom:18px" id="itc-row-1"></div>
+    <div class="section-label">Activity Monitoring Checks</div>
+    <div class="grid g3" id="itc-row-2"></div>
   </div>
-  <div class="section-label">Access &amp; Authentication Checks</div>
-  <div class="grid g3" style="margin-bottom:18px" id="itc-row-1"></div>
-  <div class="section-label">Activity Monitoring Checks</div>
-  <div class="grid g3" id="itc-row-2"></div>
-</div>
 
-<!-- PAGE: LOAN AND REPAYMENT SCHEDULE -->
-<!-- ══════════════════════════════════════════════════════════════
+  <!-- PAGE: LOAN AND REPAYMENT SCHEDULE -->
+  <!-- ══════════════════════════════════════════════════════════════
      PAGE: LOAN AND REPAYMENT SCHEDULE MODULE
      Rendered by renderLoanRepayment() in main.js. Reached only from
      the Home screen "Loan and Repayment Schedule" button (no top-nav
@@ -107,114 +162,231 @@
      side by side with no internal scrollbars; only the page itself
      scrolls, so all three stay aligned row-for-row as the user scrolls.
 ═══════════════════════════════════════════════════════════════ -->
-<div class="page" id="page-loan-repayment" style="max-width:100%;margin:0 auto;padding:0 26px;">
-  <!-- Back navigation: Loan and Repayment Schedule page → Home -->
-  <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-  <div class="page-head">
-    <div class="eyebrow">Loan Monitoring</div>
-    <h1>Loan and Repayment Schedule</h1>
-    <p>Month-wise repayment schedule compared as per calculation, as per bank, and the difference between the two.</p>
-  </div>
-  <div class="loan-filter-bar">
-    <div class="loan-filter-group">
-      <label for="loan-filter-type">Loan Type</label>
-      <select id="loan-filter-type" class="remark-input" onchange="renderLoanRepayment()">
-        <option value="">All Loan Types</option>
-      </select>
-    </div>
-    <div class="loan-filter-group">
-      <label for="loan-filter-location">Location</label>
-      <select id="loan-filter-location" class="remark-input" onchange="renderLoanRepayment()">
-        <option value="">All Locations</option>
-      </select>
-    </div>
-  </div>
-  <div class="loan-tbl-title">Repayment Schedule — As per Calculation, As per Bank &amp; Difference</div>
-  <div class="tbl-wrap-flat"><table class="tbl tbl-compact loan-combined-tbl" id="loan-tbl-combined"></table></div>
-</div>
-
-<div class="wrap">
-
-  <!-- PAGE: WELCOME -->
-  <div class="page" id="page-welcome">
-    <!-- Back navigation: Welcome page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="hero">
-      <div class="eyebrow">Purchase Internal Control</div>
-      <h1>Purchase <span>Control</span><br>Dashboard</h1>
-      <p>Comprehensive audit and control analytics for purchase transactions — data hygiene, PO matching, vendor risk, GST formula validation, and AI-driven insights in one place.</p>
-      <div class="cta">
-        <button class="btn primary" onclick="goTo('ai-dashboard')">Open AI Dashboard →</button>
-        <button class="btn ghost" onclick="goTo('filters')">Set Filters</button>
-      </div>
-    </div>
-    <div class="modules" id="welcome-modules">
-      <!-- Populated by JS -->
-    </div>
-  </div>
-
-  <!-- PAGE: FILTERS -->
-  <div class="page" id="page-filters">
-    <!-- Back navigation: Filters page → Home -->
+  <div class="page" id="page-loan-repayment" style="max-width:100%;margin:0 auto;padding:0 26px;">
+    <!-- Back navigation: Loan and Repayment Schedule page → Home -->
     <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
     <div class="page-head">
-      <div class="eyebrow">Global Settings</div>
-      <h1>Dashboard Filters</h1>
-      <p>Set filters here — all pages update instantly to reflect your selection.</p>
+      <div class="eyebrow">Loan Monitoring</div>
+      <h1>Loan and Repayment Schedule</h1>
+      <p>Month-wise repayment schedule compared as per calculation, as per bank, and the difference between the two.</p>
     </div>
-    <div class="filter-page-grid" id="filter-page-grid">
-      <!-- Populated by JS -->
+    <div class="loan-filter-bar">
+      <div class="loan-filter-group">
+        <label for="loan-filter-type">Loan Type</label>
+        <select id="loan-filter-type" class="remark-input" onchange="renderLoanRepayment()">
+          <option value="">All Loan Types</option>
+        </select>
+      </div>
+      <div class="loan-filter-group">
+        <label for="loan-filter-location">Location</label>
+        <select id="loan-filter-location" class="remark-input" onchange="renderLoanRepayment()">
+          <option value="">All Locations</option>
+        </select>
+      </div>
     </div>
-    <div class="filter-actions">
-      <button class="btn primary" onclick="applyFilters()">Apply Filters</button>
-      <button class="btn ghost" onclick="resetFilters()">Reset All</button>
+    <div class="loan-tbl-title">Repayment Schedule — As per Calculation, As per Bank &amp; Difference</div>
+    <div class="tbl-wrap-flat">
+      <table class="tbl tbl-compact loan-combined-tbl" id="loan-tbl-combined"></table>
     </div>
   </div>
 
-  <!-- PAGE: DATA HYGIENE -->
-  <div class="page" id="page-hygiene">
-    <!-- Back navigation: Data Hygiene page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="filter-shell">
-      <div class="rail" id="rail-hygiene"></div>
-      <div>
-        <div class="page-head">
-          <div class="eyebrow">Data Quality</div>
-          <h1>Purchase Data Hygiene</h1>
-          <p>Flags duplicate master data, mismatched GST codes, and product anomalies.</p>
+  <div class="wrap">
+
+    <!-- PAGE: WELCOME -->
+    <div class="page" id="page-welcome">
+      <!-- Back navigation: Welcome page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="hero">
+        <div class="eyebrow">Purchase Internal Control</div>
+        <h1>Purchase <span>Control</span><br>Dashboard</h1>
+        <p>Comprehensive audit and control analytics for purchase transactions — data hygiene, PO matching, vendor risk,
+          GST formula validation, and AI-driven insights in one place.</p>
+        <div class="cta">
+          <button class="btn primary" onclick="goTo('ai-dashboard')">Open AI Dashboard →</button>
+          <button class="btn ghost" onclick="goTo('filters')">Set Filters</button>
         </div>
-        <div id="filter-strip-hygiene"></div>
-        <div class="section-label">Tax & GST Checks</div>
-        <div class="grid g2" style="margin-bottom:18px">
-          <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Multiple Tax Code</div><div class="desc">GST rate mapped to more than one tax description</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('multi_tax')">Observation</button></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-multi-tax"><thead><tr><th>GST Rate (%)</th><th>Tax Description</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
+      </div>
+      <div class="modules" id="welcome-modules">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- PAGE: FILTERS -->
+    <div class="page" id="page-filters">
+      <!-- Back navigation: Filters page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Global Settings</div>
+        <h1>Dashboard Filters</h1>
+        <p>Set filters here — all pages update instantly to reflect your selection.</p>
+      </div>
+      <div class="filter-page-grid" id="filter-page-grid">
+        <!-- Populated by JS -->
+      </div>
+      <div class="filter-actions">
+        <button class="btn primary" onclick="applyFilters()">Apply Filters</button>
+        <button class="btn ghost" onclick="resetFilters()">Reset All</button>
+      </div>
+    </div>
+
+    <!-- PAGE: DATA HYGIENE -->
+    <div class="page" id="page-hygiene">
+      <!-- Back navigation: Data Hygiene page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="filter-shell">
+        <div class="rail" id="rail-hygiene"></div>
+        <div>
+          <div class="page-head">
+            <div class="eyebrow">Data Quality</div>
+            <h1>Purchase Data Hygiene</h1>
+            <p>Flags duplicate master data, mismatched GST codes, and product anomalies.</p>
           </div>
-          <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Same Product, Multiple GST Rate</div><div class="desc">A product billed at more than one GST rate</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('prod_gst')">Observation</button></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-gst"><thead><tr><th>Product Name</th><th class="r">GST Rate (%)</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
+          <div id="filter-strip-hygiene"></div>
+          <div class="section-label">Tax & GST Checks</div>
+          <div class="grid g2" style="margin-bottom:18px">
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Multiple Tax Code</div>
+                  <div class="desc">GST rate mapped to more than one tax description</div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
+                    onclick="downloadHygieneExcel('multi_tax')" style="padding:5px 10px;font-size:11px;">📥
+                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="openObservationModal('multi_tax')">Observation</button></div>
+              </div>
+              <div class="card-b no-pad">
+                <div class="tbl-wrap">
+                  <table class="tbl" id="tbl-multi-tax">
+                    <thead>
+                      <tr>
+                        <th>GST Rate (%)</th>
+                        <th>Tax Description</th>
+                        <th class="r">Count</th>
+                        <th>Remark</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Same Product, Multiple GST Rate</div>
+                  <div class="desc">A product billed at more than one GST rate</div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
+                    onclick="downloadHygieneExcel('prod_gst')" style="padding:5px 10px;font-size:11px;">📥
+                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="openObservationModal('prod_gst')">Observation</button></div>
+              </div>
+              <div class="card-b no-pad">
+                <div class="tbl-wrap">
+                  <table class="tbl" id="tbl-prod-gst">
+                    <thead>
+                      <tr>
+                        <th>Product Name</th>
+                        <th class="r">GST Rate (%)</th>
+                        <th class="r">Count</th>
+                        <th>Remark</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="section-label">Customer & Product Master Checks</div>
-        <div class="grid g3">
-          <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Duplicate Customer Name</div><div class="desc">Same name under different codes</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('dup_cust')">Observation</button></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-dup-cust"><thead><tr><th>Customer Name</th><th>Code</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
-          </div>
-          <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Product Name Check</div><div class="desc">Same product, multiple codes</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('prod_name')">Observation</button></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-name"><thead><tr><th>Product Name</th><th>Code</th><th class="r">Count</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
-          </div>
-          <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Product Code Check</div><div class="desc">Codes not found in master</div></div><button class="obs-card-btn" type="button" onclick="openObservationModal('prod_code')">Observation</button></div>
-            <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-prod-code"><thead><tr><th>Product Code</th><th class="c">Status</th><th>Remark</th></tr></thead><tbody></tbody></table></div></div>
+          <div class="section-label">Customer & Product Master Checks</div>
+          <div class="grid g3">
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Duplicate Customer Name</div>
+                  <div class="desc">Same name under different codes</div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
+                    onclick="downloadHygieneExcel('dup_cust')" style="padding:5px 10px;font-size:11px;">📥
+                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="openObservationModal('dup_cust')">Observation</button></div>
+              </div>
+              <div class="card-b no-pad">
+                <div class="tbl-wrap">
+                  <table class="tbl" id="tbl-dup-cust">
+                    <thead>
+                      <tr>
+                        <th>Customer Name</th>
+                        <th>Code</th>
+                        <th class="r">Count</th>
+                        <th>Remark</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Product Name Check</div>
+                  <div class="desc">Same product, multiple codes</div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
+                    onclick="downloadHygieneExcel('prod_name')" style="padding:5px 10px;font-size:11px;">📥
+                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="openObservationModal('prod_name')">Observation</button></div>
+              </div>
+              <div class="card-b no-pad">
+                <div class="tbl-wrap">
+                  <table class="tbl" id="tbl-prod-name">
+                    <thead>
+                      <tr>
+                        <th>Product Name</th>
+                        <th>Code</th>
+                        <th class="r">Count</th>
+                        <th>Remark</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Product Code Check</div>
+                  <div class="desc">Codes not found in master</div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
+                    onclick="downloadHygieneExcel('prod_code')" style="padding:5px 10px;font-size:11px;">📥
+                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="openObservationModal('prod_code')">Observation</button></div>
+              </div>
+              <div class="card-b no-pad">
+                <div class="tbl-wrap">
+                  <table class="tbl" id="tbl-prod-code">
+                    <thead>
+                      <tr>
+                        <th>Product Code</th>
+                        <th class="c">Status</th>
+                        <th>Remark</th>
+                      </tr>
+                    </thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════════
        PAGE: HR AND PAYROLL MODULE (new)
        Rendered by renderHrPayroll() in main.js. Reached only from the
        Home screen "HR and Payroll" button (no top-nav tab), same pattern
@@ -223,265 +395,495 @@
        log page, whose own Back button returns here (see obsBackTarget()
        in main.js).
   ═══════════════════════════════════════════════════════════════ -->
-  <div class="page" id="page-hr-payroll">
-    <!-- Back navigation: HR and Payroll page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">HR General Controls</div>
-      <h1>HR and Payroll</h1>
-      <p>Employee master data hygiene and statutory ID checks.</p>
+    <div class="page" id="page-hr-payroll">
+      <!-- Back navigation: HR and Payroll page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">HR General Controls</div>
+        <h1>HR and Payroll</h1>
+        <p>Employee master data hygiene and statutory ID checks.</p>
+      </div>
+      <!-- Section 1 of 2: Bank & Statutory ID Checks (cards 1-3 of HR_TABLES) -->
+      <div class="section-label">Bank &amp; Statutory ID Checks</div>
+      <div class="grid g3" style="margin-bottom:18px" id="hr-row-1"></div>
+      <!-- Section 2 of 2: Employee Master Checks (cards 4-5 of HR_TABLES) -->
+      <div class="section-label">Employee Master Checks</div>
+      <div class="grid g3" id="hr-row-2"></div>
     </div>
-    <!-- Section 1 of 2: Bank & Statutory ID Checks (cards 1-3 of HR_TABLES) -->
-    <div class="section-label">Bank &amp; Statutory ID Checks</div>
-    <div class="grid g3" style="margin-bottom:18px" id="hr-row-1"></div>
-    <!-- Section 2 of 2: Employee Master Checks (cards 4-5 of HR_TABLES) -->
-    <div class="section-label">Employee Master Checks</div>
-    <div class="grid g3" id="hr-row-2"></div>
-  </div>
 
-  <!-- PAGE: PO SUMMARY -->
-  <div class="page" id="page-po-summary">
-    <!-- Back navigation: PO Summary page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">Reconciliation</div>
-      <h1>PO vs Invoice vs GRN vs Bank</h1>
-      <p>Comparing purchase orders against invoices, goods receipts, and bank payments.</p>
-    </div>
-    <div id="filter-strip-po"></div>
-    <div class="kpi-row" id="kpi-po"></div>
-    <div class="card">
-      <div class="card-h"><div class="grow"><div class="ttl">Detailed Comparison — PO / Invoice / GRN / Bank</div><div class="desc">Line-by-line reconciliation with match status</div></div></div>
-      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-comparison"><thead><tr><th>Invoice No</th><th>Vendor Name</th><th>PO No</th><th class="c">PO Amt (₹)</th><th>GRN No</th><th class="c">GRN Amt (₹)</th><th class="c">Bank Amt (₹)</th><th class="c">GRN Amt - Bank Amt (₹)</th></tr></thead><tbody></tbody></table></div></div>
-    </div>
-  </div>
-
-  <!-- PAGE: PO DETAIL -->
-  <div class="page" id="page-po-detail">
-    <!-- Back navigation: PO Detail page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">Exceptions</div>
-      <h1>PO V/s Inv V/s GRN V/s Bank — Detail</h1>
-      <p>Exceptions: missing GRNs, open POs, bank accounts, and payment days analysis.</p>
-    </div>
-    <div id="filter-strip-detail"></div>
-    <div class="grid g2" style="margin-bottom:18px">
-      <div>
-        <div class="section-label">GRN Without Purchase Invoice</div>
-        <div class="card">
-          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-grn-without"><thead><tr><th>GRN No</th><th>Invoice No</th><th>Company</th><th class="r">Amount (₹)</th></tr></thead><tbody></tbody></table></div></div>
-        </div>
+    <!-- PAGE: PO SUMMARY -->
+    <div class="page" id="page-po-summary">
+      <!-- Back navigation: PO Summary page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Reconciliation</div>
+        <h1>PO vs Invoice vs GRN vs Bank</h1>
+        <p>Comparing purchase orders against invoices, goods receipts, and bank payments.</p>
       </div>
-      <div>
-        <div class="section-label">Open PO (No GRN)</div>
-        <div class="card">
-          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-open-po"><thead><tr><th>PO No</th><th>Invoice No</th><th>Company</th><th class="r">Amount (₹)</th></tr></thead><tbody></tbody></table></div></div>
-        </div>
-      </div>
-    </div>
-    <div class="grid g2">
-      <div>
-        <div class="section-label">Number of Bank Accounts per Vendor</div>
-        <div class="card">
-          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-bank-accounts"><thead><tr><th>Company</th><th class="r">Bank Count</th><th>Banks Used</th></tr></thead><tbody></tbody></table></div></div>
-        </div>
-      </div>
-      <div>
-        <div class="section-label">Average Payment Days</div>
-        <div class="card">
-          <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-pay-days"><thead><tr><th>Company</th><th class="r">Avg Days</th><th class="r">Transactions</th></tr></thead><tbody></tbody></table></div></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PAGE: PURCHASE -->
-  <div class="page" id="page-purchase">
-    <!-- Back navigation: Purchase page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="filter-shell">
-      <div class="rail" id="rail-purchase"></div>
-      <div>
-        <div class="page-head">
-          <div class="eyebrow">Purchase Analytics</div>
-          <h1>Purchase</h1>
-          <p>Blocked vendor payments, purchase vs return trend, and detailed purchase register.</p>
-        </div>
-        <div id="filter-strip-purchase"></div>
-        <div class="grid g2" style="margin-bottom:18px">
-          <div>
-            <div class="section-label">Payment to Blocked Vendors</div>
-            <div class="card">
-              <div class="card-b no-pad"><div class="tbl-wrap"><table class="tbl" id="tbl-blocked"><thead><tr><th>Vendor Name</th><th>Reason</th><th>Invoice No</th><th class="r">Amount (₹)</th></tr></thead><tbody></tbody></table></div></div>
-            </div>
-          </div>
-          <div>
-            <div class="section-label">Purchase vs Purchase Return (Trend)</div>
-            <div class="card">
-              <div class="card-h"><div class="grow"><div class="ttl">Purchase vs Return — Monthly</div><div class="desc">Combo chart: purchase amount (bars) vs return amount (line)</div></div></div>
-              <div class="card-b"><div class="chart-wrap"><canvas id="chart-purchase-combo"></canvas></div></div>
-            </div>
+      <div id="filter-strip-po"></div>
+      <div class="kpi-row" id="kpi-po"></div>
+      <div class="card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Detailed Comparison — PO / Invoice / GRN / Bank</div>
+            <div class="desc">Line-by-line reconciliation with match status</div>
           </div>
         </div>
-        <div class="section-label">Purchase Report</div>
-        <div class="card">
-          <div class="card-h"><div class="grow"><div class="ttl">Detailed Purchase Register</div><div class="desc">Full transaction log with product, date, customer, and amount</div></div></div>
-          <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-purchase-report"><thead><tr><th>Invoice No</th><th>Product Name</th><th>Year</th><th>Month</th><th>Invoice Date</th><th>Customer</th><th class="r">Amount (₹)</th><th class="r">GST (₹)</th><th class="r">Total (₹)</th></tr></thead><tbody></tbody></table></div></div>
+        <div class="card-b no-pad">
+          <div class="tbl-wrap-full">
+            <table class="tbl" id="tbl-comparison">
+              <thead>
+                <tr>
+                  <th>Invoice No</th>
+                  <th>Vendor Name</th>
+                  <th>PO No</th>
+                  <th class="c">PO Amt (₹)</th>
+                  <th>GRN No</th>
+                  <th class="c">GRN Amt (₹)</th>
+                  <th class="c">Bank Amt (₹)</th>
+                  <th class="c">GRN Amt - Bank Amt (₹)</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- PAGE: AI DASHBOARD -->
-  <div class="page" id="page-ai-dashboard">
-    <!-- Back navigation: AI Dashboard page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="filter-shell">
-      <div class="rail" id="rail-ai"></div>
-      <div>
-        <div class="page-head">
-          <div class="eyebrow">AI Insights</div>
-          <h1>Purchase Dashboard</h1>
-          <p>AI-driven aggregated view — by entity, period, and product distribution.</p>
-        </div>
-        <div id="filter-strip-ai"></div>
-        <div class="kpi-row" id="kpi-ai"></div>
-        <div class="grid g2" style="margin-bottom:18px">
+    <!-- PAGE: PO DETAIL -->
+    <div class="page" id="page-po-detail">
+      <!-- Back navigation: PO Detail page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Exceptions</div>
+        <h1>PO V/s Inv V/s GRN V/s Bank — Detail</h1>
+        <p>Exceptions: missing GRNs, open POs, bank accounts, and payment days analysis.</p>
+      </div>
+      <div id="filter-strip-detail"></div>
+      <div class="grid g2" style="margin-bottom:18px">
+        <div>
+          <div class="section-label">GRN Without Purchase Invoice</div>
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Purchase Distribution</div><div class="desc">By product / customer / state — use dropdown to switch</div></div>
-              <select id="pie-dimension" style="font-family:var(--body);font-size:12px;border:1px solid var(--line2);border-radius:var(--rs);padding:4px 8px;cursor:pointer;background:#fff;color:var(--ink)">
-                <option value="PROD_NM">By Product</option>
-                <option value="CUST_NM">By Customer</option>
-                <option value="CUST_STATE">By State</option>
-                <option value="COMP_NM">By Company</option>
-              </select>
+            <div class="card-b no-pad">
+              <div class="tbl-wrap">
+                <table class="tbl" id="tbl-grn-without">
+                  <thead>
+                    <tr>
+                      <th>GRN No</th>
+                      <th>Invoice No</th>
+                      <th>Company</th>
+                      <th class="r">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
             </div>
-            <div class="card-b"><div class="chart-wrap"><canvas id="chart-pie"></canvas></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">Open PO (No GRN)</div>
+          <div class="card">
+            <div class="card-b no-pad">
+              <div class="tbl-wrap">
+                <table class="tbl" id="tbl-open-po">
+                  <thead>
+                    <tr>
+                      <th>PO No</th>
+                      <th>Invoice No</th>
+                      <th>Company</th>
+                      <th class="r">Amount (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="grid g2">
+        <div>
+          <div class="section-label">Number of Bank Accounts per Vendor</div>
+          <div class="card">
+            <div class="card-b no-pad">
+              <div class="tbl-wrap">
+                <table class="tbl" id="tbl-bank-accounts">
+                  <thead>
+                    <tr>
+                      <th>Company</th>
+                      <th class="r">Bank Count</th>
+                      <th>Banks Used</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">Average Payment Days</div>
+          <div class="card">
+            <div class="card-b no-pad">
+              <div class="tbl-wrap">
+                <table class="tbl" id="tbl-pay-days">
+                  <thead>
+                    <tr>
+                      <th>Company</th>
+                      <th class="r">Avg Days</th>
+                      <th class="r">Transactions</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: PURCHASE -->
+    <div class="page" id="page-purchase">
+      <!-- Back navigation: Purchase page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="filter-shell">
+        <div class="rail" id="rail-purchase"></div>
+        <div>
+          <div class="page-head">
+            <div class="eyebrow">Purchase Analytics</div>
+            <h1>Purchase</h1>
+            <p>Blocked vendor payments, purchase vs return trend, and detailed purchase register.</p>
+          </div>
+          <div id="filter-strip-purchase"></div>
+          <div class="grid g2" style="margin-bottom:18px">
+            <div>
+              <div class="section-label">Payment to Blocked Vendors</div>
+              <div class="card">
+                <div class="card-b no-pad">
+                  <div class="tbl-wrap">
+                    <table class="tbl" id="tbl-blocked">
+                      <thead>
+                        <tr>
+                          <th>Vendor Name</th>
+                          <th>Reason</th>
+                          <th>Invoice No</th>
+                          <th class="r">Amount (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="section-label">Purchase vs Purchase Return (Trend)</div>
+              <div class="card">
+                <div class="card-h">
+                  <div class="grow">
+                    <div class="ttl">Purchase vs Return — Monthly</div>
+                    <div class="desc">Combo chart: purchase amount (bars) vs return amount (line)</div>
+                  </div>
+                </div>
+                <div class="card-b">
+                  <div class="chart-wrap"><canvas id="chart-purchase-combo"></canvas></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="section-label">Purchase Report</div>
+          <div class="card">
+            <div class="card-h">
+              <div class="grow">
+                <div class="ttl">Detailed Purchase Register</div>
+                <div class="desc">Full transaction log with product, date, customer, and amount</div>
+              </div>
+            </div>
+            <div class="card-b no-pad">
+              <div class="tbl-wrap-full">
+                <table class="tbl" id="tbl-purchase-report">
+                  <thead>
+                    <tr>
+                      <th>Invoice No</th>
+                      <th>Product Name</th>
+                      <th>Year</th>
+                      <th>Month</th>
+                      <th>Invoice Date</th>
+                      <th>Customer</th>
+                      <th class="r">Amount (₹)</th>
+                      <th class="r">GST (₹)</th>
+                      <th class="r">Total (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUDIT TRAIL PAGE: new dedicated page with grouped tables and filter controls. -->
+    <div class="page" id="page-audit-trail">
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Audit Trail</div>
+        <h1>Audit Trail</h1>
+        <p>Upload Excel-based audit data and review grouped records with working filters.</p>
+      </div>
+      <div class="card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Filterable Audit Trail</div>
+            <div class="desc">Use the controls below to narrow the grouped audit trail data.</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div id="audit-trail-filters"
+            style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px;">
+          </div>
+          <div id="audit-trail-summary" style="margin-bottom:12px;"></div>
+          <div id="audit-trail-tables"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: AI DASHBOARD -->
+    <div class="page" id="page-ai-dashboard">
+      <!-- Back navigation: AI Dashboard page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="filter-shell">
+        <div class="rail" id="rail-ai"></div>
+        <div>
+          <div class="page-head">
+            <div class="eyebrow">AI Insights</div>
+            <h1>Purchase Dashboard</h1>
+            <p>AI-driven aggregated view — by entity, period, and product distribution.</p>
+          </div>
+          <div id="filter-strip-ai"></div>
+          <div class="kpi-row" id="kpi-ai"></div>
+          <div class="grid g2" style="margin-bottom:18px">
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Purchase Distribution</div>
+                  <div class="desc">By product / customer / state — use dropdown to switch</div>
+                </div>
+                <select id="pie-dimension"
+                  style="font-family:var(--body);font-size:12px;border:1px solid var(--line2);border-radius:var(--rs);padding:4px 8px;cursor:pointer;background:#fff;color:var(--ink)">
+                  <option value="PROD_NM">By Product</option>
+                  <option value="CUST_NM">By Customer</option>
+                  <option value="CUST_STATE">By State</option>
+                  <option value="COMP_NM">By Company</option>
+                </select>
+              </div>
+              <div class="card-b">
+                <div class="chart-wrap"><canvas id="chart-pie"></canvas></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-h">
+                <div class="grow">
+                  <div class="ttl">Month-wise Trend</div>
+                  <div class="desc">Invoice amount by month — use Period to filter</div>
+                </div>
+              </div>
+              <div class="card-b">
+                <div class="chart-wrap"><canvas id="chart-month-trend"></canvas></div>
+              </div>
+            </div>
           </div>
           <div class="card">
-            <div class="card-h"><div class="grow"><div class="ttl">Month-wise Trend</div><div class="desc">Invoice amount by month — use Period to filter</div></div></div>
-            <div class="card-b"><div class="chart-wrap"><canvas id="chart-month-trend"></canvas></div></div>
+            <div class="card-h">
+              <div class="grow">
+                <div class="ttl">Company-wise Performance</div>
+                <div class="desc">Invoice amount per company — bar chart</div>
+              </div>
+            </div>
+            <div class="card-b">
+              <div class="chart-wrap chart-wrap-tall"><canvas id="chart-company-bar"></canvas></div>
+            </div>
           </div>
         </div>
-        <div class="card">
-          <div class="card-h"><div class="grow"><div class="ttl">Company-wise Performance</div><div class="desc">Invoice amount per company — bar chart</div></div></div>
-          <div class="card-b"><div class="chart-wrap chart-wrap-tall"><canvas id="chart-company-bar"></canvas></div></div>
-        </div>
       </div>
     </div>
-  </div>
 
-  <!-- PAGE: FORMULA CHECK -->
-  <div class="page" id="page-formula">
-    <!-- Back navigation: Calculation Check page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">Validation</div>
-      <h1>Calculation Check</h1>
-      <p>GST rate validation and discount difference analysis across all invoices.</p>
-    </div>
-    <div class="grid g2">
-      <div>
-        <div class="section-label">GST Rate Check</div>
-        <div class="card">
-          <div class="card-h"><div class="grow"><div class="ttl">GST Calculation Variance</div><div class="desc">Expected vs actual GST — flags errors</div></div></div>
-          <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-gst-check"><thead><tr><th>Invoice No</th><th class="r">Invoice Amt (₹)</th><th class="c">GST %</th><th class="r">Actual GST (₹)</th><th class="r">Expected GST (₹)</th><th class="r">Diff (₹)</th><th class="c">Status</th></tr></thead><tbody></tbody></table></div></div>
+    <!-- PAGE: FORMULA CHECK -->
+    <div class="page" id="page-formula">
+      <!-- Back navigation: Calculation Check page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Validation</div>
+        <h1>Calculation Check</h1>
+        <p>GST rate validation and discount difference analysis across all invoices.</p>
+      </div>
+      <div class="grid g2">
+        <div>
+          <div class="section-label">GST Rate Check</div>
+          <div class="card">
+            <div class="card-h">
+              <div class="grow">
+                <div class="ttl">GST Calculation Variance</div>
+                <div class="desc">Expected vs actual GST — flags errors</div>
+              </div>
+            </div>
+            <div class="card-b no-pad">
+              <div class="tbl-wrap-full">
+                <table class="tbl" id="tbl-gst-check">
+                  <thead>
+                    <tr>
+                      <th>Invoice No</th>
+                      <th class="r">Invoice Amt (₹)</th>
+                      <th class="c">GST %</th>
+                      <th class="r">Actual GST (₹)</th>
+                      <th class="r">Expected GST (₹)</th>
+                      <th class="r">Diff (₹)</th>
+                      <th class="c">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-label">Discount Difference</div>
+          <div class="card">
+            <div class="card-h">
+              <div class="grow">
+                <div class="ttl">Discount Variance</div>
+                <div class="desc">Applied vs calculated discount — flags overrides</div>
+              </div>
+            </div>
+            <div class="card-b no-pad">
+              <div class="tbl-wrap-full">
+                <table class="tbl" id="tbl-disc-check">
+                  <thead>
+                    <tr>
+                      <th>Invoice No</th>
+                      <th class="r">Invoice Amt (₹)</th>
+                      <th class="r">Discount (₹)</th>
+                      <th class="r">Calc Disc (₹)</th>
+                      <th class="r">Diff (₹)</th>
+                      <th class="c">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <div class="section-label">Discount Difference</div>
-        <div class="card">
-          <div class="card-h"><div class="grow"><div class="ttl">Discount Variance</div><div class="desc">Applied vs calculated discount — flags overrides</div></div></div>
-          <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" id="tbl-disc-check"><thead><tr><th>Invoice No</th><th class="r">Invoice Amt (₹)</th><th class="r">Discount (₹)</th><th class="r">Calc Disc (₹)</th><th class="r">Diff (₹)</th><th class="c">Status</th></tr></thead><tbody></tbody></table></div></div>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- PAGE: OBSERVATIONS (shared observation log, used by Data Hygiene,
+    <!-- PAGE: OBSERVATIONS (shared observation log, used by Data Hygiene,
        IT Controls, and HR and Payroll cards alike) -->
-  <div class="page" id="page-observations">
-    <div class="page-head">
-      <div class="eyebrow">Observation Log</div>
-      <h1 id="obs-page-title">Table</h1>
-      <p>Manage observations for this category.</p>
-    </div>
-    <!-- Back navigation: routes to Hygiene / IT Controls / HR and Payroll
+    <div class="page" id="page-observations">
+      <div class="page-head">
+        <div class="eyebrow">Observation Log</div>
+        <h1 id="obs-page-title">Table</h1>
+        <p>Manage observations for this category.</p>
+      </div>
+      <!-- Back navigation: routes to Hygiene / IT Controls / HR and Payroll
          depending on which module opened this log, via obsBackTarget()
          in main.js (checks currentObsCategory prefix: itc_ / hr_ / other) -->
-    <button type="button" class="btn ghost sm" id="obs-back-btn" onclick="goTo(obsBackTarget())" style="margin-bottom: 20px;">← Back</button>
-    <div class="card">
-      <div class="obs-modal-body" id="obs-modal-body" style="padding: 20px;">
-        <!-- Populated by main.js -->
-      </div>
-    </div>
-  </div>
-
-  <!-- PAGE: ADDITION -->
-  <div class="page" id="page-addition">
-    <!-- Back navigation: Additional Modules page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">Roadmap</div>
-      <h1>Additional Modules</h1>
-      <p>Planned capabilities for the next phase of the Purchase ICD platform.</p>
-    </div>
-    <div class="card">
-      <ul class="addition-list">
-        <li>
-          <span class="li-num">01</span>
-          <div><div class="li-title">MIS Reporting</div><div class="li-desc">Automated management information system reports with drill-down capabilities</div></div>
-          <span class="coming-badge">Coming Soon</span>
-        </li>
-        <li>
-          <span class="li-num">02</span>
-          <div><div class="li-title">Fraud Analysis</div><div class="li-desc">ML-powered anomaly detection across vendor payments, duplicate invoices and round-amount transactions</div></div>
-          <span class="coming-badge">Coming Soon</span>
-        </li>
-        <li>
-          <span class="li-num">03</span>
-          <div><div class="li-title">Business Transformation</div><div class="li-desc">Process benchmarking, payment cycle optimisation and working capital analytics</div></div>
-          <span class="coming-badge">Coming Soon</span>
-        </li>
-        <li>
-          <span class="li-num">04</span>
-          <div><div class="li-title">Inventory Analysis</div><div class="li-desc">Stock turn, slow-moving inventory flagging and reorder point calculation</div></div>
-          <span class="coming-badge">Coming Soon</span>
-        </li>
-        <li>
-          <span class="li-num">05</span>
-          <div><div class="li-title">Trial Balance</div><div class="li-desc">GL reconciliation, period-end balancing and variance commentary generation</div></div>
-          <span class="coming-badge">Coming Soon</span>
-        </li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- PAGE: UPLOAD OBSERVATION FILE -->
-  <div class="page" id="page-upload-observation">
-    <!-- Back navigation: Upload Observation File page → Home -->
-    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">Observation Import</div>
-      <h1>Upload Observation File</h1>
-      <p>Use this page to upload an Excel observation seed file directly from the dashboard.</p>
-    </div>
-    <div class="card">
-      <div style="display:grid;gap:14px;max-width:560px">
-        <label for="observation-upload-input" class="obs-field-label">Select Excel file</label>
-        <input id="observation-upload-input" type="file" accept=".xlsx,.xls" class="remark-input" style="padding:10px">
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <button class="btn primary" type="button" onclick="uploadObservationFile()">Upload File</button>
-          <span id="upload-observation-status" style="font-size:13px;color:var(--muted)">No file selected yet.</span>
+      <button type="button" class="btn ghost sm" id="obs-back-btn" onclick="goTo(obsBackTarget())"
+        style="margin-bottom: 20px;">← Back</button>
+      <div class="card">
+        <div class="obs-modal-body" id="obs-modal-body" style="padding: 20px;">
+          <!-- Populated by main.js -->
         </div>
       </div>
     </div>
-  </div>
 
-</div><!-- /wrap -->
+    <!-- PAGE: ADDITION -->
+    <div class="page" id="page-addition">
+      <!-- Back navigation: Additional Modules page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Roadmap</div>
+        <h1>Additional Modules</h1>
+        <p>Planned capabilities for the next phase of the Purchase ICD platform.</p>
+      </div>
+      <div class="card">
+        <ul class="addition-list">
+          <li>
+            <span class="li-num">01</span>
+            <div>
+              <div class="li-title">MIS Reporting</div>
+              <div class="li-desc">Automated management information system reports with drill-down capabilities</div>
+            </div>
+            <span class="coming-badge">Coming Soon</span>
+          </li>
+          <li>
+            <span class="li-num">02</span>
+            <div>
+              <div class="li-title">Fraud Analysis</div>
+              <div class="li-desc">ML-powered anomaly detection across vendor payments, duplicate invoices and
+                round-amount transactions</div>
+            </div>
+            <span class="coming-badge">Coming Soon</span>
+          </li>
+          <li>
+            <span class="li-num">03</span>
+            <div>
+              <div class="li-title">Business Transformation</div>
+              <div class="li-desc">Process benchmarking, payment cycle optimisation and working capital analytics</div>
+            </div>
+            <span class="coming-badge">Coming Soon</span>
+          </li>
+          <li>
+            <span class="li-num">04</span>
+            <div>
+              <div class="li-title">Inventory Analysis</div>
+              <div class="li-desc">Stock turn, slow-moving inventory flagging and reorder point calculation</div>
+            </div>
+            <span class="coming-badge">Coming Soon</span>
+          </li>
+          <li>
+            <span class="li-num">05</span>
+            <div>
+              <div class="li-title">Trial Balance</div>
+              <div class="li-desc">GL reconciliation, period-end balancing and variance commentary generation</div>
+            </div>
+            <span class="coming-badge">Coming Soon</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- PAGE: UPLOAD OBSERVATION FILE -->
+    <div class="page" id="page-upload-observation">
+      <!-- Back navigation: Upload Observation File page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Observation Import</div>
+        <h1>Upload Observation File</h1>
+        <p>Use this page to upload an Excel observation seed file directly from the dashboard.</p>
+      </div>
+      <div class="card">
+        <div style="display:grid;gap:14px;max-width:560px">
+          <label for="observation-upload-input" class="obs-field-label">Select Excel file</label>
+          <input id="observation-upload-input" type="file" accept=".xlsx,.xls" class="remark-input"
+            style="padding:10px">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn primary" type="button" onclick="uploadObservationFile()">Upload File</button>
+            <span id="upload-observation-status" style="font-size:13px;color:var(--muted)">No file selected yet.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /wrap -->
 
 
-<script src="/static/js/main.js"></script>
+  <script src="/static/js/main.js"></script>
 </body>
+
 </html>
