@@ -120,6 +120,12 @@ body {
   cursor: pointer; box-shadow: var(--sh);
 }
 .obs-btn:hover { background: var(--maroon); }
+.obs-card-btn {
+  border: 0; border-radius: 999px; padding: 6px 12px; background: var(--red);
+  color: #fff; font-family: var(--display); font-weight: 700; font-size: 11.5px;
+  cursor: pointer; box-shadow: var(--sh); white-space: nowrap;
+}
+.obs-card-btn:hover { background: var(--maroon); }
 .nav-tab {
   appearance: none; border: 0; background: none; cursor: pointer;
   font-family: var(--display); font-weight: 600; font-size: 12.5px;
@@ -139,9 +145,105 @@ body {
 }
 
 /* ── LAYOUT / WRAP ────────────────────────────────── */
+body.on-home .topnav { display: none; }
+
+.home-wrap {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.app-name {
+  font-family: var(--display); font-weight: 800; font-size: 30px;
+  color: var(--ink); text-align: center; margin: 0 0 6px;
+  letter-spacing: -.3px;
+}
+.app-sub {
+  font-family: var(--body); font-size: 13.5px; color: var(--muted);
+  text-align: center; margin: 0 0 32px; max-width: 580px;
+}
+.home-table-card {
+  width: 100%;
+  box-shadow: var(--shh);
+  border-radius: var(--r);
+  overflow: hidden;
+  border: 1px solid var(--line2);
+  background: #fff;
+}
+.home-modules-tbl th {
+  padding: 14px 16px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 12.5px;
+  background: var(--ink);
+  color: #ffffff;
+  letter-spacing: .2px;
+}
+.home-modules-tbl td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.home-modules-tbl tr:last-child td {
+  border-bottom: none;
+}
+.home-modules-tbl tr:hover {
+  background: #faf7f4;
+}
+.home-table-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  background: #fdfbf7; 
+  color: var(--ink);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid var(--line); 
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--sh);
+  transition: transform .15s, box-shadow .15s, background .15s, color .15s;
+  text-decoration: none;
+}
+
+.home-table-btn:hover {
+  background: #f3efe6; 
+  color: var(--maroon); 
+  box-shadow: var(--shh);
+  transform: translateY(-1px);
+}
+.font-bold { font-weight: 700; }
+.home-buttons { display: flex; flex-direction: column; gap: 16px; width: 100%; }
+.home-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; padding: 20px 24px;
+  background: var(--maroon); color: #ffffff;
+  font-family: var(--display); font-weight: 600; font-size: 16px;
+  border: none; border-radius: 999px; cursor: pointer;
+  box-shadow: var(--sh);
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+.home-btn:hover { background: var(--red); box-shadow: var(--shh); transform: translateY(-2px); }
+
 .wrap { max-width: 1360px; margin: 0 auto; padding: 22px 26px 60px; }
 .page { display: none; }
 .page.active { display: block; animation: fadeIn .22s ease; }
+.data-loading { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; background: rgba(246,243,238,.78); backdrop-filter: blur(2px); }
+.data-loading[hidden] { display: none; }
+/* LOAN AND REPAYMENT SCHEDULE MODULE: the Home screen button for this page
+   must stay clickable even while #data-loading (z-index:1000) is covering
+   the screen, since this page needs no workbook data. Without this, the
+   overlay physically sits on top of the button and swallows the click
+   before it reaches it, even though the page looks normal underneath. */
+#loan-repayment-btn { position: relative; z-index: 1001; }
+.loading-card { display: flex; align-items: center; gap: 12px; max-width: 420px; padding: 18px 22px; border: 1px solid var(--line); border-radius: var(--r); background: #fff; box-shadow: var(--shh); color: var(--ink); font-family: var(--display); font-size: 13px; font-weight: 600; }
+.loading-spinner { width: 20px; height: 20px; flex: 0 0 20px; border: 3px solid var(--peach); border-top-color: var(--orange); border-radius: 50%; animation: loading-spin .8s linear infinite; }
+@keyframes loading-spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
 
 .page-head { margin-bottom: 20px; }
@@ -171,9 +273,9 @@ body {
 
 /* ── CARDS / GRID ─────────────────────────────────── */
 .grid { display: grid; gap: 18px; }
-.g2 { grid-template-columns: 1fr 1fr; }
-.g3 { grid-template-columns: repeat(3, 1fr); }
-.g4 { grid-template-columns: repeat(4, 1fr); }
+.g2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 900px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } }
 
 .card {
@@ -214,8 +316,8 @@ table.tbl tbody tr:hover td { background: #faf7f3; }
 table.tbl td.r, table.tbl th.r { text-align: right; font-family: var(--num); }
 table.tbl td.c, table.tbl th.c { text-align: center; }
 table.tbl .grp { font-weight: 600; color: var(--maroon); }
-table.tbl tr.row-flag td { background: var(--flagbg); }
-table.tbl tr.row-flag:hover td { background: #f7e0de; }
+table.tbl tr.row-flag td { background: #fff; }
+table.tbl tr.row-flag:hover td { background: #faf7f3; }
 table.tbl tr.row-warn td { background: var(--warnbg); }
 .tag {
   font-family: var(--display); font-weight: 700; font-size: 9.5px;
@@ -238,7 +340,7 @@ table.tbl tr.row-warn td { background: var(--warnbg); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
 
 /* ── FILTERS SIDEBAR RAIL ─────────────────────────── */
-.filter-shell { display: grid; grid-template-columns: 248px 1fr; gap: 22px; align-items: start; }
+.filter-shell { display: grid; grid-template-columns: 248px minmax(0, 1fr); gap: 22px; align-items: start; }
 @media (max-width: 960px) { .filter-shell { grid-template-columns: 1fr; } }
 .rail { position: sticky; top: 108px; display: flex; flex-direction: column; gap: 14px; }
 .rail-card {
@@ -374,3 +476,166 @@ table.tbl tr.row-warn td { background: var(--warnbg); }
 }
 .fchip .rm { cursor: pointer; font-size: 13px; line-height: 1; }
 .fchip .rm:hover { color: var(--red); }
+
+/* ── REMARK CELL & BUTTONS ──────────────────────── */
+.remark-cell {
+  min-width: 210px;
+}
+.remark-box {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.remark-input {
+  flex: 1;
+  min-width: 100px;
+  padding: 4px 8px;
+  font-family: var(--body);
+  font-size: 11.5px;
+  border: 1px solid var(--line);
+  border-radius: var(--rs);
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
+}
+.remark-input:disabled {
+  background: #f3f4f6;
+  color: #374151;
+  border-color: #e5e7eb;
+  cursor: default;
+}
+.remark-input:focus {
+  outline: none;
+  border-color: var(--maroon);
+  box-shadow: 0 0 0 2px rgba(108, 14, 18, 0.12);
+}
+.remark-input.remark-saved {
+  border-color: var(--ok) !important;
+  background-color: #f0fdf4 !important;
+}
+
+/* ── Observation form: two-column field layout (no row dividers) ── */
+.obs-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 32px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--line2);
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+.obs-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.obs-field-full { grid-column: 1 / -1; }
+.obs-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.obs-field .remark-input,
+.obs-field select.remark-input,
+.obs-field textarea.remark-input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+.obs-field-checkbox { flex-direction: row; align-items: center; gap: 8px; }
+@media (max-width: 760px) {
+  .obs-field-grid { grid-template-columns: 1fr; }
+}
+
+.remark-actions {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+.btn-rmk {
+  border: none;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  font-family: var(--display);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.btn-rmk:hover {
+  opacity: 0.88;
+}
+.btn-rmk-save {
+  background: var(--ok);
+  color: #fff;
+}
+.btn-rmk-edit {
+  background: var(--blue);
+  color: #fff;
+}
+.btn-rmk-del {
+  background: #fee2e2;
+  color: var(--red);
+}
+/* ═════════════════════════════════════════════════════════════
+   LOAN AND REPAYMENT SCHEDULE MODULE — three tables side by side.
+   Tables have no internal scrollbar (.tbl-wrap-flat overrides the
+   default .tbl-wrap max-height/overflow); only the page itself
+   scrolls, so all three tables move together and stay row-aligned.
+   ═════════════════════════════════════════════════════════════ */
+.loan-tables-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+}
+.loan-tbl-col {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.loan-tbl-title {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--maroon);
+  background: var(--peach);
+  border: 1px solid #d3d3d3;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 12px;
+}
+.tbl-wrap-flat {
+  overflow: visible;
+  max-height: none;
+  border: 1px solid #d3d3d3;
+  border-radius: 0 0 10px 10px;
+  background: #fff;
+}
+table.tbl-compact { font-size: 9.5px; table-layout: fixed; width: 100%; }
+table.tbl-compact th { padding: 5px 4px; white-space: normal; word-break: break-word; line-height: 1.15; }
+table.tbl-compact td { padding: 4px 4px; white-space: normal; word-break: break-word; }
+table.tbl-compact td.r { white-space: nowrap; }
+
+/* Combined Loan and Repayment table: three column groups (As per
+   Calculation / As per Bank / Difference) inside one table, separated
+   by a solid vertical divider instead of three separate table boxes. */
+.loan-combined-tbl th.grp-head { text-align: center; background: var(--peach); color: var(--maroon); font-size: 11px; }
+.loan-combined-tbl, .loan-combined-tbl th, .loan-combined-tbl td { border-color: #d3d3d3; }
+.loan-combined-tbl th { border-bottom: 1px solid #d3d3d3; }
+.loan-combined-tbl td { border-bottom: 1px solid #d3d3d3; }
+.loan-combined-tbl .div-l { border-left: 1.5px solid #d3d3d3 !important; }
+.loan-combined-tbl td.diff-hit { background: #fde2e2; color: var(--red); font-weight: 700; }
+
+.loan-filter-bar {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  margin-bottom: 16px; padding: 12px 14px;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+}
+.loan-filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
+.loan-filter-group label {
+  font-family: var(--display); font-weight: 700; font-size: 10.5px;
+  letter-spacing: .3px; text-transform: uppercase; color: var(--muted);
+}
+.loan-filter-group select.remark-input { width: 100%; }
