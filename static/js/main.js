@@ -434,10 +434,10 @@ function renderCurrentPage(pageId) {
   if (pageId === 'loan-repayment') { renderLoanRepayment(); return; }
   // KYC DETAILS: static hardcoded page, no rendering function needed —
   // markup lives directly in index.html (#page-kyc), same Home-only pattern.
-  if (pageId === 'kyc') { return; }
+  if (pageId === 'kyc') { renderKyc(); return; }
   // OTHER LOAN DETAILS: static hardcoded page, no rendering function needed —
   // markup lives directly in index.html (#page-other-loan), same Home-only pattern.
-  if (pageId === 'other-loan') { return; }
+  if (pageId === 'other-loan') { renderLoan(); return; }
   // AUDIT TRAIL PAGE: this page uses its own backend endpoint and should render
   // even before the main purchase workbook has finished loading.
   if (pageId === 'audit-trail') { loadAuditTrailData(); return; }
@@ -1121,6 +1121,508 @@ const LOAN_DIFF_ROWS = [
   [null,null,null,null,null,null],
   [null,null,null,null,null,null],
   [null,null,null,null,null,null],
+];
+
+const KYC_TABLES = [
+  {
+    "title": "PAN/Aadhaar not matching",
+    "desc": "Customers whose PAN and Aadhar records don't match",
+    "headers": [
+      "Customer",
+      "Not Matching KYC"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "PAN vs Aadhar name mismatch"
+      ],
+      [
+        "Sneha Patil",
+        "Aadhar DOB mismatch"
+      ],
+      [
+        "Imran Shaikh",
+        "PAN vs Aadhar name mismatch"
+      ],
+      [
+        "Kavita Joshi",
+        "Aadhar address mismatch"
+      ],
+      [
+        "Vikram Nair",
+        "PAN number invalid format"
+      ],
+      [
+        "Ayesha Khan",
+        "Aadhar photo mismatch"
+      ]
+    ],
+    "id": "kyc_pan_aadhaar_not_matching"
+  },
+  {
+    "title": "Last KYC updated",
+    "desc": "Days since last KYC refresh, by priority",
+    "headers": [
+      "Customer Name",
+      "Days",
+      "Priority"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "450",
+        "High"
+      ],
+      [
+        "Sneha Patil",
+        "395",
+        "High"
+      ],
+      [
+        "Imran Shaikh",
+        "280",
+        "Medium"
+      ],
+      [
+        "Kavita Joshi",
+        "210",
+        "Medium"
+      ],
+      [
+        "Vikram Nair",
+        "190",
+        "Low"
+      ],
+      [
+        "Ayesha Khan",
+        "120",
+        "Low"
+      ]
+    ],
+    "id": "kyc_last_kyc_updated"
+  },
+  {
+    "title": "Missing KYC",
+    "desc": "Customers with one or more missing KYC identifiers",
+    "headers": [
+      "Customer Name",
+      "Name of Missing ID",
+      "Priority"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "PAN",
+        "High"
+      ],
+      [
+        "Sneha Patil",
+        "Aadhar",
+        "High"
+      ],
+      [
+        "Imran Shaikh",
+        "ITR Copy",
+        "Medium"
+      ],
+      [
+        "Kavita Joshi",
+        "Nominee Details",
+        "Low"
+      ],
+      [
+        "Vikram Nair",
+        "Aadhar",
+        "High"
+      ],
+      [
+        "Ayesha Khan",
+        "PAN",
+        "High"
+      ]
+    ],
+    "id": "kyc_missing_kyc"
+  },
+  {
+    "title": "VKYC",
+    "desc": "Flags raised during the video KYC process",
+    "headers": [
+      "Customer Name",
+      "Issue"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "Photo not matching video"
+      ],
+      [
+        "Sneha Patil",
+        "PAN not matching"
+      ],
+      [
+        "Imran Shaikh",
+        "PAN missing"
+      ],
+      [
+        "Kavita Joshi",
+        "Aadhar missing"
+      ],
+      [
+        "Vikram Nair",
+        "Video call disconnected mid-session"
+      ],
+      [
+        "Ayesha Khan",
+        "Address not matching video"
+      ]
+    ],
+    "id": "kyc_vkyc"
+  },
+  {
+    "title": "Document Not Uploaded",
+    "desc": "Customers with a KYC document type absent from the system",
+    "headers": [
+      "Customer Name",
+      "Document",
+      "Priority"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "PAN, Aadhar",
+        "High"
+      ],
+      [
+        "Sneha Patil",
+        "ITR Copy",
+        "Medium"
+      ],
+      [
+        "Imran Shaikh",
+        "PAN",
+        "High"
+      ],
+      [
+        "Kavita Joshi",
+        "Aadhar",
+        "High"
+      ],
+      [
+        "Vikram Nair",
+        "PAN, ITR Copy",
+        "High"
+      ],
+      [
+        "Ayesha Khan",
+        "Nominee Details",
+        "Low"
+      ]
+    ],
+    "id": "kyc_document_not_uploaded"
+  },
+  {
+    "title": "Duplicate Aadhar Usage",
+    "desc": "Same Aadhar number linked to multiple customer records",
+    "headers": [
+      "Aadhar Number",
+      "Number"
+    ],
+    "rows": [
+      [
+        "XXXX-XXXX-4821",
+        "7"
+      ],
+      [
+        "XXXX-XXXX-6034",
+        "4"
+      ],
+      [
+        "XXXX-XXXX-7719",
+        "2"
+      ],
+      [
+        "XXXX-XXXX-2280",
+        "2"
+      ],
+      [
+        "XXXX-XXXX-9145",
+        "1"
+      ],
+      [
+        "XXXX-XXXX-3367",
+        "1"
+      ]
+    ],
+    "id": "kyc_duplicate_aadhar_usage"
+  },
+  {
+    "title": "Duplicate PAN Usage",
+    "desc": "Same PAN number linked to multiple customer records",
+    "headers": [
+      "PAN Number",
+      "Number"
+    ],
+    "rows": [
+      [
+        "ABCPD1234E",
+        "7"
+      ],
+      [
+        "QWERT5678F",
+        "4"
+      ],
+      [
+        "LMNOP9012G",
+        "2"
+      ],
+      [
+        "ZXCVB3456H",
+        "2"
+      ],
+      [
+        "HGFED7890J",
+        "1"
+      ],
+      [
+        "TYUIO2345K",
+        "1"
+      ]
+    ],
+    "id": "kyc_duplicate_pan_usage"
+  }
+];
+const LOAN_TABLES = [
+  {
+    "title": "Pending NPA Classification",
+    "desc": "Days overdue on accounts not yet flagged as NPA",
+    "headers": [
+      "Customer",
+      "NPA Days"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "5"
+      ],
+      [
+        "Sneha Patil",
+        "6"
+      ],
+      [
+        "Imran Shaikh",
+        "7"
+      ],
+      [
+        "Kavita Joshi",
+        "8"
+      ],
+      [
+        "Vikram Nair",
+        "9"
+      ],
+      [
+        "Ayesha Khan",
+        "4"
+      ]
+    ],
+    "id": "loan_pending_npa_classification"
+  },
+  {
+    "title": "Sanction Letter Deviation",
+    "desc": "Actual disbursed terms compared against sanction letter terms",
+    "headers": [
+      "Customer",
+      "Actual",
+      "Sanction"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "\u20b910 Cr",
+        "\u20b99 Cr"
+      ],
+      [
+        "Sneha Patil",
+        "13% rate of interest",
+        "12% rate of interest"
+      ],
+      [
+        "Imran Shaikh",
+        "EMI \u20b92,000",
+        "EMI \u20b91,000"
+      ],
+      [
+        "Kavita Joshi",
+        "Principal amount \u20b91.05 Cr",
+        "Principal amount \u20b91.02 Cr"
+      ],
+      [
+        "Vikram Nair",
+        "\u20b96.5 Cr",
+        "\u20b96 Cr"
+      ],
+      [
+        "Ayesha Khan",
+        "14% rate of interest",
+        "12.5% rate of interest"
+      ]
+    ],
+    "id": "loan_sanction_letter_deviation"
+  },
+  {
+    "title": "Approval Breaches",
+    "desc": "Sanctions approved beyond the approver's authorised limit",
+    "headers": [
+      "Loan Approval Person",
+      "Above Limit"
+    ],
+    "rows": [
+      [
+        "Ramesh Kulkarni",
+        "15 Lacs"
+      ],
+      [
+        "Sita Rane",
+        "20 Lacs"
+      ],
+      [
+        "Anil Verma",
+        "25 Lacs"
+      ],
+      [
+        "Priya Menon",
+        "12 Lacs"
+      ],
+      [
+        "Suresh Iyer",
+        "18 Lacs"
+      ],
+      [
+        "Neha Kapoor",
+        "22 Lacs"
+      ]
+    ],
+    "id": "loan_approval_breaches"
+  },
+  {
+    "title": "Multi-Loan Exposure",
+    "desc": "Customers holding more than one active loan account",
+    "headers": [
+      "Customer",
+      "Loan Number"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "7"
+      ],
+      [
+        "Sneha Patil",
+        "5"
+      ],
+      [
+        "Imran Shaikh",
+        "3"
+      ],
+      [
+        "Kavita Joshi",
+        "4"
+      ],
+      [
+        "Vikram Nair",
+        "2"
+      ],
+      [
+        "Ayesha Khan",
+        "3"
+      ]
+    ],
+    "id": "loan_multi_loan_exposure"
+  },
+  {
+    "title": "Restructured Accounts",
+    "desc": "Loans restructured and the revised repayment duration",
+    "headers": [
+      "Customer",
+      "Loan Restructure",
+      "Duration of Loan"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "Tenure extended",
+        "10 years"
+      ],
+      [
+        "Sneha Patil",
+        "EMI reduced",
+        "9 years"
+      ],
+      [
+        "Imran Shaikh",
+        "Moratorium granted",
+        "7 years"
+      ],
+      [
+        "Kavita Joshi",
+        "Interest rate revised",
+        "8 years"
+      ],
+      [
+        "Vikram Nair",
+        "Tenure extended",
+        "12 years"
+      ],
+      [
+        "Ayesha Khan",
+        "EMI reduced",
+        "6 years"
+      ]
+    ],
+    "id": "loan_restructured_accounts"
+  },
+  {
+    "title": "Joint Venture Account Entries",
+    "desc": "Entries flagged for monitoring in JV-linked accounts",
+    "headers": [
+      "Customer",
+      "Entry",
+      "Amount Involved"
+    ],
+    "rows": [
+      [
+        "Rohan Deshmukh",
+        "Capital contribution",
+        "9"
+      ],
+      [
+        "Sneha Patil",
+        "Profit withdrawal",
+        "3"
+      ],
+      [
+        "Imran Shaikh",
+        "Partner loan transfer",
+        "2"
+      ],
+      [
+        "Kavita Joshi",
+        "Asset revaluation",
+        "5"
+      ],
+      [
+        "Vikram Nair",
+        "Capital contribution",
+        "6"
+      ],
+      [
+        "Ayesha Khan",
+        "Profit withdrawal",
+        "4"
+      ]
+    ],
+    "id": "loan_joint_venture_account_entries"
+  }
 ];
 
 function loanMoney(v) {
@@ -2016,7 +2518,23 @@ const OBS_TITLES = {
   'hr_dup_pan_aadhaar': 'Duplicate PAN / Aadhaar Number Observations',
   'hr_missing_ids': 'Employees Without PAN / Aadhaar / Bank Details Observations',
   'hr_missing_master': 'Missing Department / Location / Grade Observations',
-  'hr_same_pan': 'Same PAN For Multiple Employees Observations'
+  'hr_same_pan': 'Same PAN For Multiple Employees Observations',
+  // KYC categories
+  'kyc_pan_aadhaar_not_matching': 'PAN/Aadhaar Not Matching Observations',
+  'kyc_last_kyc_updated': 'Last KYC Updated Observations',
+  'kyc_missing_kyc': 'Missing KYC Observations',
+  'kyc_vkyc': 'VKYC Observations',
+  'kyc_document_not_uploaded': 'Document Not Uploaded Observations',
+  'kyc_duplicate_aadhar_usage': 'Duplicate Aadhaar Usage Observations',
+  'kyc_duplicate_pan_usage': 'Duplicate PAN Usage Observations',
+  // LOAN categories
+  'loan_pending_npa_classification': 'Pending NPA Classification Observations',
+  'loan_sanction_letter_deviation': 'Sanction Letter Deviation Observations',
+  'loan_approval_breaches': 'Approval Breaches Observations',
+  'loan_multi_loan_exposure': 'Multi-Loan Exposure Observations',
+  'loan_restructured_accounts': 'Restructured Accounts Observations',
+  'loan_joint_venture_account_entries': 'Joint Venture Account Entries Observations',
+
 };
 
 const DROPDOWNS = {
@@ -2048,11 +2566,10 @@ async function openObservationModal(category) {
 }
 
 function obsBackTarget() {
-  // Routes the observation log's Back button to whichever module opened
-  // it, based on the category prefix: 'itc_' → IT Controls (added),
-  // 'hr_' → HR and Payroll (new), anything else → Data Hygiene (original).
   if (currentObsCategory && currentObsCategory.startsWith('itc_')) return 'it-controls';
   if (currentObsCategory && currentObsCategory.startsWith('hr_')) return 'hr-payroll';
+  if (currentObsCategory && currentObsCategory.startsWith('kyc_')) return 'kyc';
+  if (currentObsCategory && currentObsCategory.startsWith('loan_')) return 'other-loan';
   return 'hygiene';
 }
 
@@ -2323,3 +2840,122 @@ function hexA(hex, alpha) {
 }
 
 loadData();
+function generateCardHtml(t) {
+  const headBtn = `<div style="display:flex;gap:6px;align-items:center;">
+      <button class="btn ghost sm" type="button" onclick="downloadDynamicExcel('${t.id}')" style="padding:5px 10px;font-size:11px;">📥 Excel</button>
+      <button class="obs-card-btn" type="button" onclick="openObservationModal('${t.id}')">Observation</button>
+  </div>`;
+  const cardHead = `
+      <div class="card-h">
+        <div class="grow"><div class="ttl">${esc(t.title)}</div><div class="desc">${esc(t.desc)}</div></div>
+        ${headBtn}
+      </div>`;
+
+  const headCells = t.headers.map(h => `<th>${esc(h)}</th>`).join('');
+  
+  const rowsHtml = t.rows.map((row, i) => {
+    const issueId = `${t.id}-${i}`;
+    // Assume first column is the entity key
+    const entityKey = row[0] || `row-${i}`;
+    const r = {
+      ISSUE_ID: issueId,
+      CATEGORY: t.id,
+      ENTITY_KEY: entityKey,
+      REMARK: getSavedRemark(issueId)
+    };
+    
+    const dataCells = row.map(cell => {
+      // Check if it's a number to right align, or just use string
+      const isNum = /^\d+$/.test(cell);
+      return `<td${isNum ? ' class="c num"' : ''}>${esc(cell)}</td>`;
+    }).join('');
+    
+    return `<tr>${dataCells}${renderRemarkCell(r)}</tr>`;
+  }).join('');
+
+  return `
+    <div class="card" style="margin-bottom:18px;">${cardHead}
+      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl">
+        <thead><tr>${headCells}<th>Remark</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div></div>
+    </div>`;
+}
+
+function renderKyc() {
+  const container = document.getElementById('kyc-tables-container');
+  if (!container) return;
+  
+  let html = '';
+  // Arrange in grid g2
+  for (let i = 0; i < KYC_TABLES.length; i += 2) {
+    const t1 = KYC_TABLES[i];
+    const t2 = KYC_TABLES[i+1];
+    if (t2) {
+      html += `<div class="grid g2"><div>${generateCardHtml(t1)}</div><div>${generateCardHtml(t2)}</div></div>`;
+    } else {
+      html += `<div>${generateCardHtml(t1)}</div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+function renderLoan() {
+  const container = document.getElementById('loan-tables-container');
+  if (!container) return;
+  
+  let html = '';
+  // Arrange in grid g2
+  for (let i = 0; i < LOAN_TABLES.length; i += 2) {
+    const t1 = LOAN_TABLES[i];
+    const t2 = LOAN_TABLES[i+1];
+    if (t2) {
+      html += `<div class="grid g2"><div>${generateCardHtml(t1)}</div><div>${generateCardHtml(t2)}</div></div>`;
+    } else {
+      html += `<div>${generateCardHtml(t1)}</div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+function downloadDynamicExcel(tableId) {
+  let tableConfig = KYC_TABLES.find(t => t.id === tableId) || LOAN_TABLES.find(t => t.id === tableId);
+  if (!tableConfig) return;
+
+  const escapeXml = v => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  let xml = '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Sheet1"><Table>';
+  
+  // Headers
+  xml += '<Row>';
+  tableConfig.headers.forEach(h => {
+    xml += `<Cell><Data ss:Type="String">${escapeXml(h)}</Data></Cell>`;
+  });
+  xml += `<Cell><Data ss:Type="String">Remark</Data></Cell>`;
+  xml += '</Row>';
+
+  // Rows
+  tableConfig.rows.forEach((row, i) => {
+    xml += '<Row>';
+    row.forEach(cell => {
+      xml += `<Cell><Data ss:Type="String">${escapeXml(cell)}</Data></Cell>`;
+    });
+    const issueId = `${tableConfig.id}-${i}`;
+    const remark = getSavedRemark(issueId);
+    xml += `<Cell><Data ss:Type="String">${escapeXml(remark)}</Data></Cell>`;
+    xml += '</Row>';
+  });
+
+  xml += '</Table></Worksheet></Workbook>';
+
+  const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${tableConfig.id}_Report.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
