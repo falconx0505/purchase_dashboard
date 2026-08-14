@@ -32,10 +32,10 @@ function goTo(pageId) {
   const tab = document.querySelector(`[data-page="${pageId}"]`);
   if (page) page.classList.add('active');
   if (tab) tab.classList.add('active');
-  // 'it-controls', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
+  // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan');
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
 }
@@ -396,7 +396,7 @@ function renderAuditTrailPage() {
       </table></div></div>
     </div>
     <div class="card">
-      <div class="card-h"><div class="grow"><div class="ttl">Detailed Audit Trail Log</div><div class="desc">Individual audit record details matching active filters (${filteredRows.length} record(s))</div></div></div>
+      <div class="card-h"><div class="grow"><div class="ttl">Detailed Audit Trail Log</div><div class="desc">Individual audit record details matching active filters </div></div></div>
       <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" style="white-space:nowrap">
         <thead><tr><th>Vendor No</th><th>Vendor Name</th><th>Field Changed</th><th>Field Description</th><th>Indicator</th><th>Old Value</th><th>New Value</th><th>Changed By</th><th>Risk</th><th>Year</th><th>Qty</th><th>Month</th></tr></thead>
         <tbody>${detailRowsHtml}</tbody>
@@ -427,10 +427,17 @@ function renderCurrentPage(pageId) {
   // LOAN_CALC_ROWS+LOAN_BANK_ROWS+LOAN_DIFF_ROWS) and don't need
   // RAW.purchase data to be loaded.
   if (pageId === 'it-controls') { renderItControls(); return; }
+  if (pageId === 'control-inventory') { renderControlInventory(); return; }
   if (pageId === 'hr-payroll') { renderHrPayroll(); return; }
   // Loan and Repayment Schedule: routes to renderLoanRepayment(), added
   // alongside the two lines above for the same Home-only, no-RAW-needed reason.
   if (pageId === 'loan-repayment') { renderLoanRepayment(); return; }
+  // KYC DETAILS: static hardcoded page, no rendering function needed —
+  // markup lives directly in index.html (#page-kyc), same Home-only pattern.
+  if (pageId === 'kyc') { return; }
+  // OTHER LOAN DETAILS: static hardcoded page, no rendering function needed —
+  // markup lives directly in index.html (#page-other-loan), same Home-only pattern.
+  if (pageId === 'other-loan') { return; }
   // AUDIT TRAIL PAGE: this page uses its own backend endpoint and should render
   // even before the main purchase workbook has finished loading.
   if (pageId === 'audit-trail') { loadAuditTrailData(); return; }
@@ -471,51 +478,57 @@ const IT_TABLES = [
     title: 'Access After Last Working Day',
     desc: 'System access retained after employee exit',
     metricLabel: 'Days After Last Working Day',
-    min: 1, max: 20
+    min: 1, max: 20,
+    employees: ['Priya Sharma', 'Rohit Verma', 'Ananya Iyer', 'Karan Mehta', 'Sneha Reddy', 'Arjun Nair', 'Divya Pillai']
   },
   {
     id: 'inactive_90', category: 'itc_inactive_90',
     title: 'Users Not Logged In for 90+ Days',
     desc: 'Dormant accounts still active in the system',
     metricLabel: 'Days Not Logged In',
-    min: 91, max: 400
+    min: 91, max: 400,
+    employees: ['Vikram Singh', 'Neha Kulkarni', 'Aditya Rao', 'Ishita Desai', 'Manish Gupta', 'Pooja Joshi', 'Siddharth Kapoor']
   },
   {
     id: 'pwd_stale', category: 'itc_pwd_stale',
     title: 'Password Not Changed',
     desc: 'Accounts exceeding password rotation policy',
     metricLabel: 'Days Since Password Changed',
-    min: 91, max: 250
+    min: 91, max: 250,
+    employees: ['Ravi Kumar', 'Meera Nair', 'Sanjay Patil', 'Kavya Menon', 'Nikhil Chandra', 'Anjali Rao', 'Deepak Bhatt']
   },
   {
     id: 'after_hours', category: 'itc_after_hours',
     title: 'Login Outside Business Hours',
     desc: 'Sign-ins recorded outside approved working hours',
     metricLabel: 'Logins After Office Hours',
-    min: 1, max: 15
+    min: 1, max: 15,
+    employees: ['Tanvi Shah', 'Aakash Bose', 'Ritika Malhotra', 'Varun Sethi', 'Shreya Agarwal', 'Harsh Vardhan', 'Nisha Kohli']
   },
   {
     id: 'failed_login', category: 'itc_failed_login',
     title: 'Multiple Failed Login Attempts',
     desc: 'Repeated unsuccessful sign-in attempts',
     metricLabel: 'Failed Login Attempts',
-    min: 5, max: 45
+    min: 5, max: 45,
+    employees: ['Gaurav Khanna', 'Swati Deshmukh', 'Yash Thakur', 'Preeti Saxena', 'Manoj Tiwari', 'Radhika Iyengar', 'Aman Chopra']
   },
   {
     id: 'above_limit', category: 'itc_above_limit',
     title: 'Approved Above Authorized Limit',
     desc: 'Transactions approved beyond the approver\u2019s authority',
     metricLabel: 'Transactions Above Limit',
-    min: 3, max: 35
+    min: 3, max: 35,
+    employees: ['Ramesh Iyer', 'Sunita Bhatia', 'Kunal Oberoi', 'Lavanya Pillai', 'Rahul Dutta', 'Simran Bakshi', 'Ajay Mathur']
   }
 ];
-
+ 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
+ 
 function itControlCardHtml(t) {
-  const rowsHtml = IT_EMPLOYEES.map((name, i) => {
+  const rowsHtml = t.employees.map((name, i) => {
     const issueId = `itc-${t.id}-${name.toLowerCase().replace(/\s+/g, '-')}`;
     const r = {
       ISSUE_ID: issueId,
@@ -526,7 +539,7 @@ function itControlCardHtml(t) {
     const value = randInt(t.min, t.max);
     return `<tr><td>${esc(name)}</td><td class="r">${value}</td>${renderRemarkCell(r)}</tr>`;
   }).join('');
-
+ 
   return `
     <div class="card">
       <div class="card-h">
@@ -539,13 +552,85 @@ function itControlCardHtml(t) {
       </table></div></div>
     </div>`;
 }
-
+ 
 function renderItControls() {
   const row1 = document.getElementById('itc-row-1');
   const row2 = document.getElementById('itc-row-2');
   if (!row1 || !row2) return;
   row1.innerHTML = IT_TABLES.slice(0, 3).map(itControlCardHtml).join('');
   row2.innerHTML = IT_TABLES.slice(3, 6).map(itControlCardHtml).join('');
+}
+
+const CONTROL_INVENTORY = [
+  { control: 'IT controls', subcontrols: [
+    'access after last working day',
+    'user not logged in for 90+ days',
+    'password not changed',
+    'login outside business hours',
+    'multiple failed login attempts',
+    'approved above authorized limit'
+  ] },
+  { control: 'hr and payroll', subcontrols: [
+    'multiple employees using same bank account',
+    'duplicate pan/aadhaar/bank account',
+    'employees without PAN/Aadhaar bank account',
+    'missing department/location/grade',
+    'same PAN for multiple employees'
+  ] },
+  { control: 'Audit trail', subcontrols: [] },
+  { control: 'Loan and repayment schedule', subcontrols: [
+    'as per calculation, as per bank, as per difference'
+  ] },
+  { control: 'Purchase control dashboard', subcontrols: [
+    'Multiple tax code',
+    'same product multiple gst rate',
+    'duplicate customer name',
+    'product name check',
+    'product code check'
+  ] }
+];
+
+const CONTROL_INVENTORY_REGIONS = ['Bangalore', 'Mumbai', 'Delhi NCR', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad'];
+const CONTROL_INVENTORY_EMAILS = [
+  'aarav.shah@example.com', 'ananya.iyer@example.com', 'arjun.nair@example.com',
+  'divya.pillai@example.com', 'karan.mehta@example.com', 'priya.sharma@example.com',
+  'rohit.verma@example.com', 'sneha.reddy@example.com', 'vikram.singh@example.com'
+];
+
+function controlInventoryDetails(index) {
+  const end = new Date(2026, randInt(6, 11), randInt(1, 28));
+  const start = new Date(end);
+  start.setMonth(start.getMonth() - (randInt(0, 1) ? 3 : 6));
+  const formatDate = date => date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const emails = [...CONTROL_INVENTORY_EMAILS]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 3)
+    .join(', ');
+  return {
+    start: formatDate(start),
+    end: formatDate(end),
+    region: CONTROL_INVENTORY_REGIONS[index % CONTROL_INVENTORY_REGIONS.length],
+    emails
+  };
+}
+
+function renderControlInventory() {
+  const body = document.getElementById('control-inventory-body');
+  if (!body) return;
+  let index = 0;
+  body.innerHTML = CONTROL_INVENTORY.map(group => {
+    if (!group.subcontrols.length) {
+      return `<tr><td>${esc(group.control)}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
+    }
+    const rows = group.subcontrols.map((subcontrol, subcontrolIndex) => {
+      const details = controlInventoryDetails(index++);
+      const controlCell = subcontrolIndex === 0
+        ? `<td rowspan="${group.subcontrols.length}">${esc(group.control)}</td>`
+        : '';
+      return `<tr>${controlCell}<td>${esc(subcontrol)}</td><td>${esc(details.start)}</td><td>${esc(details.end)}</td><td>${esc(details.region)}</td><td>${esc(details.emails)}</td><td></td><td></td></tr>`;
+    });
+    return rows.join('');
+  }).join('');
 }
 // ─────────────────────────────────────────────────────────────
 // END IT CONTROLS MODULE

@@ -441,6 +441,26 @@ table.tbl tr.row-warn td { background: var(--warnbg); }
 }
 .section-label::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 
+/* Control inventory access is positioned at the top-right of the home page. */
+.home-page-head {
+  position: relative;
+  width: 100%;
+  align-self: stretch;
+}
+.home-page-head .control-inventory-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.control-inventory-table th,
+.control-inventory-table td { white-space: nowrap; }
+@media (max-width: 620px) {
+  .home-page-head .control-inventory-btn {
+    position: static;
+    margin-top: 14px;
+  }
+}
+
 /* ── STAT INLINE ──────────────────────────────────── */
 .stat-inline { display: flex; align-items: baseline; gap: 8px; }
 .stat-big { font-family: var(--num); font-weight: 700; font-size: 22px; color: var(--ink); }
