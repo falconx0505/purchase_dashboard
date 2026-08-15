@@ -99,6 +99,21 @@ body {
 .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 0 3px rgba(243,122,4,.18); }
 .hdr-accent { height: 3px; background: linear-gradient(90deg, var(--red), var(--orange) 55%, var(--amber)); }
 
+/* ── USER BADGE (below navbar) ───────────────────────── */
+.user-badge-row {
+  display: flex; justify-content: flex-end;
+  padding: 10px 26px 0;
+  background: var(--bg);
+}
+.chip-user {
+  display: inline-flex; align-items: center;
+  font-family: var(--display); font-weight: 700;
+  font-size: 13.5px; letter-spacing: .2px;
+  padding: 8px 18px; border-radius: 999px;
+  border: 1px solid var(--orange);
+  background: var(--peach); color: var(--maroon);
+}
+
 /* ── TOP NAV TABS ─────────────────────────────────── */
 .topnav {
   background: #fff;
@@ -288,6 +303,26 @@ body.on-home .topnav { display: none; }
 .card-h .desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .card-b { padding: 14px 16px; }
 .card-b.no-pad { padding: 0; }
+
+/* ── AD-HOC ANALYSIS BOX (home page) ─────────────────── */
+.adhoc-card {
+  width: 100%;
+  margin-top: 18px;
+  box-shadow: var(--shh);
+  border-radius: var(--r);
+  border: 1px solid var(--line2);
+}
+.adhoc-card .eyebrow { margin-bottom: 10px; }
+.adhoc-row { display: flex; align-items: center; gap: 10px; }
+.adhoc-input {
+  flex: 1; min-width: 0;
+  font-family: var(--body); font-size: 13px; color: var(--ink);
+  padding: 11px 14px; border-radius: 10px;
+  border: 1px solid var(--line2); background: var(--bg);
+}
+.adhoc-input::placeholder { color: var(--faint); }
+.adhoc-input:focus { outline: none; border-color: var(--orange); background: var(--card); }
+.adhoc-btn { flex-shrink: 0; padding: 11px 22px; border-radius: 10px; font-size: 13px; }
 
 /* ── PILLS / TAGS ─────────────────────────────────── */
 .pill {

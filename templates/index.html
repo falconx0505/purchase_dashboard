@@ -44,6 +44,11 @@
     <button class="nav-tab" data-page="upload-observation">📁 Upload </button>
   </nav>
 
+  <!-- ── USER BADGE (below navbar, all pages) ─────── -->
+  <div class="user-badge-row">
+    <div class="chip chip-user">Welcome, Sobiya</div>
+  </div>
+
   <!-- ── PAGES CONTAINER ────────────────────────── -->
   <div id="data-loading" class="data-loading" role="status" aria-live="polite">
     <div class="loading-card"><span class="loading-spinner"></span><span class="loading-message">Loading dashboard
@@ -54,7 +59,7 @@
   <div class="page active" id="page-home">
     <div class="home-wrap">
       <div class="home-page-head">
-        <h1 class="app-name">Enterprise Control Suite</h1>
+        <h1 class="app-name">Continuous Control Monitoring Dashboard</h1>
         <!-- <p class="app-sub">Select a module from the summary table below to open its control dashboard.</p> -->
         <button type="button" class="btn primary control-inventory-btn" onclick="goTo('control-inventory')">User Access</button>
       </div>
@@ -148,6 +153,16 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card adhoc-card">
+        <div class="card-b">
+          <div class="eyebrow">Ad-Hoc Analysis · Plain Language</div>
+          <div class="adhoc-row">
+            <input type="text" class="adhoc-input" placeholder='e.g. "Show accounts with cash deposits just under ₹10 lakh in the Q1 dump"' />
+            <button type="button" class="btn primary adhoc-btn">Analyze</button>
           </div>
         </div>
       </div>

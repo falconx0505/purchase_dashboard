@@ -1125,7 +1125,7 @@ const LOAN_DIFF_ROWS = [
 
 const KYC_TABLES = [
   {
-    "title": "PAN/Aadhaar not matching",
+    "title": "PAN & Aadhaar not matching",
     "desc": "Customers whose PAN and Aadhar records don't match",
     "headers": [
       "Customer",
@@ -1141,7 +1141,7 @@ const KYC_TABLES = [
         "Aadhar DOB mismatch"
       ],
       [
-        "Imran Shaikh",
+        "Shanaya Shaikh",
         "PAN vs Aadhar name mismatch"
       ],
       [
@@ -1149,7 +1149,7 @@ const KYC_TABLES = [
         "Aadhar address mismatch"
       ],
       [
-        "Vikram Nair",
+        "Veer Nair",
         "PAN number invalid format"
       ],
       [
@@ -1161,49 +1161,49 @@ const KYC_TABLES = [
   },
   {
     "title": "Last KYC updated",
-    "desc": "Days since last KYC refresh, by priority",
+    "desc": "Years since last KYC refresh, by priority",
     "headers": [
       "Customer Name",
-      "Days",
+      "Years",
       "Priority"
     ],
     "rows": [
       [
-        "Rohan Deshmukh",
-        "450",
-        "High"
-      ],
-      [
-        "Sneha Patil",
-        "395",
-        "High"
-      ],
-      [
-        "Imran Shaikh",
-        "280",
+        "Rohan Joshi",
+        "10",
         "Medium"
       ],
       [
-        "Kavita Joshi",
-        "210",
+        "Sneha Patra",
+        "12",
+        "High"
+      ],
+      [
+        "Ushma Sewani",
+        "5",
         "Medium"
       ],
       [
-        "Vikram Nair",
-        "190",
+        "Kavita Varma",
+        "8",
+        "Medium"
+      ],
+      [
+        "Arnav Nair",
+        "2",
         "Low"
       ],
       [
-        "Ayesha Khan",
-        "120",
-        "Low"
+        "Ayesha Nair",
+        "12",
+        "High"
       ]
     ],
     "id": "kyc_last_kyc_updated"
   },
   {
     "title": "Missing KYC",
-    "desc": "Customers with one or more missing KYC identifiers",
+    "desc": "Customers KYC document absent from the system",
     "headers": [
       "Customer Name",
       "Name of Missing ID",
@@ -1211,7 +1211,7 @@ const KYC_TABLES = [
     ],
     "rows": [
       [
-        "Rohan Deshmukh",
+        "Imran Shaikh",
         "PAN",
         "High"
       ],
@@ -1221,12 +1221,12 @@ const KYC_TABLES = [
         "High"
       ],
       [
-        "Imran Shaikh",
+        "Aanya Chhatwani",
         "ITR Copy",
         "Medium"
       ],
       [
-        "Kavita Joshi",
+        "Khyati Joshi",
         "Nominee Details",
         "Low"
       ],
@@ -1236,7 +1236,7 @@ const KYC_TABLES = [
         "High"
       ],
       [
-        "Ayesha Khan",
+        "Irfan Khan",
         "PAN",
         "High"
       ]
@@ -1245,7 +1245,7 @@ const KYC_TABLES = [
   },
   {
     "title": "VKYC",
-    "desc": "Flags raised during the video KYC process",
+    "desc": "Flags raised during the Video KYC process",
     "headers": [
       "Customer Name",
       "Issue"
@@ -1256,15 +1256,15 @@ const KYC_TABLES = [
         "Photo not matching video"
       ],
       [
-        "Sneha Patil",
+        "Sana Sharma",
         "PAN not matching"
       ],
       [
-        "Imran Shaikh",
+        "Isha Rathi",
         "PAN missing"
       ],
       [
-        "Kavita Joshi",
+        "Pranjal Satav",
         "Aadhar missing"
       ],
       [
@@ -1272,7 +1272,7 @@ const KYC_TABLES = [
         "Video call disconnected mid-session"
       ],
       [
-        "Ayesha Khan",
+        "Palak Ardeja",
         "Address not matching video"
       ]
     ],
@@ -1288,22 +1288,22 @@ const KYC_TABLES = [
     ],
     "rows": [
       [
-        "Rohan Deshmukh",
+        "Sunaina Deshmukh",
         "PAN, Aadhar",
         "High"
       ],
       [
-        "Sneha Patil",
+        "Siksha Patil",
         "ITR Copy",
         "Medium"
       ],
       [
-        "Imran Shaikh",
+        "Irad Shaikh",
         "PAN",
         "High"
       ],
       [
-        "Kavita Joshi",
+        "Kalyani Kher",
         "Aadhar",
         "High"
       ],
@@ -1313,7 +1313,7 @@ const KYC_TABLES = [
         "High"
       ],
       [
-        "Ayesha Khan",
+        "Aanya Verma",
         "Nominee Details",
         "Low"
       ]
@@ -1401,28 +1401,28 @@ const LOAN_TABLES = [
     ],
     "rows": [
       [
-        "Rohan Deshmukh",
-        "5"
+        "Annanya Nagrik",
+        "50"
       ],
       [
-        "Sneha Patil",
-        "6"
+        "Nikita Chim",
+        "40"
       ],
       [
-        "Imran Shaikh",
-        "7"
+        "Akshada Dongre",
+        "33"
       ],
       [
-        "Kavita Joshi",
-        "8"
+        "Harshita Ganwani",
+        "45"
       ],
       [
         "Vikram Nair",
-        "9"
+        "21"
       ],
       [
-        "Ayesha Khan",
-        "4"
+        "Manjiri Dhoran",
+        "30"
       ]
     ],
     "id": "loan_pending_npa_classification"
@@ -1437,12 +1437,12 @@ const LOAN_TABLES = [
     ],
     "rows": [
       [
-        "Rohan Deshmukh",
+        "Sarvesh Magad",
         "\u20b910 Cr",
         "\u20b99 Cr"
       ],
       [
-        "Sneha Patil",
+        "Tanmay Warkad",
         "13% rate of interest",
         "12% rate of interest"
       ],
@@ -1452,12 +1452,12 @@ const LOAN_TABLES = [
         "EMI \u20b91,000"
       ],
       [
-        "Kavita Joshi",
+        "Tanush Ruchwani",
         "Principal amount \u20b91.05 Cr",
         "Principal amount \u20b91.02 Cr"
       ],
       [
-        "Vikram Nair",
+        "Veer Varma",
         "\u20b96.5 Cr",
         "\u20b96 Cr"
       ],
@@ -1479,30 +1479,31 @@ const LOAN_TABLES = [
     "rows": [
       [
         "Ramesh Kulkarni",
-        "15 Lacs"
+        "15 Cr"
       ],
       [
         "Sita Rane",
-        "20 Lacs"
+        "20 Cr"
       ],
       [
         "Anil Verma",
-        "25 Lacs"
+        "25 Cr"
       ],
       [
         "Priya Menon",
-        "12 Lacs"
+        "12 Cr"
       ],
       [
         "Suresh Iyer",
-        "18 Lacs"
+        "18 Cr"
       ],
       [
         "Neha Kapoor",
-        "22 Lacs"
+        "22 Cr"
       ]
     ],
-    "id": "loan_approval_breaches"
+    "id": "loan_approval_breaches",
+    "numStyle": true
   },
   {
     "title": "Multiple Loan Account Of Same Person",
@@ -1517,27 +1518,28 @@ const LOAN_TABLES = [
         "7"
       ],
       [
-        "Sneha Patil",
+        "Vinti Patil",
         "5"
       ],
       [
-        "Imran Shaikh",
+        "Sobiya Shaikh",
         "3"
       ],
       [
-        "Kavita Joshi",
+        "Khyati Joshi",
         "4"
       ],
       [
-        "Vikram Nair",
+        "Tanmay Sharma",
         "2"
       ],
       [
-        "Ayesha Khan",
+        "Arva Khan",
         "3"
       ]
     ],
-    "id": "loan_multi_loan_exposure"
+    "id": "loan_multi_loan_exposure",
+    "numStyle": true
   },
   {
     "title": "Restructuring Of Loan",
@@ -1549,12 +1551,12 @@ const LOAN_TABLES = [
     ],
     "rows": [
       [
-        "Rohan Deshmukh",
+        "Rohit Khira",
         "9",
         "10 years"
       ],
       [
-        "Sneha Patil",
+        "Siksha Patil",
         "8",
         "9 years"
       ],
@@ -1564,7 +1566,7 @@ const LOAN_TABLES = [
         "7 years"
       ],
       [
-        "Kavita Joshi",
+        "Kalki Jhaveri",
         "9",
         "8 years"
       ],
@@ -1574,7 +1576,7 @@ const LOAN_TABLES = [
         "12 years"
       ],
       [
-        "Ayesha Khan",
+        "Virmala Verma",
         "5",
         "6 years"
       ]
@@ -1582,8 +1584,8 @@ const LOAN_TABLES = [
     "id": "loan_restructured_accounts"
   },
   {
-    "title": "JV Monitoring In Account",
-    "desc": "JV Monitoring",
+    "title": "JV entries In loan Account",
+    "desc": "Number of times manual intervention done in acc",
     "headers": [
       "Customer",
       "Entry",
@@ -2865,10 +2867,10 @@ function generateCardHtml(t) {
     };
     
     const dataCells = row.map(cell => {
-      // Check if it's a number to right align, or just use string
-      const isNum = /^\d+$/.test(cell);
-      return `<td${isNum ? ' class="c num"' : ''}>${esc(cell)}</td>`;
-    }).join('');
+  // Check if it's a number to right align, or just use string
+  const isNum = !t.plain && /^\d+$/.test(cell);
+  return `<td${isNum ? ' class="c num"' : ''}>${esc(cell)}</td>`;
+}).join('');
     
     return `<tr>${dataCells}${renderRemarkCell(r)}</tr>`;
   }).join('');
