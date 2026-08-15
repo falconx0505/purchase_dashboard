@@ -1393,7 +1393,7 @@ const KYC_TABLES = [
 ];
 const LOAN_TABLES = [
   {
-    "title": "Pending NPA Classification",
+    "title": "NPA Account Not Marked As NPA Days",
     "desc": "Days overdue on accounts not yet flagged as NPA",
     "headers": [
       "Customer",
@@ -1428,7 +1428,7 @@ const LOAN_TABLES = [
     "id": "loan_pending_npa_classification"
   },
   {
-    "title": "Sanction Letter Deviation",
+    "title": "Loan Details in Actual VS Sanction letter",
     "desc": "Actual disbursed terms compared against sanction letter terms",
     "headers": [
       "Customer",
@@ -1470,7 +1470,7 @@ const LOAN_TABLES = [
     "id": "loan_sanction_letter_deviation"
   },
   {
-    "title": "Approval Breaches",
+    "title": "Loan Sanction To People Above Limit",
     "desc": "Sanctions approved beyond the approver's authorised limit",
     "headers": [
       "Loan Approval Person",
@@ -1505,7 +1505,7 @@ const LOAN_TABLES = [
     "id": "loan_approval_breaches"
   },
   {
-    "title": "Multi-Loan Exposure",
+    "title": "Multiple Loan Account Of Same Person",
     "desc": "Customers holding more than one active loan account",
     "headers": [
       "Customer",
@@ -1540,50 +1540,50 @@ const LOAN_TABLES = [
     "id": "loan_multi_loan_exposure"
   },
   {
-    "title": "Restructured Accounts",
+    "title": "Restructuring Of Loan",
     "desc": "Loans restructured and the revised repayment duration",
     "headers": [
       "Customer",
-      "Loan Restructure",
+      "Loan Number",
       "Duration of Loan"
     ],
     "rows": [
       [
         "Rohan Deshmukh",
-        "Tenure extended",
+        "9",
         "10 years"
       ],
       [
         "Sneha Patil",
-        "EMI reduced",
+        "8",
         "9 years"
       ],
       [
         "Imran Shaikh",
-        "Moratorium granted",
+        "6",
         "7 years"
       ],
       [
         "Kavita Joshi",
-        "Interest rate revised",
+        "9",
         "8 years"
       ],
       [
         "Vikram Nair",
-        "Tenure extended",
+        "4",
         "12 years"
       ],
       [
         "Ayesha Khan",
-        "EMI reduced",
+        "5",
         "6 years"
       ]
     ],
     "id": "loan_restructured_accounts"
   },
   {
-    "title": "Joint Venture Account Entries",
-    "desc": "Entries flagged for monitoring in JV-linked accounts",
+    "title": "JV Monitoring In Account",
+    "desc": "JV Monitoring",
     "headers": [
       "Customer",
       "Entry",
@@ -1592,33 +1592,33 @@ const LOAN_TABLES = [
     "rows": [
       [
         "Rohan Deshmukh",
-        "Capital contribution",
-        "9"
+        "3",
+        "90,000"
       ],
       [
         "Sneha Patil",
-        "Profit withdrawal",
-        "3"
+        "4",
+        "31,000"
       ],
       [
         "Imran Shaikh",
-        "Partner loan transfer",
-        "2"
+        "9",
+        "20,000"
       ],
       [
         "Kavita Joshi",
-        "Asset revaluation",
-        "5"
+        "7",
+        "50,000"
       ],
       [
         "Vikram Nair",
-        "Capital contribution",
-        "6"
+        "7",
+        "69,000"
       ],
       [
         "Ayesha Khan",
-        "Profit withdrawal",
-        "4"
+        "3",
+        "45,000"
       ]
     ],
     "id": "loan_joint_venture_account_entries"
