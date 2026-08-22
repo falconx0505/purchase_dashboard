@@ -1,4 +1,3 @@
-# pyrefly: ignore [missing-import]
 import os
 import random
 import re
@@ -9,6 +8,7 @@ from xml.etree.ElementTree import iterparse
 from flask import Flask, render_template, jsonify, request
 from werkzeug.utils import secure_filename
 import pandas as pd
+import requests
 
 VALID_CATEGORIES = {
     # Purchase Data Hygiene categories (original module)
@@ -921,9 +921,54 @@ def _dashboard_payload(payload):
         "months": payload.get("months", []),
     }
 
+LARS_API_URL = "http://localhost:50126/ImportObservationApi.asmx/AddObservations"
+LARS_USERNAME = "admin"
+LARS_PASSWORD = "admin@123"
+
+def send_observation_to_lars(data):
+    """Maps local data to LARS JSON schema and POSTs it to their API."""
+    payload = {
+        "request": {
+            "CompanyID": 1,            # Set your real LARS CompanyID
+            "EmpId": "1001",           # Set valid LARS EmpId
+            "ReportNo": "Rep2408",     # Set/generate valid LARS ReportNo
+            "Rows": [
+                {
+                    "ObservationTitle": str(data.get("ObservationTitle", "") or "").strip(),
+                    "SBU": str(data.get("SBU", "") or "").strip(),
+                    "Category": str(data.get("category", "") or "").strip(),
+                    "ObservationType": str(data.get("ObservationType", "") or "").strip(),
+                    "RiskType": str(data.get("RiskType", "") or "").strip(),
+                    "RepeatObservation": str(data.get("RepeatObservation", "") or "New").strip(),
+                    "ObservationDescription": str(data.get("ObservationDescription", "") or "").strip(),
+                    "ShortObservation": str(data.get("ShortObservation", "") or "").strip(),
+                    "Recommendation_1": str(data.get("Recommendation", "") or "").strip(),
+                    "Auditee_1": str(data.get("Auditee", "") or "").strip(),
+                    "Corrective_ActionPlan_1": str(data.get("CorrectiveActionPlan", "") or "").strip(),
+                    "Preventive_ActionPlan_1": str(data.get("PreventiveActionPlan", "") or "").strip(),
+                    "Target_Date_Not_Applicable_1": str(data.get("TargetDateNotApplicable", "No") or "No").strip(),
+                    "Target_Date_1": str(data.get("TargetDate", "") or "").strip()
+                }
+            ]
+        }
+    }
+
+    headers = {
+        "Content-Type": "application/json",
+        "username": LARS_USERNAME,
+        "passwd": LARS_PASSWORD
+    }
+
+    # Make outbound call to LARS endpoint
+    response = requests.post(LARS_API_URL, json=payload, headers=headers, timeout=10)
+    response.raise_for_status()
+    return response.json()
+
 @app.route("/")
 def index():
     return render_template("index.html")
+
+# load purchase record
 
 @app.route("/api/data")
 def get_data():
@@ -1057,7 +1102,21 @@ def save_observation():
                 placeholders = ", ".join(["?"] * len(fields))
                 conn.execute(f"INSERT INTO observations ({cols}) VALUES ({placeholders})", vals)
             conn.commit()
-            return jsonify({"success": True})
+
+        # --- NEW CODE: Forward to LARS API ---
+        lars_status = "not_sent"
+        try:
+            lars_res = send_observation_to_lars(data)
+            lars_status = "success"
+        except Exception as lars_err:
+            print("LARS API Sync Warning:", str(lars_err))
+            lars_status = f"failed: {str(lars_err)}"
+
+        return jsonify({
+            "success": True,
+            "lars_sync": lars_status
+        })
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
