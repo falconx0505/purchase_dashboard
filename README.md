@@ -10,4 +10,4 @@ pip install -r requirements.txt
 
 python app.py
 
-upload observation file from the top right upload option
+upload observation file from the top right upload option in purchase/data hygiene page
