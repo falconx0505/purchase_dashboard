@@ -46,7 +46,7 @@
 
   <!-- ── USER BADGE (below navbar, all pages) ─────── -->
   <div class="user-badge-row">
-    <div class="chip chip-user">Welcome, Sobiya</div>
+    <div class="chip chip-user">Welcome, Sundeep</div>
   </div>
 
   <!-- ── PAGES CONTAINER ────────────────────────── -->
@@ -222,12 +222,6 @@
         </div>
       </div>
 
-      <!-- Genie floating action button (placeholder, not yet wired up).
-           Uses /static/images/genie-icon.png — same file, background
-           removed so it floats free with no box/outline behind it. -->
-      <button type="button" class="genie-fab" aria-label="Genie AI Assistant">
-        <img src="/static/images/genie-icon.png" alt="Genie" />
-      </button>
     </div>
   </div>
 
@@ -1262,6 +1256,44 @@
 
   </div><!-- /wrap -->
 
+  <!-- ══════════════════════════════════════════════════════════════
+     GENIE AI ASSISTANT — floating button + chat popup.
+     Lives outside every .page so it's a single persistent element;
+     goTo() in main.js shows/hides it (see GENIE_PAGES) rather than
+     duplicating this markup per page. Currently visible on Home,
+     Data Hygiene, and PO vs Invoice vs GRN vs Bank.
+  ═══════════════════════════════════════════════════════════════ -->
+  <div class="genie-chat" id="genie-chat">
+    <div class="genie-chat-head">
+      <div class="genie-chat-head-left">
+        <img src="/static/images/genie-icon.png" alt="" class="genie-chat-avatar" />
+        <div>
+          <div class="genie-chat-title">Hi, I'm your AI Genie</div>
+          <div class="genie-chat-sub">How may I help you today?</div>
+        </div>
+      </div>
+      <button type="button" class="genie-chat-close" onclick="toggleGenieChat(false)" aria-label="Close">×</button>
+    </div>
+    <div class="genie-chat-body">
+      <div class="genie-chat-bubble" style="margin-bottom: 10px;">
+        Hello! I’m your AI Genie, here to help with your questions and ideas. How may I assist you?
+      </div>
+
+      <div class="genie-chat-bubble">
+        Ad-Hoc Analysis · Plain Language
+      </div>
+    </div>
+    <div class="genie-chat-input-row">
+      <input type="text" id="genie-chat-input" class="genie-chat-input"
+        placeholder="e.g. Show purchases under ₹10 lakh" />
+      <button type="button" class="genie-chat-send" onclick="handleGenieChatSend()" aria-label="Send">➤</button>
+    </div>
+  </div>
+
+  <button type="button" class="genie-fab hidden" id="genie-fab" aria-label="Open Genie AI Assistant"
+    onclick="toggleGenieChat()">
+    <img src="/static/images/genie-icon.png" alt="Genie" />
+  </button>
 
   <script src="/static/js/main.js"></script>
 </body>

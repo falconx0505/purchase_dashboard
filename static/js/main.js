@@ -13,8 +13,15 @@ const PIE_COLORS = [
   '#C22829', '#F37A04', '#F1A646', '#5388B7', '#6C0E12',
   '#2f8f5b', '#857a74', '#B45309', '#1D4ED8', '#7C3AED',
 ];
+// Pages where the Genie floating button/chat should be visible.
+// Declared here (top of file, with the other constants) rather than
+// down by updateGenieVisibility(), because that function gets called
+// immediately below on page load — a `const` declared further down
+// would still be in its temporal dead zone at that point and throw.
+const GENIE_PAGES = ['home', 'hygiene', 'po-summary'];
 
 document.body.classList.add('on-home');
+updateGenieVisibility('home');
 
 let F = { company: [], state: [], product: [], customer: [], month: [] };
 let RAW = null;
@@ -31,6 +38,35 @@ function destroyChart(id) {
   if (CHARTS[id]) { CHARTS[id].destroy(); delete CHARTS[id]; }
 }
 
+// ── Genie AI Assistant: floating button + chat popup ─────────
+// Shown only on GENIE_PAGES (declared up top); goTo() calls
+// updateGenieVisibility() on every navigation so this stays in sync
+// without duplicating the button per page.
+function updateGenieVisibility(pageId) {
+  const fab = document.getElementById('genie-fab');
+  const show = GENIE_PAGES.includes(pageId);
+  if (fab) fab.classList.toggle('hidden', !show);
+  if (!show) toggleGenieChat(false);
+}
+
+function toggleGenieChat(force) {
+  const panel = document.getElementById('genie-chat');
+  if (!panel) return;
+  const show = typeof force === 'boolean' ? force : !panel.classList.contains('open');
+  panel.classList.toggle('open', show);
+  if (show) {
+    const input = document.getElementById('genie-chat-input');
+    if (input) setTimeout(() => input.focus(), 150);
+  }
+}
+
+function handleGenieChatSend() {
+  const input = document.getElementById('genie-chat-input');
+  if (!input || !input.value.trim()) return;
+  // Placeholder — not wired to a backend yet.
+  input.value = '';
+}
+
 function goTo(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -42,6 +78,7 @@ function goTo(pageId) {
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
   document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan');
+  updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
 }
