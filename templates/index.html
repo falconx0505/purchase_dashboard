@@ -61,111 +61,173 @@
       <div class="home-page-head">
         <h1 class="app-name">Continuous Control Monitoring Dashboard</h1>
         <!-- <p class="app-sub">Select a module from the summary table below to open its control dashboard.</p> -->
-        <button type="button" class="btn primary control-inventory-btn" onclick="goTo('control-inventory')">User Access</button>
+        <button type="button" class="btn primary control-inventory-btn" onclick="goTo('control-inventory')">User
+          Access</button>
       </div>
-      <div class="card home-table-card">
-        <div class="card-b no-pad">
-          <div class="tbl-wrap-full">
-            <table class="tbl home-modules-tbl">
-              <thead>
-                <tr>
-                  <th class="c">Sr No</th>
-                  <th>Name</th>
-                  <th class="c">Control Number</th>
-                  <th class="c">Count of Error</th>
-                  <th class="c">Remarks Provide</th>
-                  <th class="c">pending</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="c num font-bold">1</td>
-                  <td>
-                    <button class="home-table-btn" type="button" onclick="goTo('it-controls')">IT Control</button>
-                  </td>
-                  <td class="c num font-bold">6</td>
-                  <td class="c num"><span class="tag flag">48</span></td>
-                  <td class="c num">32</td>
-                  <td class="c num"><span class="tag warn">16</span></td>
-                </tr>
-                <tr>
-                  <td class="c num font-bold">2</td>
-                  <td>
-                    <button class="home-table-btn" type="button" onclick="goTo('hr-payroll')">HR management</button>
-                  </td>
-                  <td class="c num font-bold">5</td>
-                  <td class="c num"><span class="tag flag">35</span></td>
-                  <td class="c num">25</td>
-                  <td class="c num"><span class="tag warn">10</span></td>
-                </tr>
-                <tr>
-                  <td class="c num font-bold">3</td>
-                  <td>
-                    <button class="home-table-btn" type="button" onclick="goTo('audit-trail')">Audit trial</button>
-                  </td>
-                  <td class="c num font-bold">3</td>
-                  <td class="c num"><span class="tag flag">10</span></td>
-                  <td class="c num">7</td>
-                  <td class="c num"><span class="tag warn">3</span></td>
-                </tr>
-                <tr>
-                  <td class="c num font-bold">4</td>
-                  <td>
-                    <button class="home-table-btn" id="loan-repayment-btn" type="button"
-                      onclick="openLoanRepayment()">EMI Checking</button>
-                  </td>
-                  <td class="c num font-bold">1</td>
-                  <td class="c num"><span class="tag flag">16</span></td>
-                  <td class="c num">9</td>
-                  <td class="c num"><span class="tag warn">7</span></td>
-                </tr>
-                <tr>
-                  <td class="c num font-bold">5</td>
-                  <td>
-                    <button class="home-table-btn" type="button" onclick="goTo('welcome')">Purchase</button>
-                  </td>
-                  <td class="c num font-bold">20</td>
-                  <td class="c num"><span class="tag flag">14</span></td>
-                  <td class="c num">9</td>
-                  <td class="c num"><span class="tag warn">5</span></td>
-                </tr>
-                <tr>
-                  <td class="c num font-bold">6</td>
-                  <td>
-                    <button class="home-table-btn" type="button"
-                      onclick="goTo('kyc')">KYC Checks</button>
-                  </td>
-                  <td class="c num font-bold">7</td>
-                  <td class="c num"><span class="tag flag">42</span></td>
-                  <td class="c num">30</td>
-                  <td class="c num"><span class="tag warn">12</span></td>
-                </tr>
-                <tr>
-                  <td class="c num font-bold">7</td>
-                  <td>
-                    <button class="home-table-btn" type="button"
-                      onclick="goTo('other-loan')">Loan Checklist</button>
-                  </td>
-                  <td class="c num font-bold">6</td>
-                  <td class="c num"><span class="tag flag">36</span></td>
-                  <td class="c num">29</td>
-                  <td class="c num"><span class="tag warn">17</span></td>
-                </tr>
-              </tbody>
-            </table>
+      <!-- Top Section: Table + Pie Chart Side-by-Side -->
+      <div class="home-top-grid">
+        <div class="card home-table-card">
+          <div class="card-b no-pad">
+            <div class="tbl-wrap-full">
+              <table class="tbl home-modules-tbl">
+                <thead>
+                  <tr>
+                    <th class="c">Sr No</th>
+                    <th>Name</th>
+                    <th class="c">Control Number</th>
+                    <th class="c">Count of Error</th>
+                    <th class="c">Remarks Provide</th>
+                    <th class="c">pending</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="c num font-bold">1</td>
+                    <td>
+                      <button class="home-table-btn" type="button" onclick="goTo('it-controls')">IT Control</button>
+                    </td>
+                    <td class="c num font-bold">6</td>
+                    <td class="c num"><span class="tag flag">48</span></td>
+                    <td class="c num">32</td>
+                    <td class="c num"><span class="tag warn">16</span></td>
+                  </tr>
+                  <tr>
+                    <td class="c num font-bold">2</td>
+                    <td>
+                      <button class="home-table-btn" type="button" onclick="goTo('hr-payroll')">HR management</button>
+                    </td>
+                    <td class="c num font-bold">5</td>
+                    <td class="c num"><span class="tag flag">35</span></td>
+                    <td class="c num">25</td>
+                    <td class="c num"><span class="tag warn">10</span></td>
+                  </tr>
+                  <tr>
+                    <td class="c num font-bold">3</td>
+                    <td>
+                      <button class="home-table-btn" type="button" onclick="goTo('audit-trail')">Audit trial</button>
+                    </td>
+                    <td class="c num font-bold">3</td>
+                    <td class="c num"><span class="tag flag">10</span></td>
+                    <td class="c num">7</td>
+                    <td class="c num"><span class="tag warn">3</span></td>
+                  </tr>
+                  <tr>
+                    <td class="c num font-bold">4</td>
+                    <td>
+                      <button class="home-table-btn" id="loan-repayment-btn" type="button"
+                        onclick="openLoanRepayment()">EMI Checking</button>
+                    </td>
+                    <td class="c num font-bold">1</td>
+                    <td class="c num"><span class="tag flag">16</span></td>
+                    <td class="c num">9</td>
+                    <td class="c num"><span class="tag warn">7</span></td>
+                  </tr>
+                  <tr>
+                    <td class="c num font-bold">5</td>
+                    <td>
+                      <button class="home-table-btn" type="button" onclick="goTo('welcome')">Purchase</button>
+                    </td>
+                    <td class="c num font-bold">20</td>
+                    <td class="c num"><span class="tag flag">14</span></td>
+                    <td class="c num">9</td>
+                    <td class="c num"><span class="tag warn">5</span></td>
+                  </tr>
+                  <tr>
+                    <td class="c num font-bold">6</td>
+                    <td>
+                      <button class="home-table-btn" type="button" onclick="goTo('kyc')">KYC Checks</button>
+                    </td>
+                    <td class="c num font-bold">7</td>
+                    <td class="c num"><span class="tag flag">42</span></td>
+                    <td class="c num">30</td>
+                    <td class="c num"><span class="tag warn">12</span></td>
+                  </tr>
+                  <tr>
+                    <td class="c num font-bold">7</td>
+                    <td>
+                      <button class="home-table-btn" type="button" onclick="goTo('other-loan')">Loan Checklist</button>
+                    </td>
+                    <td class="c num font-bold">6</td>
+                    <td class="c num"><span class="tag flag">36</span></td>
+                    <td class="c num">29</td>
+                    <td class="c num"><span class="tag warn">17</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pie Chart Card on the Side of Table -->
+        <div class="card home-chart-card home-pie-card">
+          <div class="card-h">
+            <div class="grow">
+              <div class="ttl">Count of Errors Distribution</div>
+              <div class="desc">Relative share of error counts across all 7 controls</div>
+            </div>
+            <span class="chip chip-sm" style="font-size:11px;font-weight:700;"><span class="dot"></span> 201 Total
+              Errors</span>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap home-pie-wrap">
+              <canvas id="chart-home-pie"></canvas>
+            </div>
           </div>
         </div>
       </div>
 
+      <!-- Bar Graph 1: Sequential Order (Table Order) -->
+      <div class="card home-chart-card home-bar-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Count of Errors by Control</div>
+            <div class="desc">Error count across all 7 controls in sequential order (1 to 7)</div>
+          </div>
+          <span class="chip chip-sm" style="background:var(--peach);color:var(--maroon);border-color:var(--orange);">7
+            Controls</span>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-home-bar">
+            <canvas id="chart-home-bar-seq"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bar Graph 2: Monthly Trend (Stacked by Control) -->
+      <div class="card home-chart-card home-bar-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Monthly Error Trend by Control</div>
+            <div class="desc">Error count split across Apr–Aug, stacked by control</div>
+          </div>
+          <span class="chip chip-sm" style="background:var(--okbg);color:var(--ok);border-color:var(--okline);">5
+            Months</span>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-home-bar chart-wrap-home-bar-stacked">
+            <canvas id="chart-home-bar-sorted"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ad-Hoc AI Analysis Box -->
       <div class="card adhoc-card">
         <div class="card-b">
           <div class="eyebrow">Ad-Hoc Analysis · Plain Language</div>
           <div class="adhoc-row">
-            <input type="text" class="adhoc-input" placeholder='e.g. "Show accounts with cash deposits just under ₹10 lakh in the Q1 dump"' />
-            <button type="button" class="btn primary adhoc-btn">Analyze</button>
+            <input type="text" class="adhoc-input" id="home-adhoc-input"
+              placeholder='e.g. "Show accounts with cash deposits just under ₹10 lakh in the Q1 dump"' />
+            <button type="button" class="btn primary adhoc-btn" onclick="handleAdhocSubmit()">Analyze</button>
           </div>
         </div>
       </div>
+
+      <!-- Genie floating action button (placeholder, not yet wired up).
+           Uses /static/images/genie-icon.png — same file, background
+           removed so it floats free with no box/outline behind it. -->
+      <button type="button" class="genie-fab" aria-label="Genie AI Assistant">
+        <img src="/static/images/genie-icon.png" alt="Genie" />
+      </button>
     </div>
   </div>
 
@@ -181,10 +243,32 @@
   <div class="page" id="page-it-controls" style="max-width:1360px;margin:0 auto;padding:0 26px;">
     <!-- Back navigation: IT Controls page → Home -->
     <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-    <div class="page-head">
-      <div class="eyebrow">IT General Controls</div>
-      <h1>IT Controls</h1>
-      <p>Access management, authentication, and activity monitoring checks.</p>
+    <div class="page-head-row">
+      <div class="page-head">
+        <div class="eyebrow">IT General Controls</div>
+        <h1>IT Controls</h1>
+        <p>Access management, authentication, and activity monitoring checks.</p>
+      </div>
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="itc-filter-location">Location</label>
+          <select id="itc-filter-location" class="remark-input">
+            <option value="">All Locations</option>
+            <option>Bangalore</option>
+            <option>Mumbai</option>
+            <option>Delhi NCR</option>
+            <option>Hyderabad</option>
+            <option>Chennai</option>
+            <option>Kolkata</option>
+            <option>Pune</option>
+            <option>Ahmedabad</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="itc-filter-date">Date</label>
+          <input type="date" id="itc-filter-date" class="remark-input">
+        </div>
+      </div>
     </div>
     <div class="stat-row">
       <div class="stat-box" style="--accent:var(--red)">
@@ -513,10 +597,32 @@
     <div class="page" id="page-hr-payroll">
       <!-- Back navigation: HR and Payroll page → Home -->
       <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-      <div class="page-head">
-        <div class="eyebrow">HR General Controls</div>
-        <h1>HR and Payroll</h1>
-        <p>Employee master data hygiene and statutory ID checks.</p>
+      <div class="page-head-row">
+        <div class="page-head">
+          <div class="eyebrow">HR General Controls</div>
+          <h1>HR and Payroll</h1>
+          <p>Employee master data hygiene and statutory ID checks.</p>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="hr-filter-location">Location</label>
+            <select id="hr-filter-location" class="remark-input">
+              <option value="">All Locations</option>
+              <option>Bangalore</option>
+              <option>Mumbai</option>
+              <option>Delhi NCR</option>
+              <option>Hyderabad</option>
+              <option>Chennai</option>
+              <option>Kolkata</option>
+              <option>Pune</option>
+              <option>Ahmedabad</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="hr-filter-date">Date</label>
+            <input type="date" id="hr-filter-date" class="remark-input">
+          </div>
+        </div>
       </div>
       <div class="stat-row">
         <div class="stat-box" style="--accent:var(--red)">
@@ -872,13 +978,35 @@
     </div>
 
     <!-- PAGE: KYC DETAILS -->
-        <div class="page" id="page-kyc">
+    <div class="page" id="page-kyc">
       <!-- Back navigation: KYC Details page → Home -->
       <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-      <div class="page-head">
-        <div class="eyebrow">Compliance</div>
-        <h1>KYC Details</h1>
-        <p>PAN/Aadhar mismatches, pending updates, missing documents and duplicate ID usage.</p>
+      <div class="page-head-row">
+        <div class="page-head">
+          <div class="eyebrow">Compliance</div>
+          <h1>KYC Details</h1>
+          <p>PAN/Aadhar mismatches, pending updates, missing documents and duplicate ID usage.</p>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="kyc-filter-location">Location</label>
+            <select id="kyc-filter-location" class="remark-input">
+              <option value="">All Locations</option>
+              <option>Bangalore</option>
+              <option>Mumbai</option>
+              <option>Delhi NCR</option>
+              <option>Hyderabad</option>
+              <option>Chennai</option>
+              <option>Kolkata</option>
+              <option>Pune</option>
+              <option>Ahmedabad</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="kyc-filter-date">Date</label>
+            <input type="date" id="kyc-filter-date" class="remark-input">
+          </div>
+        </div>
       </div>
       <div class="stat-row">
         <div class="stat-box" style="--accent:var(--red)">
@@ -907,13 +1035,36 @@
     </div>
 
     <!-- PAGE: OTHER LOAN DETAILS -->
-        <div class="page" id="page-other-loan">
+    <div class="page" id="page-other-loan">
       <!-- Back navigation: Other Loan Details page → Home -->
       <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-      <div class="page-head">
-        <div class="eyebrow">Compliance</div>
-        <h1>Other Loan Details</h1>
-        <p>NPA marking delays, sanction letter deviations, approval breaches, multi-loan exposure, restructuring and JV monitoring.</p>
+      <div class="page-head-row">
+        <div class="page-head">
+          <div class="eyebrow">Compliance</div>
+          <h1>Other Loan Details</h1>
+          <p>NPA marking delays, sanction letter deviations, approval breaches, multi-loan exposure, restructuring and
+            JV monitoring.</p>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="loan-checklist-filter-location">Location</label>
+            <select id="loan-checklist-filter-location" class="remark-input">
+              <option value="">All Locations</option>
+              <option>Bangalore</option>
+              <option>Mumbai</option>
+              <option>Delhi NCR</option>
+              <option>Hyderabad</option>
+              <option>Chennai</option>
+              <option>Kolkata</option>
+              <option>Pune</option>
+              <option>Ahmedabad</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="loan-checklist-filter-date">Date</label>
+            <input type="date" id="loan-checklist-filter-date" class="remark-input">
+          </div>
+        </div>
       </div>
       <div class="stat-row">
         <div class="stat-box" style="--accent:var(--red)">

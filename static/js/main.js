@@ -19,6 +19,12 @@ document.body.classList.add('on-home');
 let F = { company: [], state: [], product: [], customer: [], month: [] };
 let RAW = null;
 let currentObsCategory = '';
+// Cached monthly split for the Home "Monthly Error Trend" chart — declared
+// up top (not down near the chart function) because renderHomeCharts() is
+// invoked immediately below on page load, before the script has finished
+// running top-to-bottom. A `let` declared further down would still be in
+// its temporal dead zone at that point and throw a ReferenceError.
+let HOME_MONTHLY_SPLIT = null;
 
 const CHARTS = {};
 function destroyChart(id) {
@@ -441,6 +447,9 @@ function renderCurrentPage(pageId) {
   // AUDIT TRAIL PAGE: this page uses its own backend endpoint and should render
   // even before the main purchase workbook has finished loading.
   if (pageId === 'audit-trail') { loadAuditTrailData(); return; }
+  // HOME PAGE: pie + bar charts are built from static table data (not RAW),
+  // so they can render immediately, same pattern as the branches above.
+  if (pageId === 'home') { renderHomeCharts(); return; }
   if (!RAW) return;
   switch (pageId) {
     case 'welcome': renderWelcome(); break;
@@ -522,11 +531,11 @@ const IT_TABLES = [
     employees: ['Ramesh Iyer', 'Sunita Bhatia', 'Kunal Oberoi', 'Lavanya Pillai', 'Rahul Dutta', 'Simran Bakshi', 'Ajay Mathur']
   }
 ];
- 
+
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
- 
+
 function itControlCardHtml(t) {
   const rowsHtml = t.employees.map((name, i) => {
     const issueId = `itc-${t.id}-${name.toLowerCase().replace(/\s+/g, '-')}`;
@@ -539,7 +548,7 @@ function itControlCardHtml(t) {
     const value = randInt(t.min, t.max);
     return `<tr><td>${esc(name)}</td><td class="r">${value}</td>${renderRemarkCell(r)}</tr>`;
   }).join('');
- 
+
   return `
     <div class="card">
       <div class="card-h">
@@ -552,7 +561,7 @@ function itControlCardHtml(t) {
       </table></div></div>
     </div>`;
 }
- 
+
 function renderItControls() {
   const row1 = document.getElementById('itc-row-1');
   const row2 = document.getElementById('itc-row-2');
@@ -562,32 +571,40 @@ function renderItControls() {
 }
 
 const CONTROL_INVENTORY = [
-  { control: 'IT controls', subcontrols: [
-    'access after last working day',
-    'user not logged in for 90+ days',
-    'password not changed',
-    'login outside business hours',
-    'multiple failed login attempts',
-    'approved above authorized limit'
-  ] },
-  { control: 'hr and payroll', subcontrols: [
-    'multiple employees using same bank account',
-    'duplicate pan/aadhaar/bank account',
-    'employees without PAN/Aadhaar bank account',
-    'missing department/location/grade',
-    'same PAN for multiple employees'
-  ] },
+  {
+    control: 'IT controls', subcontrols: [
+      'access after last working day',
+      'user not logged in for 90+ days',
+      'password not changed',
+      'login outside business hours',
+      'multiple failed login attempts',
+      'approved above authorized limit'
+    ]
+  },
+  {
+    control: 'hr and payroll', subcontrols: [
+      'multiple employees using same bank account',
+      'duplicate pan/aadhaar/bank account',
+      'employees without PAN/Aadhaar bank account',
+      'missing department/location/grade',
+      'same PAN for multiple employees'
+    ]
+  },
   { control: 'Audit trail', subcontrols: [] },
-  { control: 'Loan and repayment schedule', subcontrols: [
-    'as per calculation, as per bank, as per difference'
-  ] },
-  { control: 'Purchase control dashboard', subcontrols: [
-    'Multiple tax code',
-    'same product multiple gst rate',
-    'duplicate customer name',
-    'product name check',
-    'product code check'
-  ] }
+  {
+    control: 'Loan and repayment schedule', subcontrols: [
+      'as per calculation, as per bank, as per difference'
+    ]
+  },
+  {
+    control: 'Purchase control dashboard', subcontrols: [
+      'Multiple tax code',
+      'same product multiple gst rate',
+      'duplicate customer name',
+      'product name check',
+      'product code check'
+    ]
+  }
 ];
 
 const CONTROL_INVENTORY_REGIONS = ['Bangalore', 'Mumbai', 'Delhi NCR', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad'];
@@ -822,8 +839,8 @@ function renderHrPayroll() {
 // supplied. Update this map when the actual loan type/location per
 // borrower is available; it does not affect any figures in the tables.
 const LOAN_META = {
-  'Ram':      { type: 'Home Loan',     location: 'Bangalore' },
-  'Shyam':    { type: 'Vehicle Loan',  location: 'Mumbai' },
+  'Ram': { type: 'Home Loan', location: 'Bangalore' },
+  'Shyam': { type: 'Vehicle Loan', location: 'Mumbai' },
   'Pranjali': { type: 'Personal Loan', location: 'Delhi' },
 };
 const LOAN_TYPE_OPTIONS = ['Home Loan', 'Vehicle Loan', 'Personal Loan', 'Business Loan', 'Education Loan'];
@@ -842,285 +859,285 @@ function loanFilterOptionsInit() {
 
 // Each row: [Person Name, Month, Opening Balance, Interest, Principal, EMI, Closing Balance, Interest Rate, Other Charge]
 const LOAN_CALC_ROWS = [
-  ["Ram",1,2000000,21667,73417,95084,1926583,0.13,null],
-  ["Ram",2,1926583,20871,74213,95084,1852370,0.13,null],
-  ["Ram",3,1852370,20109,74975,95084,1777395,0.13,null],
-  ["Ram",4,1777395,19306,75778,95084,1701617,0.13,null],
-  ["Ram",5,1701617,18434,76650,95084,1624967,0.13,null],
-  ["Ram",6,1624967,17604,77480,95084,1547487,0.13,null],
-  ["Ram",7,1547487,16765,78319,95084,1469168,0.13,null],
-  ["Ram",8,1469168,15916,79168,95084,1390000,0.13,null],
-  ["Ram",9,1390000,15058,80026,95084,1309974,0.13,null],
-  ["Ram",10,1309974,14192,80892,95084,1229082,0.13,null],
-  ["Ram",11,1229082,13315,81769,95084,1147313,0.13,null],
-  ["Ram",12,1147313,12430,82654,95084,1064659,0.13,null],
-  ["Ram",13,1064659,11533,83551,95084,981108,0.13,null],
-  ["Ram",14,981108,10629,84455,95084,896653,0.13,400],
-  ["Ram",15,896653,9714,85370,95084,811283,0.13,null],
-  ["Ram",16,811283,8789,86295,95084,724988,0.13,null],
-  ["Ram",17,724988,7854,87230,95084,637758,0.13,null],
-  ["Ram",18,637758,6909,88175,95084,549583,0.13,null],
-  ["Ram",19,549583,5954,89130,95084,460453,0.13,null],
-  ["Ram",20,460453,4988,90096,95084,370357,0.13,null],
-  ["Ram",21,370357,4020,91064,95084,279293,0.13,null],
-  ["Ram",22,279293,3026,92058,95084,187235,0.13,null],
-  ["Ram",23,187235,2029,93055,95084,94180,0.13,null],
-  ["Ram",24,94180,1020,94064,95084,0,0.13,null],
-  ["Shyam",1,5500000,32083,76823,108907,5423177,0.07,null],
-  ["Shyam",2,5423177,31635,77271,108907,5345905,0.07,null],
-  ["Shyam",3,5345905,31184,77722,108907,5268183,0.07,null],
-  ["Shyam",4,5268183,30731,78176,108907,5190008,0.07,null],
-  ["Shyam",5,5190008,30275,78632,108907,5111376,0.07,null],
-  ["Shyam",6,5111376,29816,79090,108907,5032286,0.07,null],
-  ["Shyam",7,5032286,29355,79552,108907,4952734,0.07,null],
-  ["Shyam",8,4952734,28891,80016,108907,4872719,0.07,null],
-  ["Shyam",9,4872719,28424,80482,108907,4792236,0.07,null],
-  ["Shyam",10,4792236,27955,80952,108907,4711284,0.07,null],
-  ["Shyam",11,4711284,27482,81424,108907,4629860,0.07,null],
-  ["Shyam",12,4629860,27008,81899,108907,4547961,0.07,null],
-  ["Shyam",13,4547961,26530,82377,108907,4465584,0.07,null],
-  ["Shyam",14,4465584,26049,82857,108907,4382727,0.07,null],
-  ["Shyam",15,4382727,25566,83341,108907,4299386,0.07,null],
-  ["Shyam",16,4299386,25080,83827,108907,4215560,0.07,null],
-  ["Shyam",17,4215560,24591,84316,108907,4131244,0.07,null],
-  ["Shyam",18,4131244,24099,84808,108907,4046436,0.07,null],
-  ["Shyam",19,4046436,23604,85302,108907,3961134,0.07,null],
-  ["Shyam",20,3961134,23107,85800,108907,3875334,0.07,null],
-  ["Shyam",21,3875334,22606,86300,108907,3789033,0.07,null],
-  ["Shyam",22,3789033,22103,86804,108907,3702229,0.07,null],
-  ["Shyam",23,3702229,21596,87310,108907,3614919,0.07,null],
-  ["Shyam",24,3614919,21087,87820,108907,3527099,0.07,null],
-  ["Shyam",25,3527099,20575,88332,108907,3438768,0.07,null],
-  ["Shyam",26,3438768,20059,88847,108907,3349921,0.07,null],
-  ["Shyam",27,3349921,19541,89365,108907,3260555,0.07,null],
-  ["Shyam",28,3260555,19020,89887,108907,3170668,0.07,null],
-  ["Shyam",29,3170668,18496,90411,108907,3080257,0.07,null],
-  ["Shyam",30,3080257,17968,90938,108907,2989319,0.07,null],
-  ["Shyam",31,2989319,17438,91469,108907,2897850,0.07,null],
-  ["Shyam",32,2897850,16904,92002,108907,2805848,0.07,null],
-  ["Shyam",33,2805848,16367,92539,108907,2713308,0.07,null],
-  ["Shyam",34,2713308,15828,93079,108907,2620230,0.07,null],
-  ["Shyam",35,2620230,15285,93622,108907,2526608,0.07,null],
-  ["Shyam",36,2526608,14739,94168,108907,2432440,0.07,null],
-  ["Shyam",37,2432440,14189,94717,108907,2337722,0.07,null],
-  ["Shyam",38,2337722,13637,95270,108907,2242452,0.07,null],
-  ["Shyam",39,2242452,13081,95826,108907,2146627,0.07,null],
-  ["Shyam",40,2146627,12522,96385,108907,2050242,0.07,null],
-  ["Shyam",41,2050242,11960,96947,108907,1953295,0.07,null],
-  ["Shyam",42,1953295,11394,97512,108907,1855783,0.07,null],
-  ["Shyam",43,1855783,10825,98081,108907,1757702,0.07,null],
-  ["Shyam",44,1757702,10253,98653,108907,1659048,0.07,null],
-  ["Shyam",45,1659048,9678,99229,108907,1559820,0.07,null],
-  ["Shyam",46,1559820,9099,99808,108907,1460012,0.07,null],
-  ["Shyam",47,1460012,8517,100390,108907,1359622,0.07,null],
-  ["Shyam",48,1359622,7931,100975,108907,1258647,0.07,null],
-  ["Shyam",49,1258647,7342,101564,108907,1157082,0.07,null],
-  ["Shyam",50,1157082,6750,102157,108907,1054925,0.07,null],
-  ["Shyam",51,1054925,6154,102753,108907,952172,0.07,null],
-  ["Shyam",52,952172,5554,103352,108907,848820,0.07,null],
-  ["Shyam",53,848820,4951,103955,108907,744865,0.07,null],
-  ["Shyam",54,744865,4345,104562,108907,640303,0.07,null],
-  ["Shyam",55,640303,3735,105171,108907,535132,0.07,null],
-  ["Shyam",56,535132,3122,105785,108907,4,0.07,null],
-  ["Pranjali",1,500000,2917,48701,51618,451299,0.07,null],
-  ["Pranjali",2,451299,2633,48986,51618,402313,0.07,null],
-  ["Pranjali",3,402313,2347,49271,51618,353042,0.07,null],
-  ["Pranjali",4,353042,2059,49559,51618,303483,0.07,null],
-  ["Pranjali",5,303483,1770,49848,51618,253635,0.07,null],
-  ["Pranjali",6,253635,2536,49723,52259,203912,0.12,null],
-  ["Pranjali",7,203912,2039,50220,52259,153693,0.12,null],
-  ["Pranjali",8,153693,1537,50722,52259,102971,0.12,null],
-  ["Pranjali",9,102971,1030,51229,52259,51741,0.12,null],
-  ["Pranjali",10,51741,517,51741,52259,0,0.12,null],
+  ["Ram", 1, 2000000, 21667, 73417, 95084, 1926583, 0.13, null],
+  ["Ram", 2, 1926583, 20871, 74213, 95084, 1852370, 0.13, null],
+  ["Ram", 3, 1852370, 20109, 74975, 95084, 1777395, 0.13, null],
+  ["Ram", 4, 1777395, 19306, 75778, 95084, 1701617, 0.13, null],
+  ["Ram", 5, 1701617, 18434, 76650, 95084, 1624967, 0.13, null],
+  ["Ram", 6, 1624967, 17604, 77480, 95084, 1547487, 0.13, null],
+  ["Ram", 7, 1547487, 16765, 78319, 95084, 1469168, 0.13, null],
+  ["Ram", 8, 1469168, 15916, 79168, 95084, 1390000, 0.13, null],
+  ["Ram", 9, 1390000, 15058, 80026, 95084, 1309974, 0.13, null],
+  ["Ram", 10, 1309974, 14192, 80892, 95084, 1229082, 0.13, null],
+  ["Ram", 11, 1229082, 13315, 81769, 95084, 1147313, 0.13, null],
+  ["Ram", 12, 1147313, 12430, 82654, 95084, 1064659, 0.13, null],
+  ["Ram", 13, 1064659, 11533, 83551, 95084, 981108, 0.13, null],
+  ["Ram", 14, 981108, 10629, 84455, 95084, 896653, 0.13, 400],
+  ["Ram", 15, 896653, 9714, 85370, 95084, 811283, 0.13, null],
+  ["Ram", 16, 811283, 8789, 86295, 95084, 724988, 0.13, null],
+  ["Ram", 17, 724988, 7854, 87230, 95084, 637758, 0.13, null],
+  ["Ram", 18, 637758, 6909, 88175, 95084, 549583, 0.13, null],
+  ["Ram", 19, 549583, 5954, 89130, 95084, 460453, 0.13, null],
+  ["Ram", 20, 460453, 4988, 90096, 95084, 370357, 0.13, null],
+  ["Ram", 21, 370357, 4020, 91064, 95084, 279293, 0.13, null],
+  ["Ram", 22, 279293, 3026, 92058, 95084, 187235, 0.13, null],
+  ["Ram", 23, 187235, 2029, 93055, 95084, 94180, 0.13, null],
+  ["Ram", 24, 94180, 1020, 94064, 95084, 0, 0.13, null],
+  ["Shyam", 1, 5500000, 32083, 76823, 108907, 5423177, 0.07, null],
+  ["Shyam", 2, 5423177, 31635, 77271, 108907, 5345905, 0.07, null],
+  ["Shyam", 3, 5345905, 31184, 77722, 108907, 5268183, 0.07, null],
+  ["Shyam", 4, 5268183, 30731, 78176, 108907, 5190008, 0.07, null],
+  ["Shyam", 5, 5190008, 30275, 78632, 108907, 5111376, 0.07, null],
+  ["Shyam", 6, 5111376, 29816, 79090, 108907, 5032286, 0.07, null],
+  ["Shyam", 7, 5032286, 29355, 79552, 108907, 4952734, 0.07, null],
+  ["Shyam", 8, 4952734, 28891, 80016, 108907, 4872719, 0.07, null],
+  ["Shyam", 9, 4872719, 28424, 80482, 108907, 4792236, 0.07, null],
+  ["Shyam", 10, 4792236, 27955, 80952, 108907, 4711284, 0.07, null],
+  ["Shyam", 11, 4711284, 27482, 81424, 108907, 4629860, 0.07, null],
+  ["Shyam", 12, 4629860, 27008, 81899, 108907, 4547961, 0.07, null],
+  ["Shyam", 13, 4547961, 26530, 82377, 108907, 4465584, 0.07, null],
+  ["Shyam", 14, 4465584, 26049, 82857, 108907, 4382727, 0.07, null],
+  ["Shyam", 15, 4382727, 25566, 83341, 108907, 4299386, 0.07, null],
+  ["Shyam", 16, 4299386, 25080, 83827, 108907, 4215560, 0.07, null],
+  ["Shyam", 17, 4215560, 24591, 84316, 108907, 4131244, 0.07, null],
+  ["Shyam", 18, 4131244, 24099, 84808, 108907, 4046436, 0.07, null],
+  ["Shyam", 19, 4046436, 23604, 85302, 108907, 3961134, 0.07, null],
+  ["Shyam", 20, 3961134, 23107, 85800, 108907, 3875334, 0.07, null],
+  ["Shyam", 21, 3875334, 22606, 86300, 108907, 3789033, 0.07, null],
+  ["Shyam", 22, 3789033, 22103, 86804, 108907, 3702229, 0.07, null],
+  ["Shyam", 23, 3702229, 21596, 87310, 108907, 3614919, 0.07, null],
+  ["Shyam", 24, 3614919, 21087, 87820, 108907, 3527099, 0.07, null],
+  ["Shyam", 25, 3527099, 20575, 88332, 108907, 3438768, 0.07, null],
+  ["Shyam", 26, 3438768, 20059, 88847, 108907, 3349921, 0.07, null],
+  ["Shyam", 27, 3349921, 19541, 89365, 108907, 3260555, 0.07, null],
+  ["Shyam", 28, 3260555, 19020, 89887, 108907, 3170668, 0.07, null],
+  ["Shyam", 29, 3170668, 18496, 90411, 108907, 3080257, 0.07, null],
+  ["Shyam", 30, 3080257, 17968, 90938, 108907, 2989319, 0.07, null],
+  ["Shyam", 31, 2989319, 17438, 91469, 108907, 2897850, 0.07, null],
+  ["Shyam", 32, 2897850, 16904, 92002, 108907, 2805848, 0.07, null],
+  ["Shyam", 33, 2805848, 16367, 92539, 108907, 2713308, 0.07, null],
+  ["Shyam", 34, 2713308, 15828, 93079, 108907, 2620230, 0.07, null],
+  ["Shyam", 35, 2620230, 15285, 93622, 108907, 2526608, 0.07, null],
+  ["Shyam", 36, 2526608, 14739, 94168, 108907, 2432440, 0.07, null],
+  ["Shyam", 37, 2432440, 14189, 94717, 108907, 2337722, 0.07, null],
+  ["Shyam", 38, 2337722, 13637, 95270, 108907, 2242452, 0.07, null],
+  ["Shyam", 39, 2242452, 13081, 95826, 108907, 2146627, 0.07, null],
+  ["Shyam", 40, 2146627, 12522, 96385, 108907, 2050242, 0.07, null],
+  ["Shyam", 41, 2050242, 11960, 96947, 108907, 1953295, 0.07, null],
+  ["Shyam", 42, 1953295, 11394, 97512, 108907, 1855783, 0.07, null],
+  ["Shyam", 43, 1855783, 10825, 98081, 108907, 1757702, 0.07, null],
+  ["Shyam", 44, 1757702, 10253, 98653, 108907, 1659048, 0.07, null],
+  ["Shyam", 45, 1659048, 9678, 99229, 108907, 1559820, 0.07, null],
+  ["Shyam", 46, 1559820, 9099, 99808, 108907, 1460012, 0.07, null],
+  ["Shyam", 47, 1460012, 8517, 100390, 108907, 1359622, 0.07, null],
+  ["Shyam", 48, 1359622, 7931, 100975, 108907, 1258647, 0.07, null],
+  ["Shyam", 49, 1258647, 7342, 101564, 108907, 1157082, 0.07, null],
+  ["Shyam", 50, 1157082, 6750, 102157, 108907, 1054925, 0.07, null],
+  ["Shyam", 51, 1054925, 6154, 102753, 108907, 952172, 0.07, null],
+  ["Shyam", 52, 952172, 5554, 103352, 108907, 848820, 0.07, null],
+  ["Shyam", 53, 848820, 4951, 103955, 108907, 744865, 0.07, null],
+  ["Shyam", 54, 744865, 4345, 104562, 108907, 640303, 0.07, null],
+  ["Shyam", 55, 640303, 3735, 105171, 108907, 535132, 0.07, null],
+  ["Shyam", 56, 535132, 3122, 105785, 108907, 4, 0.07, null],
+  ["Pranjali", 1, 500000, 2917, 48701, 51618, 451299, 0.07, null],
+  ["Pranjali", 2, 451299, 2633, 48986, 51618, 402313, 0.07, null],
+  ["Pranjali", 3, 402313, 2347, 49271, 51618, 353042, 0.07, null],
+  ["Pranjali", 4, 353042, 2059, 49559, 51618, 303483, 0.07, null],
+  ["Pranjali", 5, 303483, 1770, 49848, 51618, 253635, 0.07, null],
+  ["Pranjali", 6, 253635, 2536, 49723, 52259, 203912, 0.12, null],
+  ["Pranjali", 7, 203912, 2039, 50220, 52259, 153693, 0.12, null],
+  ["Pranjali", 8, 153693, 1537, 50722, 52259, 102971, 0.12, null],
+  ["Pranjali", 9, 102971, 1030, 51229, 52259, 51741, 0.12, null],
+  ["Pranjali", 10, 51741, 517, 51741, 52259, 0, 0.12, null],
 ];
 
 // Each row: [Person Name, Month, Opening Balance, Interest, Principal, EMI, Closing Balance, Interest Rate]
 const LOAN_BANK_ROWS = [
-  ["Ram",1,2000000,21667,73417,95084,1926583,0.13],
-  ["Ram",2,1926583,20871,74213,95084,1852370,0.13],
-  ["Ram",3,1852370,20109,74975,95084,1777395,0.13],
-  ["Ram",4,1777395,19306,75778,95084,1701617,0.13],
-  ["Ram",5,1701617,18434,76650,95084,1624967,0.13],
-  ["Ram",6,1624967,17604,77480,95084,1547487,0.13],
-  ["Ram",7,1547487,16765,78319,95084,1469168,0.13],
-  ["Ram",8,1469168,15916,79168,95084,1390000,0.13],
-  ["Ram",9,1390000,15058,80026,95084,1309974,0.13],
-  ["Ram",10,1309974,14192,80892,95084,1229082,0.13],
-  ["Ram",11,1229082,13315,81769,95084,1147313,0.13],
-  ["Ram",12,1147313,12430,82654,95084,1064659,0.13],
-  ["Ram",13,1064659,11533,83551,95084,981108,0.13],
-  ["Ram",14,981108,10629,84455,95084,896653,0.14],
-  ["Ram",15,896653,10000,85370,95084,811283,0.13],
-  ["Ram",16,811283,8789,86295,95084,724988,0.13],
-  ["Ram",17,724988,7854,87230,95084,637758,0.13],
-  ["Ram",18,637758,6909,88175,95084,549583,0.13],
-  ["Ram",19,549583,5954,89130,95084,460453,0.13],
-  ["Ram",20,460453,4988,90096,95084,370357,0.13],
-  ["Ram",21,370357,4020,91064,95084,279293,0.13],
-  ["Ram",22,279293,3026,92058,95084,187235,0.13],
-  ["Ram",23,187235,2029,93055,95084,94180,0.13],
-  ["Ram",24,94180,1020,94064,95084,0,0.13],
-  ["Shyam",1,5500000,32083,76823,108907,5423177,0.07],
-  ["Shyam",2,5423177,31635,77271,108907,5345905,0.07],
-  ["Shyam",3,5345905,31184,77722,108907,5268183,0.07],
-  ["Shyam",4,5268183,30731,78176,108907,5190008,0.07],
-  ["Shyam",5,5190008,30275,78632,108907,5111376,0.07],
-  ["Shyam",6,5111376,29816,79090,108907,5032286,0.07],
-  ["Shyam",7,5032286,29355,79552,108907,4952734,0.07],
-  ["Shyam",8,4952734,28891,80016,108907,4872719,0.07],
-  ["Shyam",9,4872719,28424,80482,108907,4792236,0.07],
-  ["Shyam",10,4792236,27955,80952,108907,4711284,0.07],
-  ["Shyam",11,4711284,27482,81424,108907,4629860,0.07],
-  ["Shyam",12,4629860,27008,81899,108907,4547961,0.07],
-  ["Shyam",13,4547961,26530,82377,108907,4465584,0.07],
-  ["Shyam",14,4465584,26049,82857,108907,4382727,0.07],
-  ["Shyam",15,4382727,25566,83341,108907,4299386,0.07],
-  ["Shyam",16,4299386,25080,83827,108907,4215560,0.07],
-  ["Shyam",17,4215560,24591,84316,108907,4131244,0.07],
-  ["Shyam",18,4131244,24099,84808,108907,4046436,0.07],
-  ["Shyam",19,4046436,23604,85302,108907,3961134,0.07],
-  ["Shyam",20,3961134,23107,85800,108907,3875334,0.07],
-  ["Shyam",21,3875334,22606,86300,108907,3789033,0.07],
-  ["Shyam",22,3789033,22103,86804,108907,3702229,0.07],
-  ["Shyam",23,3702229,21596,87310,108907,3614919,0.07],
-  ["Shyam",24,3614919,21087,87820,108907,3527099,0.07],
-  ["Shyam",25,3527099,20575,88332,108907,3438768,0.07],
-  ["Shyam",26,3438768,20059,88847,108907,3349921,0.07],
-  ["Shyam",27,3349921,19541,89365,108907,3260555,0.07],
-  ["Shyam",28,3260555,19020,89887,108907,3170668,0.07],
-  ["Shyam",29,3170668,18496,90411,108907,3080257,0.07],
-  ["Shyam",30,3080257,17968,90938,108907,2989319,0.07],
-  ["Shyam",31,2989319,17438,91469,108907,2897850,0.07],
-  ["Shyam",32,2897850,16904,92002,108907,2805848,0.07],
-  ["Shyam",33,2805848,16367,92539,108907,2713308,0.07],
-  ["Shyam",34,2713308,15828,93079,108907,2620230,0.07],
-  ["Shyam",35,2620230,15285,93622,108907,2526608,0.07],
-  ["Shyam",36,2526608,14739,94168,108907,2432440,0.07],
-  ["Shyam",37,2432440,14189,94717,108907,2337722,0.07],
-  ["Shyam",38,2337722,13637,95270,108907,2242452,0.07],
-  ["Shyam",39,2242452,13081,95826,108907,2146627,0.07],
-  ["Shyam",40,2146627,12522,96385,108907,2050242,0.07],
-  ["Shyam",41,2050242,11960,96947,108907,1953295,0.07],
-  ["Shyam",42,1953295,11394,97512,108907,1855783,0.07],
-  ["Shyam",43,1855783,10825,98081,108907,1757702,0.07],
-  ["Shyam",44,1757702,10253,98653,108907,1659048,0.07],
-  ["Shyam",45,1659048,9678,99229,108907,1559820,0.07],
-  ["Shyam",46,1559820,9099,99808,108907,1460012,0.07],
-  ["Shyam",47,1460012,8517,100390,108907,1359622,0.07],
-  ["Shyam",48,1359622,7931,100975,108907,1258647,0.07],
-  ["Shyam",49,1258647,7342,101564,108907,1157082,0.07],
-  ["Shyam",50,1157082,6750,102157,108907,1054925,0.07],
-  ["Shyam",51,1054925,6154,102753,108907,952172,0.07],
-  ["Shyam",52,952172,5554,103352,108907,848820,0.07],
-  ["Shyam",53,848820,4951,103955,108907,744865,0.07],
-  ["Shyam",54,744865,4345,104562,108907,640303,0.07],
-  ["Shyam",55,640303,3735,105171,108907,535132,0.07],
-  ["Shyam",56,535132,3122,105785,108907,4,0.07],
-  ["Pranjali",1,500000,2917,48701,51618,451299,0.07],
-  ["Pranjali",2,451299,2633,48986,51618,402313,0.07],
-  ["Pranjali",3,402313,2347,49271,51618,353042,0.07],
-  ["Pranjali",4,353042,2059,49559,51618,303483,0.07],
-  ["Pranjali",5,303483,1770,49848,51618,253635,0.07],
-  ["Pranjali",6,253635,3000,49723,52259,203912,0.12],
-  ["Pranjali",7,203912,2039,50220,52259,153693,0.12],
-  ["Pranjali",8,153693,1537,50722,52259,102971,0.12],
-  ["Pranjali",9,102971,1030,51229,52259,51741,0.12],
-  ["Pranjali",10,51741,517,51741,52259,0,0.12],
+  ["Ram", 1, 2000000, 21667, 73417, 95084, 1926583, 0.13],
+  ["Ram", 2, 1926583, 20871, 74213, 95084, 1852370, 0.13],
+  ["Ram", 3, 1852370, 20109, 74975, 95084, 1777395, 0.13],
+  ["Ram", 4, 1777395, 19306, 75778, 95084, 1701617, 0.13],
+  ["Ram", 5, 1701617, 18434, 76650, 95084, 1624967, 0.13],
+  ["Ram", 6, 1624967, 17604, 77480, 95084, 1547487, 0.13],
+  ["Ram", 7, 1547487, 16765, 78319, 95084, 1469168, 0.13],
+  ["Ram", 8, 1469168, 15916, 79168, 95084, 1390000, 0.13],
+  ["Ram", 9, 1390000, 15058, 80026, 95084, 1309974, 0.13],
+  ["Ram", 10, 1309974, 14192, 80892, 95084, 1229082, 0.13],
+  ["Ram", 11, 1229082, 13315, 81769, 95084, 1147313, 0.13],
+  ["Ram", 12, 1147313, 12430, 82654, 95084, 1064659, 0.13],
+  ["Ram", 13, 1064659, 11533, 83551, 95084, 981108, 0.13],
+  ["Ram", 14, 981108, 10629, 84455, 95084, 896653, 0.14],
+  ["Ram", 15, 896653, 10000, 85370, 95084, 811283, 0.13],
+  ["Ram", 16, 811283, 8789, 86295, 95084, 724988, 0.13],
+  ["Ram", 17, 724988, 7854, 87230, 95084, 637758, 0.13],
+  ["Ram", 18, 637758, 6909, 88175, 95084, 549583, 0.13],
+  ["Ram", 19, 549583, 5954, 89130, 95084, 460453, 0.13],
+  ["Ram", 20, 460453, 4988, 90096, 95084, 370357, 0.13],
+  ["Ram", 21, 370357, 4020, 91064, 95084, 279293, 0.13],
+  ["Ram", 22, 279293, 3026, 92058, 95084, 187235, 0.13],
+  ["Ram", 23, 187235, 2029, 93055, 95084, 94180, 0.13],
+  ["Ram", 24, 94180, 1020, 94064, 95084, 0, 0.13],
+  ["Shyam", 1, 5500000, 32083, 76823, 108907, 5423177, 0.07],
+  ["Shyam", 2, 5423177, 31635, 77271, 108907, 5345905, 0.07],
+  ["Shyam", 3, 5345905, 31184, 77722, 108907, 5268183, 0.07],
+  ["Shyam", 4, 5268183, 30731, 78176, 108907, 5190008, 0.07],
+  ["Shyam", 5, 5190008, 30275, 78632, 108907, 5111376, 0.07],
+  ["Shyam", 6, 5111376, 29816, 79090, 108907, 5032286, 0.07],
+  ["Shyam", 7, 5032286, 29355, 79552, 108907, 4952734, 0.07],
+  ["Shyam", 8, 4952734, 28891, 80016, 108907, 4872719, 0.07],
+  ["Shyam", 9, 4872719, 28424, 80482, 108907, 4792236, 0.07],
+  ["Shyam", 10, 4792236, 27955, 80952, 108907, 4711284, 0.07],
+  ["Shyam", 11, 4711284, 27482, 81424, 108907, 4629860, 0.07],
+  ["Shyam", 12, 4629860, 27008, 81899, 108907, 4547961, 0.07],
+  ["Shyam", 13, 4547961, 26530, 82377, 108907, 4465584, 0.07],
+  ["Shyam", 14, 4465584, 26049, 82857, 108907, 4382727, 0.07],
+  ["Shyam", 15, 4382727, 25566, 83341, 108907, 4299386, 0.07],
+  ["Shyam", 16, 4299386, 25080, 83827, 108907, 4215560, 0.07],
+  ["Shyam", 17, 4215560, 24591, 84316, 108907, 4131244, 0.07],
+  ["Shyam", 18, 4131244, 24099, 84808, 108907, 4046436, 0.07],
+  ["Shyam", 19, 4046436, 23604, 85302, 108907, 3961134, 0.07],
+  ["Shyam", 20, 3961134, 23107, 85800, 108907, 3875334, 0.07],
+  ["Shyam", 21, 3875334, 22606, 86300, 108907, 3789033, 0.07],
+  ["Shyam", 22, 3789033, 22103, 86804, 108907, 3702229, 0.07],
+  ["Shyam", 23, 3702229, 21596, 87310, 108907, 3614919, 0.07],
+  ["Shyam", 24, 3614919, 21087, 87820, 108907, 3527099, 0.07],
+  ["Shyam", 25, 3527099, 20575, 88332, 108907, 3438768, 0.07],
+  ["Shyam", 26, 3438768, 20059, 88847, 108907, 3349921, 0.07],
+  ["Shyam", 27, 3349921, 19541, 89365, 108907, 3260555, 0.07],
+  ["Shyam", 28, 3260555, 19020, 89887, 108907, 3170668, 0.07],
+  ["Shyam", 29, 3170668, 18496, 90411, 108907, 3080257, 0.07],
+  ["Shyam", 30, 3080257, 17968, 90938, 108907, 2989319, 0.07],
+  ["Shyam", 31, 2989319, 17438, 91469, 108907, 2897850, 0.07],
+  ["Shyam", 32, 2897850, 16904, 92002, 108907, 2805848, 0.07],
+  ["Shyam", 33, 2805848, 16367, 92539, 108907, 2713308, 0.07],
+  ["Shyam", 34, 2713308, 15828, 93079, 108907, 2620230, 0.07],
+  ["Shyam", 35, 2620230, 15285, 93622, 108907, 2526608, 0.07],
+  ["Shyam", 36, 2526608, 14739, 94168, 108907, 2432440, 0.07],
+  ["Shyam", 37, 2432440, 14189, 94717, 108907, 2337722, 0.07],
+  ["Shyam", 38, 2337722, 13637, 95270, 108907, 2242452, 0.07],
+  ["Shyam", 39, 2242452, 13081, 95826, 108907, 2146627, 0.07],
+  ["Shyam", 40, 2146627, 12522, 96385, 108907, 2050242, 0.07],
+  ["Shyam", 41, 2050242, 11960, 96947, 108907, 1953295, 0.07],
+  ["Shyam", 42, 1953295, 11394, 97512, 108907, 1855783, 0.07],
+  ["Shyam", 43, 1855783, 10825, 98081, 108907, 1757702, 0.07],
+  ["Shyam", 44, 1757702, 10253, 98653, 108907, 1659048, 0.07],
+  ["Shyam", 45, 1659048, 9678, 99229, 108907, 1559820, 0.07],
+  ["Shyam", 46, 1559820, 9099, 99808, 108907, 1460012, 0.07],
+  ["Shyam", 47, 1460012, 8517, 100390, 108907, 1359622, 0.07],
+  ["Shyam", 48, 1359622, 7931, 100975, 108907, 1258647, 0.07],
+  ["Shyam", 49, 1258647, 7342, 101564, 108907, 1157082, 0.07],
+  ["Shyam", 50, 1157082, 6750, 102157, 108907, 1054925, 0.07],
+  ["Shyam", 51, 1054925, 6154, 102753, 108907, 952172, 0.07],
+  ["Shyam", 52, 952172, 5554, 103352, 108907, 848820, 0.07],
+  ["Shyam", 53, 848820, 4951, 103955, 108907, 744865, 0.07],
+  ["Shyam", 54, 744865, 4345, 104562, 108907, 640303, 0.07],
+  ["Shyam", 55, 640303, 3735, 105171, 108907, 535132, 0.07],
+  ["Shyam", 56, 535132, 3122, 105785, 108907, 4, 0.07],
+  ["Pranjali", 1, 500000, 2917, 48701, 51618, 451299, 0.07],
+  ["Pranjali", 2, 451299, 2633, 48986, 51618, 402313, 0.07],
+  ["Pranjali", 3, 402313, 2347, 49271, 51618, 353042, 0.07],
+  ["Pranjali", 4, 353042, 2059, 49559, 51618, 303483, 0.07],
+  ["Pranjali", 5, 303483, 1770, 49848, 51618, 253635, 0.07],
+  ["Pranjali", 6, 253635, 3000, 49723, 52259, 203912, 0.12],
+  ["Pranjali", 7, 203912, 2039, 50220, 52259, 153693, 0.12],
+  ["Pranjali", 8, 153693, 1537, 50722, 52259, 102971, 0.12],
+  ["Pranjali", 9, 102971, 1030, 51229, 52259, 51741, 0.12],
+  ["Pranjali", 10, 51741, 517, 51741, 52259, 0, 0.12],
 ];
 
 // Each row: [Opening Balance, Interest, Principal, EMI, Closing Balance, Interest Rate] — aligned to the same
 // row index as LOAN_CALC_ROWS / LOAN_BANK_ROWS above. Empty cells are rendered as 0.
 const LOAN_DIFF_ROWS = [
-  [0,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,0.01],
-  [null,286,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,464,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
-  [null,null,null,null,null,null],
+  [0, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, 0.01],
+  [null, 286, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, 464, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
+  [null, null, null, null, null, null],
 ];
 
 const KYC_TABLES = [
@@ -2720,7 +2737,7 @@ async function saveObservation(event, id, addAnother = false) {
   };
 
   formData.forEach((val, key) => { payload[key] = val; });
-  
+
   const checkbox = form.querySelector('[name="TargetDateNotApplicable"]');
   if (checkbox) {
     payload['TargetDateNotApplicable'] = checkbox.checked ? 'true' : 'false';
@@ -2842,6 +2859,156 @@ function hexA(hex, alpha) {
 }
 
 loadData();
+// HOME PAGE loads first (it's the default active page, before any nav tab
+// is selected), so its charts are drawn straight away rather than waiting
+// on loadData()/renderCurrentPage() to route to it.
+renderHomeCharts();
+
+// ─────────────────────────────────────────────────────────────
+// HOME PAGE: Count-of-Error charts (pie + 2 bar graphs)
+// Data mirrors the "Count of Error" column of the 7-control summary
+// table on the Home screen. Kept as a static array here (rather than
+// scraped from RAW) since the Home table itself is static markup.
+// ─────────────────────────────────────────────────────────────
+function homeErrorData() {
+  return [
+    { name: 'IT Control', errors: 48 },
+    { name: 'HR management', errors: 35 },
+    { name: 'Audit trial', errors: 10 },
+    { name: 'EMI Checking', errors: 16 },
+    { name: 'Purchase', errors: 14 },
+    { name: 'KYC Checks', errors: 42 },
+    { name: 'Loan Checklist', errors: 36 },
+  ];
+}
+
+function renderHomeCharts() {
+  const data = homeErrorData();
+  renderHomePieChart(data);
+  renderHomeBarSeqChart(data);
+  renderHomeMonthlyStackedChart(data);
+}
+
+function renderHomePieChart(data) {
+  const el = document.getElementById('chart-home-pie');
+  if (!el) return;
+  destroyChart('home-pie');
+  CHARTS['home-pie'] = new Chart(el, {
+    type: 'pie',
+    data: {
+      labels: data.map(d => d.name),
+      datasets: [{
+        data: data.map(d => d.errors),
+        backgroundColor: PIE_COLORS,
+        borderColor: '#fff',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 9, font: { size: 10 }, padding: 7 } }
+      }
+    }
+  });
+}
+
+function renderHomeBarSeqChart(data) {
+  const el = document.getElementById('chart-home-bar-seq');
+  if (!el) return;
+  destroyChart('home-bar-seq');
+  CHARTS['home-bar-seq'] = new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.name),
+      datasets: [{
+        label: 'Count of Error',
+        data: data.map(d => d.errors),
+        backgroundColor: C.orange,
+        borderRadius: 5,
+        maxBarThickness: 46,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, grid: { color: '#eee' }, ticks: { font: { size: 10 } } },
+        x: { grid: { display: false }, ticks: { font: { size: 10.5 } } }
+      }
+    }
+  });
+}
+
+function renderHomeMonthlyStackedChart(data) {
+  const { months, series } = getHomeMonthlySplit(data);
+  const el = document.getElementById('chart-home-bar-sorted');
+  if (!el) return;
+  destroyChart('home-bar-sorted');
+  CHARTS['home-bar-sorted'] = new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: series.map((s, i) => ({
+        label: s.name,
+        data: s.values,
+        backgroundColor: PIE_COLORS[i % PIE_COLORS.length],
+        borderRadius: 3,
+        maxBarThickness: 90,
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9.5 }, padding: 6 } },
+        tooltip: {
+          callbacks: {
+            footer: (items) => {
+              const total = items.reduce((sum, it) => sum + it.parsed.y, 0);
+              return `Month total: ${total}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, grid: { color: '#eee' }, ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+}
+
+// ── Monthly split helper ─────────────────────────────────────
+// Breaks each control's total error count into 5 random non-negative
+// integers (one per month) that add back up to the control's total
+// (e.g. Audit trial's 5 monthly values always sum to 10). Cached so
+// the random split stays stable across re-renders/page revisits
+// instead of reshuffling every time Home is opened.
+function getHomeMonthlySplit(data) {
+  if (HOME_MONTHLY_SPLIT) return HOME_MONTHLY_SPLIT;
+  const months = ['April', 'May', 'June', 'July', 'August'];
+  HOME_MONTHLY_SPLIT = {
+    months,
+    series: data.map(d => ({ name: d.name, values: splitTotalAcrossParts(d.errors, months.length) }))
+  };
+  return HOME_MONTHLY_SPLIT;
+}
+
+function splitTotalAcrossParts(total, parts) {
+  if (total <= 0) return new Array(parts).fill(0);
+  const cuts = [];
+  for (let i = 0; i < parts - 1; i++) cuts.push(Math.floor(Math.random() * (total + 1)));
+  cuts.sort((a, b) => a - b);
+  const values = [];
+  let prev = 0;
+  for (let i = 0; i < parts - 1; i++) { values.push(cuts[i] - prev); prev = cuts[i]; }
+  values.push(total - prev);
+  return values;
+}
+
 function generateCardHtml(t) {
   const headBtn = `<div style="display:flex;gap:6px;align-items:center;">
       <button class="btn ghost sm" type="button" onclick="downloadDynamicExcel('${t.id}')" style="padding:5px 10px;font-size:11px;">📥 Excel</button>
@@ -2854,7 +3021,7 @@ function generateCardHtml(t) {
       </div>`;
 
   const headCells = t.headers.map(h => `<th>${esc(h)}</th>`).join('');
-  
+
   const rowsHtml = t.rows.map((row, i) => {
     const issueId = `${t.id}-${i}`;
     // Assume first column is the entity key
@@ -2865,13 +3032,13 @@ function generateCardHtml(t) {
       ENTITY_KEY: entityKey,
       REMARK: getSavedRemark(issueId)
     };
-    
+
     const dataCells = row.map(cell => {
-  // Check if it's a number to right align, or just use string
-  const isNum = !t.plain && /^\d+$/.test(cell);
-  return `<td${isNum ? ' class="c num"' : ''}>${esc(cell)}</td>`;
-}).join('');
-    
+      // Check if it's a number to right align, or just use string
+      const isNum = !t.plain && /^\d+$/.test(cell);
+      return `<td${isNum ? ' class="c num"' : ''}>${esc(cell)}</td>`;
+    }).join('');
+
     return `<tr>${dataCells}${renderRemarkCell(r)}</tr>`;
   }).join('');
 
@@ -2887,12 +3054,12 @@ function generateCardHtml(t) {
 function renderKyc() {
   const container = document.getElementById('kyc-tables-container');
   if (!container) return;
-  
+
   let html = '';
   // Arrange in grid g2
   for (let i = 0; i < KYC_TABLES.length; i += 2) {
     const t1 = KYC_TABLES[i];
-    const t2 = KYC_TABLES[i+1];
+    const t2 = KYC_TABLES[i + 1];
     if (t2) {
       html += `<div class="grid g2"><div>${generateCardHtml(t1)}</div><div>${generateCardHtml(t2)}</div></div>`;
     } else {
@@ -2905,12 +3072,12 @@ function renderKyc() {
 function renderLoan() {
   const container = document.getElementById('loan-tables-container');
   if (!container) return;
-  
+
   let html = '';
   // Arrange in grid g2
   for (let i = 0; i < LOAN_TABLES.length; i += 2) {
     const t1 = LOAN_TABLES[i];
-    const t2 = LOAN_TABLES[i+1];
+    const t2 = LOAN_TABLES[i + 1];
     if (t2) {
       html += `<div class="grid g2"><div>${generateCardHtml(t1)}</div><div>${generateCardHtml(t2)}</div></div>`;
     } else {
@@ -2928,7 +3095,7 @@ function downloadDynamicExcel(tableId) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
   let xml = '<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Sheet1"><Table>';
-  
+
   // Headers
   xml += '<Row>';
   tableConfig.headers.forEach(h => {
