@@ -286,6 +286,55 @@
         <div class="s-sub">Access, auth & activity checks</div>
       </div>
     </div>
+    <div class="grid g4 vis-row">
+      <!-- Card 1: Flagged Users by Category (Horizontal Bar Chart with Axes) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Flagged Users by Category</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="itc-vis-breakdown"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Card 2: Risk Level Incident Distribution (Column Chart with Axes) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Incidents by Risk Priority</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="itc-vis-severity"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Card 3: Geographic Incident Exposure (Bar Chart with Axes) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Incidents by Location</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="itc-vis-location"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Card 4: Risk Level Share (Pie Chart with Legend) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Risk Level Share</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="itc-vis-pie"></canvas></div>
+        </div>
+      </div>
+    </div>
     <div class="section-label">Access &amp; Authentication Checks</div>
     <div class="grid g3" style="margin-bottom:18px" id="itc-row-1"></div>
     <div class="section-label">Activity Monitoring Checks</div>
@@ -361,6 +410,55 @@
         <div class="s-label">Loan Types Covered</div>
         <div class="s-val">3</div>
         <div class="s-sub">Home, Vehicle & Personal</div>
+      </div>
+    </div>
+    <div class="grid g4 vis-row">
+      <!-- Card 1: Monthly Payment Comparison (Grouped Bar Chart with Axes) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Calculated EMI vs Bank Payment</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="emi-vis-comparison"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Card 2: Tracked Tenure by Loan Type (Column Chart with Axes) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Tenure Months by Loan Type</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="emi-vis-tenure"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Card 3: Reconciliation Status Split (Column Chart with Axes) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Reconciliation Record Status</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="emi-vis-status"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Card 4: Loan Portfolio Share (Pie Chart with Legend) -->
+      <div class="card vis-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Loan Portfolio Share</div>
+          </div>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="emi-vis-pie"></canvas></div>
+        </div>
       </div>
     </div>
     <div class="loan-filter-bar">
@@ -1022,6 +1120,56 @@
           <div class="s-label">Categories Monitored</div>
           <div class="s-val">7</div>
           <div class="s-sub">Duplicate PAN/Aadhaar included</div>
+        </div>
+      </div>
+
+      <div class="grid g4 vis-row">
+        <!-- Card 1: Flagged Accounts by Exception (Horizontal Bar Chart with Axes) -->
+        <div class="card vis-card">
+          <div class="card-h">
+            <div class="grow">
+              <div class="ttl">Flagged Accounts by Exception</div>
+            </div>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap chart-wrap-vis-trend"><canvas id="kyc-vis-breakdown"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Card 2: Priority Level Distribution (Column Chart with Axes) -->
+        <div class="card vis-card">
+          <div class="card-h">
+            <div class="grow">
+              <div class="ttl">Accounts by Priority Level</div>
+            </div>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap chart-wrap-vis-trend"><canvas id="kyc-vis-priority"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Card 3: Document Verification Status (Column Chart with Axes) -->
+        <div class="card vis-card">
+          <div class="card-h">
+            <div class="grow">
+              <div class="ttl">Document Verification Status</div>
+            </div>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap chart-wrap-vis-trend"><canvas id="kyc-vis-status"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Card 4: Priority Level Share (Pie Chart with Legend) -->
+        <div class="card vis-card">
+          <div class="card-h">
+            <div class="grow">
+              <div class="ttl">Priority Level Share</div>
+            </div>
+          </div>
+          <div class="card-b">
+            <div class="chart-wrap chart-wrap-vis-trend"><canvas id="kyc-vis-pie"></canvas></div>
+          </div>
         </div>
       </div>
 

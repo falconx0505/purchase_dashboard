@@ -318,7 +318,7 @@ def normalize_audit_row(row):
     if "quantity" not in normalized and "Quantity" not in normalized:
         normalized["quantity"] = safe_value(row.get("Qty")) or safe_value(row.get("Quantity")) or "Unspecified"
     if "monthname" not in normalized and "MonthName" not in normalized:
-        normalized["monthname"] = safe_value(row.get("Month Name")) or safe_value(row.get("Month")) or "Unspecified"
+        normalized["monthname"] = safe_value(row.get("Month Name")) or safe_value(row.get("MonthName")) or safe_value(row.get("Month")) or "Unspecified"
 
     if "year" in normalized and normalized["year"] and normalized["year"] != "Unspecified":
         normalized["year"] = str(normalized["year"]).strip()

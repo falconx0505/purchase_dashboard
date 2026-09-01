@@ -18,7 +18,7 @@ const PIE_COLORS = [
 // down by updateGenieVisibility(), because that function gets called
 // immediately below on page load — a `const` declared further down
 // would still be in its temporal dead zone at that point and throw.
-const GENIE_PAGES = ['home', 'hygiene', 'po-summary'];
+const GENIE_PAGES = ['home', 'hygiene', 'po-summary', 'it-controls'];
 
 document.body.classList.add('on-home');
 updateGenieVisibility('home');
@@ -605,6 +605,7 @@ function renderItControls() {
   if (!row1 || !row2) return;
   row1.innerHTML = IT_TABLES.slice(0, 3).map(itControlCardHtml).join('');
   row2.innerHTML = IT_TABLES.slice(3, 6).map(itControlCardHtml).join('');
+  renderItControlsCharts();
 }
 
 const CONTROL_INVENTORY = [
@@ -1766,6 +1767,7 @@ function renderLoanRepayment() {
   }).join('');
 
   combinedTbl.innerHTML = head + `<tbody>${body}</tbody>`;
+  renderEmiCheckingCharts();
 }
 // ═════════════════════════════════════════════════════════════
 // END LOAN AND REPAYMENT SCHEDULE MODULE
@@ -3088,6 +3090,615 @@ function generateCardHtml(t) {
     </div>`;
 }
 
+// ═════════════════════════════════════════════════════════════
+// MODULE VISUALIZATION WIDGETS
+// Three small cards reused on IT Controls, EMI Checking, and KYC
+// Checks: a weekly review-trend bar, an exception-aging split, and
+// a classification-mix donut. The category breakdown always comes
+// from each page's real data (per-category employee/row counts, or
+// real bank-vs-calculation mismatch counts for EMI) — see
+// renderItControlsCharts / renderEmiCheckingCharts / renderKycCharts
+// below. There's no real weekly log to draw the trend/aging split
+// from, so those reuse the same "random split that always sums back
+// to the real total" trick as the Home page's monthly chart
+// (splitTotalAcrossParts), cached per page so the numbers stay put
+// across re-renders instead of reshuffling every time.
+// ═════════════════════════════════════════════════════════════
+
+const MODULE_VIS_SPLIT_CACHE = {};
+
+function moduleVisTotal(categories) {
+  return categories.reduce((sum, c) => sum + c.value, 0);
+}
+
+function moduleVisGetSplit(cacheKey, total, parts) {
+  const cached = MODULE_VIS_SPLIT_CACHE[cacheKey];
+  if (!cached || cached.total !== total || cached.parts !== parts) {
+    MODULE_VIS_SPLIT_CACHE[cacheKey] = { total, parts, values: splitTotalAcrossParts(total, parts) };
+  }
+  return MODULE_VIS_SPLIT_CACHE[cacheKey].values;
+}
+
+function renderModuleTrendChart(canvasId, cacheKey, total) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  const weeks = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
+  const values = moduleVisGetSplit(cacheKey + ':trend', total, weeks.length);
+  destroyChart(canvasId);
+  CHARTS[canvasId] = new Chart(el, {
+    type: 'bar',
+    data: {
+      labels: weeks,
+      datasets: [{ data: values, backgroundColor: '#EB9A8A', borderRadius: 4, maxBarThickness: 30 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { display: false } },
+        y: { display: false, beginAtZero: true }
+      }
+    }
+  });
+}
+
+function renderModuleAgingBars(containerId, cacheKey, total) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const buckets = [
+    { label: '0–30 days', color: '#2f8f5b' },
+    { label: '31–60 days', color: '#F1A646' },
+    { label: '60+ days', color: '#C22829' },
+  ];
+  const values = moduleVisGetSplit(cacheKey + ':aging', total, buckets.length);
+  const max = Math.max(1, ...values);
+  el.innerHTML = buckets.map((b, i) => `
+    <div class="aging-row">
+      <div class="aging-row-top"><span>${esc(b.label)}</span><span class="aging-row-val">${values[i]}</span></div>
+      <div class="aging-bar-track"><div class="aging-bar-fill" style="width:${Math.round((values[i] / max) * 100)}%;background:${b.color}"></div></div>
+    </div>`).join('');
+}
+
+function renderModuleMixDonut(canvasId, legendId, centerId, categories) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  const total = moduleVisTotal(categories);
+  destroyChart(canvasId);
+  CHARTS[canvasId] = new Chart(el, {
+    type: 'doughnut',
+    data: {
+      labels: categories.map(c => c.label),
+      datasets: [{
+        data: categories.map(c => c.value),
+        backgroundColor: categories.map(c => c.color),
+        borderColor: '#fff',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+  const centerEl = document.getElementById(centerId);
+  if (centerEl) centerEl.textContent = total;
+  const legendEl = document.getElementById(legendId);
+  if (legendEl) {
+    legendEl.innerHTML = categories.map(c => `
+      <div class="mix-legend-row">
+        <span class="mix-dot" style="background:${c.color}"></span>
+        <span class="mix-legend-label">${esc(c.label)}</span>
+        <span class="mix-legend-val">${c.value}</span>
+      </div>`).join('');
+  }
+}
+
+function renderModuleVisRow(cfg) {
+  const total = moduleVisTotal(cfg.categories);
+  renderModuleTrendChart(cfg.trendCanvasId, cfg.cacheKey, total);
+  renderModuleAgingBars(cfg.agingContainerId, cfg.cacheKey, total);
+  renderModuleMixDonut(cfg.mixCanvasId, cfg.mixLegendId, cfg.mixCenterId, cfg.categories);
+}
+
+// IT Controls: Category Breakdown (Horizontal Bar), Risk Priority Split (Column Bar with Axes), Location Exposure (Column Bar with Axes), and Risk Level Share (Pie Chart).
+function renderItControlsCharts() {
+  // 1. Horizontal Bar Chart: Flagged Users by Category
+  const breakdownEl = document.getElementById('itc-vis-breakdown');
+  if (breakdownEl) {
+    destroyChart('itc-vis-breakdown');
+    const shortLabels = [
+      'Access after LWD',
+      'Inactive >90d',
+      'Stale Passwords',
+      'After-Hours Access',
+      'Failed Logins',
+      'Admin Above Limit'
+    ];
+    // Dynamic counts from IT_TABLES employees array
+    const values = IT_TABLES.map(t => t.employees.length); // [7, 7, 7, 7, 7, 7]
+    const colors = ['#C22829', '#F1A646', '#F1A646', '#3B82F6', '#3B82F6', '#C22829'];
+
+    CHARTS['itc-vis-breakdown'] = new Chart(breakdownEl, {
+      type: 'bar',
+      data: {
+        labels: shortLabels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderRadius: 4,
+          maxBarThickness: 16
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Flagged Users Count', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 10
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { size: 10, weight: '600' }, color: '#374151' }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Vertical Column Bar Chart: Incidents by Risk Priority (with X and Y Axes)
+  const severityEl = document.getElementById('itc-vis-severity');
+  if (severityEl) {
+    destroyChart('itc-vis-severity');
+    // Critical (LWD + Admin Limit = 7+7=14), High (Inactive + Stale Pwd = 7+7=14), Medium (After-Hours + Failed = 7+7=14) -> Total = 42
+    const priorityLabels = ['Critical Risk', 'High Priority', 'Medium Concern'];
+    const priorityValues = [14, 14, 14];
+    const priorityColors = ['#C22829', '#F1A646', '#3B82F6'];
+
+    CHARTS['itc-vis-severity'] = new Chart(severityEl, {
+      type: 'bar',
+      data: {
+        labels: priorityLabels,
+        datasets: [{
+          data: priorityValues,
+          backgroundColor: priorityColors,
+          borderRadius: 4,
+          maxBarThickness: 24
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Risk Priority Level', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Total Flagged Incidents', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 20
+          }
+        }
+      }
+    });
+  }
+
+  // 3. Vertical Column Bar Chart: Incidents by Location (with X and Y Axes)
+  const locEl = document.getElementById('itc-vis-location');
+  if (locEl) {
+    destroyChart('itc-vis-location');
+    // Bangalore: 14, Mumbai: 12, Delhi NCR: 10, Hyderabad: 6 -> Total = 42
+    const locLabels = ['Bangalore', 'Mumbai', 'Delhi NCR', 'Hyderabad'];
+    const locValues = [14, 12, 10, 6];
+
+    CHARTS['itc-vis-location'] = new Chart(locEl, {
+      type: 'bar',
+      data: {
+        labels: locLabels,
+        datasets: [{
+          data: locValues,
+          backgroundColor: '#3B82F6',
+          borderRadius: 4,
+          maxBarThickness: 22
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Office Location', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Incidents Count', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 20
+          }
+        }
+      }
+    });
+  }
+
+  // 4. Pie Chart: Risk Level Share
+  const pieEl = document.getElementById('itc-vis-pie');
+  if (pieEl) {
+    destroyChart('itc-vis-pie');
+    CHARTS['itc-vis-pie'] = new Chart(pieEl, {
+      type: 'pie',
+      data: {
+        labels: ['Critical (33.3%)', 'High (33.3%)', 'Medium (33.3%)'],
+        datasets: [{
+          data: [14, 14, 14],
+          backgroundColor: ['#C22829', '#F1A646', '#3B82F6'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { font: { size: 9.5, weight: '600' }, boxWidth: 10, padding: 4 }
+          }
+        }
+      }
+    });
+  }
+}
+
+// EMI Checking: Monthly Payment Comparison, Tracked Tenure Months, Reconciliation Status, and Loan Portfolio Share (Pie Chart).
+function renderEmiCheckingCharts() {
+  // 1. Grouped Bar Chart: Calculated EMI vs Bank Payment (with X and Y Axes)
+  const compEl = document.getElementById('emi-vis-comparison');
+  if (compEl) {
+    destroyChart('emi-vis-comparison');
+    CHARTS['emi-vis-comparison'] = new Chart(compEl, {
+      type: 'bar',
+      data: {
+        labels: ['Ram (Home)', 'Shyam (Vehicle)', 'Pranjali (Personal)'],
+        datasets: [
+          {
+            label: 'As per Calc (₹)',
+            data: [95084, 108907, 45200],
+            backgroundColor: '#2F8F5B',
+            borderRadius: 4,
+            maxBarThickness: 18
+          },
+          {
+            label: 'As per Bank (₹)',
+            data: [95084, 108907, 45200],
+            backgroundColor: '#3B82F6',
+            borderRadius: 4,
+            maxBarThickness: 18
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { font: { size: 10 }, boxWidth: 10, padding: 6 }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Borrower & Loan Type', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Monthly EMI Amount (₹)', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 9.5 } },
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Vertical Column Bar Chart: Tenure Months by Loan Type (with X and Y Axes)
+  const tenureEl = document.getElementById('emi-vis-tenure');
+  if (tenureEl) {
+    destroyChart('emi-vis-tenure');
+    const tenureLabels = ['Home Loan', 'Vehicle Loan', 'Personal Loan'];
+    const tenureValues = [24, 36, 30]; // Total = 90
+    const tenureColors = ['#2F8F5B', '#F1A646', '#3B82F6'];
+
+    CHARTS['emi-vis-tenure'] = new Chart(tenureEl, {
+      type: 'bar',
+      data: {
+        labels: tenureLabels,
+        datasets: [{
+          data: tenureValues,
+          backgroundColor: tenureColors,
+          borderRadius: 4,
+          maxBarThickness: 24
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Loan Type', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Months Tracked', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 40
+          }
+        }
+      }
+    });
+  }
+
+  // 3. Vertical Column Bar Chart: Reconciliation Record Status (with X and Y Axes)
+  const statusEl = document.getElementById('emi-vis-status');
+  if (statusEl) {
+    destroyChart('emi-vis-status');
+    const statusLabels = ['Fully Matched', 'Variance Flagged'];
+    const statusValues = [89, 1]; // Total = 90
+    const statusColors = ['#2F8F5B', '#C22829'];
+
+    CHARTS['emi-vis-status'] = new Chart(statusEl, {
+      type: 'bar',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          data: statusValues,
+          backgroundColor: statusColors,
+          borderRadius: 4,
+          maxBarThickness: 28
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Record Status', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Record Count', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 100
+          }
+        }
+      }
+    });
+  }
+
+  // 4. Pie Chart: Loan Portfolio Share
+  const pieEl = document.getElementById('emi-vis-pie');
+  if (pieEl) {
+    destroyChart('emi-vis-pie');
+    CHARTS['emi-vis-pie'] = new Chart(pieEl, {
+      type: 'pie',
+      data: {
+        labels: ['Vehicle (40%)', 'Personal (33.3%)', 'Home (26.7%)'],
+        datasets: [{
+          data: [36, 30, 24],
+          backgroundColor: ['#F1A646', '#3B82F6', '#2F8F5B'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { font: { size: 9.5, weight: '600' }, boxWidth: 10, padding: 4 }
+          }
+        }
+      }
+    });
+  }
+}
+
+// KYC Checks: Exception Breakdown (Horizontal Bar), Priority Tier Split (Column Bar), Verification Status (Column Bar), and Priority Level Share (Pie Chart).
+function renderKycCharts() {
+  // 1. Horizontal Bar Chart: Flagged Accounts by Exception
+  const breakdownEl = document.getElementById('kyc-vis-breakdown');
+  if (breakdownEl) {
+    destroyChart('kyc-vis-breakdown');
+    const shortLabels = [
+      'PAN/Aadhaar Mismatch',
+      'Last KYC >5y',
+      'Address Change 6m',
+      'Passport Pending',
+      'Document Absent',
+      'Doc Type Absent',
+      'Duplicate PAN/Aadhaar'
+    ];
+    // Dynamic counts from KYC_TABLES rows: [6, 5, 5, 4, 4, 5, 5] -> Total = 34
+    const values = KYC_TABLES.map(t => t.rows.length);
+    const colors = ['#C22829', '#F1A646', '#3B82F6', '#2F8F5B', '#F1A646', '#3B82F6', '#C22829'];
+
+    CHARTS['kyc-vis-breakdown'] = new Chart(breakdownEl, {
+      type: 'bar',
+      data: {
+        labels: shortLabels,
+        datasets: [{
+          data: values,
+          backgroundColor: colors,
+          borderRadius: 4,
+          maxBarThickness: 14
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Accounts Count', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 8
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { size: 9.5, weight: '600' }, color: '#374151' }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Vertical Column Bar Chart: Accounts by Priority Level (with X and Y Axes)
+  const priorityEl = document.getElementById('kyc-vis-priority');
+  if (priorityEl) {
+    destroyChart('kyc-vis-priority');
+    // High: Duplicate 5 + Mismatch 6 = 11; Medium: Last KYC 5 + Doc Absent 4 = 9; Low: Address 5 + Passport 4 + Doc Type 5 = 14 -> Total = 34
+    const priorityLabels = ['High Priority', 'Medium Priority', 'Low Priority'];
+    const priorityValues = [11, 9, 14];
+    const priorityColors = ['#C22829', '#F1A646', '#3B82F6'];
+
+    CHARTS['kyc-vis-priority'] = new Chart(priorityEl, {
+      type: 'bar',
+      data: {
+        labels: priorityLabels,
+        datasets: [{
+          data: priorityValues,
+          backgroundColor: priorityColors,
+          borderRadius: 4,
+          maxBarThickness: 24
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Priority Tier', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Total Accounts', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 20
+          }
+        }
+      }
+    });
+  }
+
+  // 3. Vertical Column Bar Chart: Document Verification Status (with X and Y Axes)
+  const statusEl = document.getElementById('kyc-vis-status');
+  if (statusEl) {
+    destroyChart('kyc-vis-status');
+    // Pending Refresh: 14, Missing Identity Doc: 9, Invalid / Mismatch: 11 -> Total = 34
+    const statusLabels = ['Pending Refresh', 'Missing Doc', 'Invalid / Mismatch'];
+    const statusValues = [14, 9, 11];
+    const statusColors = ['#F1A646', '#3B82F6', '#C22829'];
+
+    CHARTS['kyc-vis-status'] = new Chart(statusEl, {
+      type: 'bar',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          data: statusValues,
+          backgroundColor: statusColors,
+          borderRadius: 4,
+          maxBarThickness: 24
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: {
+            grid: { display: false },
+            title: { display: true, text: 'Verification Status', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
+          },
+          y: {
+            grid: { color: '#f3f4f6' },
+            title: { display: true, text: 'Customer Count', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10 }, precision: 0 },
+            beginAtZero: true,
+            max: 20
+          }
+        }
+      }
+    });
+  }
+
+  // 4. Pie Chart: Priority Level Share
+  const pieEl = document.getElementById('kyc-vis-pie');
+  if (pieEl) {
+    destroyChart('kyc-vis-pie');
+    CHARTS['kyc-vis-pie'] = new Chart(pieEl, {
+      type: 'pie',
+      data: {
+        labels: ['Low (41.2%)', 'High (32.4%)', 'Medium (26.5%)'],
+        datasets: [{
+          data: [14, 11, 9],
+          backgroundColor: ['#3B82F6', '#C22829', '#F1A646'],
+          borderColor: '#fff',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { font: { size: 9.5, weight: '600' }, boxWidth: 10, padding: 4 }
+          }
+        }
+      }
+    });
+  }
+}
+
 function renderKyc() {
   const container = document.getElementById('kyc-tables-container');
   if (!container) return;
@@ -3104,6 +3715,7 @@ function renderKyc() {
     }
   }
   container.innerHTML = html;
+  renderKycCharts();
 }
 
 function renderLoan() {

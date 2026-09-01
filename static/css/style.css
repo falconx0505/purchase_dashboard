@@ -1973,3 +1973,210 @@ table.tbl-compact td.r {
 .filter-group select.remark-input {
   width: 100%;
 }
+
+/* ── MODULE VISUALIZATION WIDGETS ─────────────────────────────
+   Shared by IT Controls / EMI Checking / KYC Checks: a compact
+   3-card row (weekly trend / exception aging / classification
+   mix), styled to sit above each module's existing check tables. */
+.vis-row {
+  margin-bottom: 20px;
+}
+
+.vis-card .card-h {
+  padding-bottom: 6px;
+}
+
+.vis-card .ttl {
+  font-size: 13px;
+}
+
+.chart-wrap-vis-trend {
+  height: 140px;
+  padding: 4px 6px 0;
+}
+
+.chart-wrap-vis-trend canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.aging-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 4px 2px 6px;
+}
+
+.aging-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+
+.aging-row-val {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.aging-bar-track {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.aging-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+
+.vis-mix-body {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 2px 2px 6px;
+}
+
+.mix-donut-wrap {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  flex-shrink: 0;
+}
+
+.mix-donut-wrap canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.mix-center-value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.mix-legend {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-height: 108px;
+  overflow-y: auto;
+}
+
+.mix-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: var(--ink);
+}
+
+.mix-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mix-legend-label {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mix-legend-val {
+  font-family: var(--display);
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* Executive Summary Cards in Visualization Row */
+.vis-summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px;
+  height: 140px;
+  justify-content: space-between;
+}
+
+.summary-metric-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.summary-metric-badge.critical {
+  background: rgba(194, 40, 41, 0.12);
+  color: #C22829;
+}
+
+.summary-metric-badge.warning {
+  background: rgba(241, 166, 70, 0.15);
+  color: #D97706;
+}
+
+.summary-metric-badge.ok {
+  background: rgba(47, 143, 91, 0.12);
+  color: #2F8F5B;
+}
+
+.summary-text-lead {
+  font-size: 12px;
+  color: var(--ink);
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.summary-highlight {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.summary-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.summary-progress-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.summary-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .4s ease;
+}
