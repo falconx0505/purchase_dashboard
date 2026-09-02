@@ -18,6 +18,8 @@
 
   <!-- ── HEADER ─────────────────────────────────── -->
   <header class="hdr">
+    <button type="button" class="hdr-menu-btn" id="controls-panel-toggle" onclick="toggleControlsPanel()"
+      aria-label="Open controls menu" aria-controls="controls-panel" aria-expanded="false">☰</button>
     <a class="hdr-brand" href="#" onclick="goTo('home'); return false;">
       <img src="/static/images/logo.png" alt="LASER logo" class="hdr-logo-mark" />
       <span class="hdr-brand-text">
@@ -26,22 +28,182 @@
     </a>
     <div class="hdr-right">
       <div class="chip"><span class="dot"></span> FY 2026–27</div>
+      <button type="button" class="hdr-bell" aria-label="Notifications" title="Notifications">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        </svg>
+        <span class="hdr-bell-dot"></span>
+      </button>
     </div>
   </header>
   <div class="hdr-accent"></div>
 
+  <!-- ── CONTROLS PANEL (openable/closable on every page) ─────── -->
+  <div class="controls-panel-backdrop" id="controls-panel-backdrop" onclick="closeControlsPanel()"></div>
+  <aside class="controls-panel" id="controls-panel" aria-hidden="true">
+    <div class="cp-head">
+      <div class="cp-brand">
+        <img src="/static/images/logo.png" alt="" class="cp-brand-mark" />
+        <span class="cp-brand-text">LASER<span class="cp-brand-sub-inline">GRC</span></span>
+      </div>
+      <button type="button" class="cp-close" onclick="closeControlsPanel()" aria-label="Close controls menu">✕</button>
+    </div>
+    <nav class="cp-body">
+      <div class="cp-section-label">Overview</div>
+      <button type="button" class="cp-item" data-page="home" onclick="navFromPanel('home')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10" />
+            <line x1="12" y1="20" x2="12" y2="4" />
+            <line x1="6" y1="20" x2="6" y2="14" />
+          </svg></span><span class="cp-name">Dashboard</span>
+      </button>
+
+      <div class="cp-section-label">Control Monitoring</div>
+      <button type="button" class="cp-item" data-page="it-controls" onclick="navFromPanel('it-controls')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z" />
+          </svg></span><span class="cp-name">IT Controls</span><span class="cp-badge">48</span>
+      </button>
+      <button type="button" class="cp-item" data-page="hr-payroll" onclick="navFromPanel('hr-payroll')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg></span><span class="cp-name">HR &amp; Payroll</span><span class="cp-badge">35</span>
+      </button>
+      <button type="button" class="cp-item" data-page="audit-trail" onclick="navFromPanel('audit-trail')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="16" y2="17" />
+          </svg></span><span class="cp-name">Audit Trail</span><span class="cp-badge">10</span>
+      </button>
+      <button type="button" class="cp-item" data-page="loan-repayment" onclick="navFromPanel('loan-repayment')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2" />
+            <line x1="2" y1="10" x2="22" y2="10" />
+          </svg></span><span class="cp-name">EMI Checking</span><span class="cp-badge">16</span>
+      </button>
+      <button type="button" class="cp-item" data-page="welcome" onclick="navFromPanel('welcome')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          </svg></span><span class="cp-name">Purchase Hygiene</span><span class="cp-badge">14</span>
+      </button>
+      <button type="button" class="cp-item" data-page="kyc" onclick="navFromPanel('kyc')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="4" width="20" height="16" rx="2" />
+            <circle cx="8" cy="10" r="2" />
+            <line x1="13" y1="9" x2="19" y2="9" />
+            <line x1="13" y1="13" x2="19" y2="13" />
+            <line x1="5" y1="16" x2="11" y2="16" />
+          </svg></span><span class="cp-name">KYC Checks</span><span class="cp-badge">42</span>
+      </button>
+      <button type="button" class="cp-item" data-page="other-loan" onclick="navFromPanel('other-loan')">
+        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="6" height="6" rx="1" />
+            <path d="M4.5 7l1 1 2-2" />
+            <line x1="11" y1="7" x2="21" y2="7" />
+            <rect x="3" y="14" width="6" height="6" rx="1" />
+            <line x1="11" y1="17" x2="21" y2="17" />
+          </svg></span><span class="cp-name">Loan Checklist</span><span class="cp-badge">36</span>
+      </button>
+    </nav>
+    <div class="cp-foot">
+      <div class="cp-avatar">SD</div>
+      <div>
+        <div class="cp-user-name">Sundeep</div>
+        <div class="cp-user-role">Internal audit</div>
+      </div>
+    </div>
+  </aside>
+
   <!-- ── TOP NAV ────────────────────────────────── -->
   <nav class="topnav" id="topnav">
-    <button class="nav-tab" data-page="welcome">🏠 Welcome</button>
-    <button class="nav-tab" data-page="filters">⚙ Filters</button>
-    <button class="nav-tab" data-page="hygiene">🔍 Data Hygiene</button>
-    <button class="nav-tab" data-page="po-summary">📊 PO vs Invoice vs GRN vs Bank</button>
-    <button class="nav-tab" data-page="po-detail">📋 PO Detail</button>
-    <button class="nav-tab" data-page="purchase">🛒 Purchase</button>
-    <button class="nav-tab" data-page="ai-dashboard">🤖 AI Dashboard</button>
-    <button class="nav-tab" data-page="formula">✔ Calculation Check</button>
-    <button class="nav-tab" data-page="addition">➕ Addition</button>
-    <button class="nav-tab" data-page="upload-observation">📁 Upload </button>
+    <button class="nav-tab" data-page="welcome"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M3 12l9-9 9 9" />
+          <path d="M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10" />
+        </svg></span>Welcome</button>
+    <button class="nav-tab" data-page="filters"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <line x1="4" y1="21" x2="4" y2="14" />
+          <line x1="4" y1="10" x2="4" y2="3" />
+          <line x1="12" y1="21" x2="12" y2="12" />
+          <line x1="12" y1="8" x2="12" y2="3" />
+          <line x1="20" y1="21" x2="20" y2="16" />
+          <line x1="20" y1="12" x2="20" y2="3" />
+          <line x1="1" y1="14" x2="7" y2="14" />
+          <line x1="9" y1="8" x2="15" y2="8" />
+          <line x1="17" y1="16" x2="23" y2="16" />
+        </svg></span>Filters</button>
+    <button class="nav-tab" data-page="hygiene"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg></span>Data Hygiene</button>
+    <button class="nav-tab" data-page="po-summary"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10" />
+          <line x1="12" y1="20" x2="12" y2="4" />
+          <line x1="6" y1="20" x2="6" y2="14" />
+        </svg></span>PO vs Invoice vs GRN vs Bank</button>
+    <button class="nav-tab" data-page="po-detail"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z" />
+          <rect x="5" y="4" width="14" height="18" rx="2" />
+          <line x1="9" y1="11" x2="15" y2="11" />
+          <line x1="9" y1="15" x2="15" y2="15" />
+        </svg></span>PO Detail</button>
+    <button class="nav-tab" data-page="purchase"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1" />
+          <circle cx="20" cy="21" r="1" />
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+        </svg></span>Purchase</button>
+    <button class="nav-tab" data-page="ai-dashboard"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z" />
+          <path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" />
+        </svg></span>AI Dashboard</button>
+    <button class="nav-tab" data-page="formula"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg></span>Calculation Check</button>
+    <button class="nav-tab" data-page="addition"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="16" />
+          <line x1="8" y1="12" x2="16" y2="12" />
+        </svg></span>Addition</button>
+    <button class="nav-tab" data-page="upload-observation"><span class="nav-tab-icon"><svg class="icn"
+          viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg></span>Upload</button>
   </nav>
 
   <!-- ── USER BADGE (below navbar, all pages) ─────── -->
@@ -311,15 +473,15 @@
         </div>
       </div>
 
-      <!-- Card 3: Geographic Incident Exposure (Bar Chart with Axes) -->
+      <!-- Card 3: Flagged Users by Check Group (Bar Chart with Axes) -->
       <div class="card vis-card">
         <div class="card-h">
           <div class="grow">
-            <div class="ttl">Incidents by Location</div>
+            <div class="ttl">Flagged Users by Check Group</div>
           </div>
         </div>
         <div class="card-b">
-          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="itc-vis-location"></canvas></div>
+          <div class="chart-wrap chart-wrap-vis-trend"><canvas id="itc-vis-group"></canvas></div>
         </div>
       </div>
 
@@ -425,11 +587,11 @@
         </div>
       </div>
 
-      <!-- Card 2: Tracked Tenure by Loan Type (Column Chart with Axes) -->
+      <!-- Card 2: Months Tracked per Borrower (Column Chart with Axes) -->
       <div class="card vis-card">
         <div class="card-h">
           <div class="grow">
-            <div class="ttl">Tenure Months by Loan Type</div>
+            <div class="ttl">Months Tracked by Borrower</div>
           </div>
         </div>
         <div class="card-b">
@@ -449,11 +611,11 @@
         </div>
       </div>
 
-      <!-- Card 4: Loan Portfolio Share (Pie Chart with Legend) -->
+      <!-- Card 4: Original Loan Amount by Borrower (Pie Chart with Legend) -->
       <div class="card vis-card">
         <div class="card-h">
           <div class="grow">
-            <div class="ttl">Loan Portfolio Share</div>
+            <div class="ttl">Original Loan Amount by Borrower</div>
           </div>
         </div>
         <div class="card-b">
@@ -542,8 +704,13 @@
                   <div class="desc">GST rate mapped to more than one tax description</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
-                    onclick="downloadHygieneExcel('multi_tax')" style="padding:5px 10px;font-size:11px;">📥
-                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="downloadHygieneExcel('multi_tax')" style="padding:5px 10px;font-size:11px;"><svg
+                      class="icn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg> Excel</button><button class="obs-card-btn" type="button"
                     onclick="openObservationModal('multi_tax')">Observation</button></div>
               </div>
               <div class="card-b no-pad">
@@ -569,8 +736,13 @@
                   <div class="desc">A product billed at more than one GST rate</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
-                    onclick="downloadHygieneExcel('prod_gst')" style="padding:5px 10px;font-size:11px;">📥
-                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="downloadHygieneExcel('prod_gst')" style="padding:5px 10px;font-size:11px;"><svg class="icn"
+                      viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg> Excel</button><button class="obs-card-btn" type="button"
                     onclick="openObservationModal('prod_gst')">Observation</button></div>
               </div>
               <div class="card-b no-pad">
@@ -599,8 +771,13 @@
                   <div class="desc">Same name under different codes</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
-                    onclick="downloadHygieneExcel('dup_cust')" style="padding:5px 10px;font-size:11px;">📥
-                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="downloadHygieneExcel('dup_cust')" style="padding:5px 10px;font-size:11px;"><svg class="icn"
+                      viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"
+                      stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg> Excel</button><button class="obs-card-btn" type="button"
                     onclick="openObservationModal('dup_cust')">Observation</button></div>
               </div>
               <div class="card-b no-pad">
@@ -626,8 +803,13 @@
                   <div class="desc">Same product, multiple codes</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
-                    onclick="downloadHygieneExcel('prod_name')" style="padding:5px 10px;font-size:11px;">📥
-                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="downloadHygieneExcel('prod_name')" style="padding:5px 10px;font-size:11px;"><svg
+                      class="icn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg> Excel</button><button class="obs-card-btn" type="button"
                     onclick="openObservationModal('prod_name')">Observation</button></div>
               </div>
               <div class="card-b no-pad">
@@ -653,8 +835,13 @@
                   <div class="desc">Codes not found in master</div>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center;"><button class="btn ghost sm" type="button"
-                    onclick="downloadHygieneExcel('prod_code')" style="padding:5px 10px;font-size:11px;">📥
-                    Excel</button><button class="obs-card-btn" type="button"
+                    onclick="downloadHygieneExcel('prod_code')" style="padding:5px 10px;font-size:11px;"><svg
+                      class="icn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg> Excel</button><button class="obs-card-btn" type="button"
                     onclick="openObservationModal('prod_code')">Observation</button></div>
               </div>
               <div class="card-b no-pad">

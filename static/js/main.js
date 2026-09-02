@@ -70,10 +70,13 @@ function handleGenieChatSend() {
 function goTo(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.cp-item').forEach(t => t.classList.remove('active'));
   const page = document.getElementById('page-' + pageId);
-  const tab = document.querySelector(`[data-page="${pageId}"]`);
+  const tab = document.querySelector(`.nav-tab[data-page="${pageId}"]`);
+  const cpItem = document.querySelector(`.cp-item[data-page="${pageId}"]`);
   if (page) page.classList.add('active');
   if (tab) tab.classList.add('active');
+  if (cpItem) cpItem.classList.add('active');
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
@@ -85,6 +88,45 @@ function goTo(pageId) {
 
 document.querySelectorAll('.nav-tab').forEach(btn => {
   btn.addEventListener('click', () => goTo(btn.dataset.page));
+});
+
+// ── CONTROLS PANEL (left drawer, openable/closable on every page) ──
+function openControlsPanel() {
+  const panel = document.getElementById('controls-panel');
+  const backdrop = document.getElementById('controls-panel-backdrop');
+  const toggleBtn = document.getElementById('controls-panel-toggle');
+  if (panel) { panel.classList.add('open'); panel.setAttribute('aria-hidden', 'false'); }
+  if (backdrop) backdrop.classList.add('open');
+  if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+}
+
+function closeControlsPanel() {
+  const panel = document.getElementById('controls-panel');
+  const backdrop = document.getElementById('controls-panel-backdrop');
+  const toggleBtn = document.getElementById('controls-panel-toggle');
+  if (panel) { panel.classList.remove('open'); panel.setAttribute('aria-hidden', 'true'); }
+  if (backdrop) backdrop.classList.remove('open');
+  if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+}
+
+function toggleControlsPanel() {
+  const panel = document.getElementById('controls-panel');
+  if (panel && panel.classList.contains('open')) closeControlsPanel();
+  else openControlsPanel();
+}
+
+// Used by the controls panel's own nav items: navigate, then close the
+// drawer so it doesn't stay open over the destination page. EMI Checking
+// routes through openLoanRepayment() so the same "hide the loading
+// overlay first" fix used on the Home button applies here too.
+function navFromPanel(pageId) {
+  closeControlsPanel();
+  if (pageId === 'loan-repayment') openLoanRepayment();
+  else goTo(pageId);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeControlsPanel();
 });
 
 async function loadData() {
@@ -238,7 +280,7 @@ function buildRails() {
         .map(v => `<option value="${esc(v)}" ${F[item.k].includes(v) ? 'selected' : ''}>${esc(v)}</option>`).join('')}
             </select>
           </div>`).join('')}
-        <button class="btn-reset" onclick="resetFilters()">↺ Reset Filters</button>
+        <button class="btn-reset" onclick="resetFilters()">Reset Filters</button>
       </div>`;
   });
 }
@@ -1775,14 +1817,14 @@ function renderLoanRepayment() {
 
 function renderWelcome() {
   const modules = [
-    { icon: '⚙', id: 'filters', title: 'Dashboard Filters', desc: 'Set global filters for company, state, product, customer, and month.' },
-    { icon: '🔍', id: 'hygiene', title: 'Data Hygiene', desc: 'Detect duplicate master data, GST mismatches, and product code errors.' },
-    { icon: '📊', id: 'po-summary', title: 'PO vs Invoice vs GRN vs Bank', desc: 'Full reconciliation across purchase orders, invoices, GRNs, and payments.' },
-    { icon: '📋', id: 'po-detail', title: 'PO Detail — Exceptions', desc: 'GRN without invoice, open POs, bank account count, and payment ageing.' },
-    { icon: '🛒', id: 'purchase', title: 'Purchase Analytics', desc: 'Blocked vendor detection, purchase vs return combo chart, full register.' },
-    { icon: '🤖', id: 'ai-dashboard', title: 'AI Dashboard', desc: 'AI-driven distribution pie, month trend, and company bar with smart filters.' },
-    { icon: '✔', id: 'formula', title: 'Formula Check', desc: 'GST rate variance and discount difference validation per invoice.' },
-    { icon: '➕', id: 'addition', title: 'Additional Modules', desc: 'Roadmap: MIS reporting, fraud analysis, inventory, trial balance.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>', id: 'filters', title: 'Dashboard Filters', desc: 'Set global filters for company, state, product, customer, and month.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>', id: 'hygiene', title: 'Data Hygiene', desc: 'Detect duplicate master data, GST mismatches, and product code errors.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', id: 'po-summary', title: 'PO vs Invoice vs GRN vs Bank', desc: 'Full reconciliation across purchase orders, invoices, GRNs, and payments.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="4" width="14" height="18" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>', id: 'po-detail', title: 'PO Detail — Exceptions', desc: 'GRN without invoice, open POs, bank account count, and payment ageing.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>', id: 'purchase', title: 'Purchase Analytics', desc: 'Blocked vendor detection, purchase vs return combo chart, full register.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>', id: 'ai-dashboard', title: 'AI Dashboard', desc: 'AI-driven distribution pie, month trend, and company bar with smart filters.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>', id: 'formula', title: 'Formula Check', desc: 'GST rate variance and discount difference validation per invoice.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>', id: 'addition', title: 'Additional Modules', desc: 'Roadmap: MIS reporting, fraud analysis, inventory, trial balance.' },
   ];
   document.getElementById('welcome-modules').innerHTML = modules.map((m, i) => `
     <div class="mod" onclick="goTo('${m.id}')">
@@ -1815,10 +1857,10 @@ function renderRemarkCell(r) {
           ${isDisabled ? 'disabled' : ''}>
         <div class="remark-actions">
           ${isDisabled ? `
-            <button type="button" class="btn-rmk btn-rmk-edit" title="Edit Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'edit')">✏️ Edit</button>
-            <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'delete')">🗑️ Delete</button>
+            <button type="button" class="btn-rmk btn-rmk-edit" title="Edit Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'edit')">Edit</button>
+            <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'delete')">Delete</button>
           ` : `
-            <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'save')">💾 Save</button>
+            <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(r.ISSUE_ID)}', 'save')">Save</button>
           `}
         </div>
       </div>
@@ -1843,8 +1885,8 @@ async function handleRemarkAction(issueId, action) {
       const actions = box.querySelector('.remark-actions');
       if (actions) {
         actions.innerHTML = `
-          <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(issueId)}', 'save')">💾 Save</button>
-          <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(issueId)}', 'delete')">🗑️ Delete</button>
+          <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(issueId)}', 'save')">Save</button>
+          <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(issueId)}', 'delete')">Delete</button>
         `;
       }
     }
@@ -1873,8 +1915,8 @@ async function handleRemarkAction(issueId, action) {
           const actions = box.querySelector('.remark-actions');
           if (actions) {
             actions.innerHTML = `
-              <button type="button" class="btn-rmk btn-rmk-edit" title="Edit Remark" onclick="handleRemarkAction('${esc(issueId)}', 'edit')">✏️ Edit</button>
-              <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(issueId)}', 'delete')">🗑️ Delete</button>
+              <button type="button" class="btn-rmk btn-rmk-edit" title="Edit Remark" onclick="handleRemarkAction('${esc(issueId)}', 'edit')">Edit</button>
+              <button type="button" class="btn-rmk btn-rmk-del" title="Delete Remark" onclick="handleRemarkAction('${esc(issueId)}', 'delete')">Delete</button>
             `;
           }
         }
@@ -1903,7 +1945,7 @@ async function handleRemarkAction(issueId, action) {
           const actions = box.querySelector('.remark-actions');
           if (actions) {
             actions.innerHTML = `
-              <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(issueId)}', 'save')">💾 Save</button>
+              <button type="button" class="btn-rmk btn-rmk-save" title="Save Remark" onclick="handleRemarkAction('${esc(issueId)}', 'save')">Save</button>
             `;
           }
         }
@@ -2690,8 +2732,8 @@ async function renderObsList() {
                   <td>${esc(item.ToDate || '—')}</td>
                   <td>${esc(item.Auditee || '—')}</td>
                   <td>
-                    <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>✏️ Edit</button>
-                    <button class="btn-rmk btn-rmk-del" onclick="deleteObservation(${item.id})">🗑️ Delete</button>
+                    <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Edit</button>
+                    <button class="btn-rmk btn-rmk-del" onclick="deleteObservation(${item.id})">Delete</button>
                   </td>
                 </tr>
               `).join('')}
@@ -2757,8 +2799,8 @@ function showObsForm(data = null) {
 
       <div style="display:flex;justify-content:flex-end;gap:10px">
         <button type="button" class="btn ghost sm" onclick="renderObsList()">Cancel</button>
-        <button type="button" class="btn secondary sm" onclick="saveObservation(event, ${item.id || 'null'}, true)">➕ Save & Add Row</button>
-        <button type="submit" class="btn primary sm">💾 Save Observation</button>
+        <button type="button" class="btn secondary sm" onclick="saveObservation(event, ${item.id || 'null'}, true)">Save & Add Row</button>
+        <button type="submit" class="btn primary sm">Save Observation</button>
       </div>
     </form>`;
 }
@@ -3050,7 +3092,7 @@ function splitTotalAcrossParts(total, parts) {
 
 function generateCardHtml(t) {
   const headBtn = `<div style="display:flex;gap:6px;align-items:center;">
-      <button class="btn ghost sm" type="button" onclick="downloadDynamicExcel('${t.id}')" style="padding:5px 10px;font-size:11px;">📥 Excel</button>
+      <button class="btn ghost sm" type="button" onclick="downloadDynamicExcel('${t.id}')" style="padding:5px 10px;font-size:11px;"><svg class="icn" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Excel</button>
       <button class="obs-card-btn" type="button" onclick="openObservationModal('${t.id}')">Observation</button>
   </div>`;
   const cardHead = `
@@ -3296,23 +3338,31 @@ function renderItControlsCharts() {
     });
   }
 
-  // 3. Vertical Column Bar Chart: Incidents by Location (with X and Y Axes)
-  const locEl = document.getElementById('itc-vis-location');
-  if (locEl) {
-    destroyChart('itc-vis-location');
-    // Bangalore: 14, Mumbai: 12, Delhi NCR: 10, Hyderabad: 6 -> Total = 42
-    const locLabels = ['Bangalore', 'Mumbai', 'Delhi NCR', 'Hyderabad'];
-    const locValues = [14, 12, 10, 6];
+  // 3. Vertical Column Bar Chart: Flagged Users by Check Group (with X and Y Axes)
+  // IT_TABLES has no location column for any employee, so a location split
+  // can't be built from real data. The page itself is already organised
+  // into two real groups (the "Access & Authentication Checks" and
+  // "Activity Monitoring Checks" sections below), so this chart summarises
+  // that actual grouping instead: IT_TABLES[0..2] vs IT_TABLES[3..5].
+  const groupEl = document.getElementById('itc-vis-group');
+  if (groupEl) {
+    destroyChart('itc-vis-group');
+    const groupLabels = ['Access & Authentication Checks', 'Activity Monitoring Checks'];
+    const groupValues = [
+      IT_TABLES.slice(0, 3).reduce((sum, t) => sum + t.employees.length, 0),
+      IT_TABLES.slice(3, 6).reduce((sum, t) => sum + t.employees.length, 0)
+    ];
+    const groupColors = ['#3B82F6', '#F1A646'];
 
-    CHARTS['itc-vis-location'] = new Chart(locEl, {
+    CHARTS['itc-vis-group'] = new Chart(groupEl, {
       type: 'bar',
       data: {
-        labels: locLabels,
+        labels: groupLabels,
         datasets: [{
-          data: locValues,
-          backgroundColor: '#3B82F6',
+          data: groupValues,
+          backgroundColor: groupColors,
           borderRadius: 4,
-          maxBarThickness: 22
+          maxBarThickness: 46
         }]
       },
       options: {
@@ -3322,15 +3372,15 @@ function renderItControlsCharts() {
         scales: {
           x: {
             grid: { display: false },
-            title: { display: true, text: 'Office Location', font: { size: 10, weight: '600' } },
-            ticks: { font: { size: 10.5, weight: '600' } }
+            title: { display: true, text: 'Check Group', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 9.5, weight: '600' } }
           },
           y: {
             grid: { color: '#f3f4f6' },
-            title: { display: true, text: 'Incidents Count', font: { size: 10, weight: '600' } },
+            title: { display: true, text: 'Flagged Users Count', font: { size: 10, weight: '600' } },
             ticks: { font: { size: 10 }, precision: 0 },
             beginAtZero: true,
-            max: 20
+            max: Math.max(20, ...groupValues) + 4
           }
         }
       }
@@ -3367,27 +3417,55 @@ function renderItControlsCharts() {
   }
 }
 
-// EMI Checking: Monthly Payment Comparison, Tracked Tenure Months, Reconciliation Status, and Loan Portfolio Share (Pie Chart).
+// EMI Checking charts — all four now key off the real borrower names used
+// in the repayment table itself (Ram / Shyam / Pranjali), with no "Home /
+// Vehicle / Personal" loan-type wording, and all values pulled live from
+// LOAN_CALC_ROWS / LOAN_BANK_ROWS / LOAN_DIFF_ROWS rather than hardcoded.
 function renderEmiCheckingCharts() {
-  // 1. Grouped Bar Chart: Calculated EMI vs Bank Payment (with X and Y Axes)
+  const borrowerNames = Object.keys(LOAN_META); // ['Ram', 'Shyam', 'Pranjali']
+
+  // Most recent tracked row per borrower, from each of the three parallel
+  // row sets (same row index = same person/month across all three).
+  function lastRowFor(rows, name) {
+    for (let i = rows.length - 1; i >= 0; i--) {
+      if (rows[i][0] === name) return rows[i];
+    }
+    return null;
+  }
+  function firstRowFor(rows, name) {
+    return rows.find(r => r[0] === name) || null;
+  }
+
+  // 1. Grouped Bar Chart: Calculated EMI vs Bank Payment, by borrower
+  // (current/most recent EMI amount per LOAN_CALC_ROWS / LOAN_BANK_ROWS —
+  // any gap between the two bars for a borrower is a real mismatch).
   const compEl = document.getElementById('emi-vis-comparison');
   if (compEl) {
     destroyChart('emi-vis-comparison');
+    const calcEmi = borrowerNames.map(name => {
+      const row = lastRowFor(LOAN_CALC_ROWS, name);
+      return row ? row[5] : 0;
+    });
+    const bankEmi = borrowerNames.map(name => {
+      const row = lastRowFor(LOAN_BANK_ROWS, name);
+      return row ? row[5] : 0;
+    });
+
     CHARTS['emi-vis-comparison'] = new Chart(compEl, {
       type: 'bar',
       data: {
-        labels: ['Ram (Home)', 'Shyam (Vehicle)', 'Pranjali (Personal)'],
+        labels: borrowerNames,
         datasets: [
           {
             label: 'As per Calc (₹)',
-            data: [95084, 108907, 45200],
+            data: calcEmi,
             backgroundColor: '#2F8F5B',
             borderRadius: 4,
             maxBarThickness: 18
           },
           {
             label: 'As per Bank (₹)',
-            data: [95084, 108907, 45200],
+            data: bankEmi,
             backgroundColor: '#3B82F6',
             borderRadius: 4,
             maxBarThickness: 18
@@ -3407,12 +3485,12 @@ function renderEmiCheckingCharts() {
         scales: {
           x: {
             grid: { display: false },
-            title: { display: true, text: 'Borrower & Loan Type', font: { size: 10, weight: '600' } },
-            ticks: { font: { size: 10, weight: '600' } }
+            title: { display: true, text: 'Borrower', font: { size: 10, weight: '600' } },
+            ticks: { font: { size: 10.5, weight: '600' } }
           },
           y: {
             grid: { color: '#f3f4f6' },
-            title: { display: true, text: 'Monthly EMI Amount (₹)', font: { size: 10, weight: '600' } },
+            title: { display: true, text: 'Current Monthly EMI (₹)', font: { size: 10, weight: '600' } },
             ticks: { font: { size: 9.5 } },
             beginAtZero: true
           }
@@ -3421,18 +3499,19 @@ function renderEmiCheckingCharts() {
     });
   }
 
-  // 2. Vertical Column Bar Chart: Tenure Months by Loan Type (with X and Y Axes)
+  // 2. Vertical Column Bar Chart: Months Tracked by Borrower (with X and Y Axes)
+  // Real row counts per borrower in LOAN_CALC_ROWS — matches the repayment
+  // schedule table below exactly.
   const tenureEl = document.getElementById('emi-vis-tenure');
   if (tenureEl) {
     destroyChart('emi-vis-tenure');
-    const tenureLabels = ['Home Loan', 'Vehicle Loan', 'Personal Loan'];
-    const tenureValues = [24, 36, 30]; // Total = 90
+    const tenureValues = borrowerNames.map(name => LOAN_CALC_ROWS.filter(r => r[0] === name).length);
     const tenureColors = ['#2F8F5B', '#F1A646', '#3B82F6'];
 
     CHARTS['emi-vis-tenure'] = new Chart(tenureEl, {
       type: 'bar',
       data: {
-        labels: tenureLabels,
+        labels: borrowerNames,
         datasets: [{
           data: tenureValues,
           backgroundColor: tenureColors,
@@ -3447,7 +3526,7 @@ function renderEmiCheckingCharts() {
         scales: {
           x: {
             grid: { display: false },
-            title: { display: true, text: 'Loan Type', font: { size: 10, weight: '600' } },
+            title: { display: true, text: 'Borrower', font: { size: 10, weight: '600' } },
             ticks: { font: { size: 10.5, weight: '600' } }
           },
           y: {
@@ -3455,7 +3534,7 @@ function renderEmiCheckingCharts() {
             title: { display: true, text: 'Months Tracked', font: { size: 10, weight: '600' } },
             ticks: { font: { size: 10 }, precision: 0 },
             beginAtZero: true,
-            max: 40
+            max: Math.max(...tenureValues) + 8
           }
         }
       }
@@ -3463,11 +3542,15 @@ function renderEmiCheckingCharts() {
   }
 
   // 3. Vertical Column Bar Chart: Reconciliation Record Status (with X and Y Axes)
+  // Real split from LOAN_DIFF_ROWS: a row counts as "Variance Flagged" if any
+  // of its difference cells is a real non-zero value.
   const statusEl = document.getElementById('emi-vis-status');
   if (statusEl) {
     destroyChart('emi-vis-status');
+    const variance = LOAN_DIFF_ROWS.filter(row => row.some(v => v !== null && v !== undefined && v !== '' && v !== 0)).length;
+    const matched = LOAN_DIFF_ROWS.length - variance;
     const statusLabels = ['Fully Matched', 'Variance Flagged'];
-    const statusValues = [89, 1]; // Total = 90
+    const statusValues = [matched, variance];
     const statusColors = ['#2F8F5B', '#C22829'];
 
     CHARTS['emi-vis-status'] = new Chart(statusEl, {
@@ -3496,24 +3579,36 @@ function renderEmiCheckingCharts() {
             title: { display: true, text: 'Record Count', font: { size: 10, weight: '600' } },
             ticks: { font: { size: 10 }, precision: 0 },
             beginAtZero: true,
-            max: 100
+            max: LOAN_DIFF_ROWS.length + 10
           }
         }
       }
     });
   }
 
-  // 4. Pie Chart: Loan Portfolio Share
+  // 4. Pie Chart: Original Loan Amount by Borrower — each borrower's opening
+  // balance on their first tracked month (LOAN_CALC_ROWS), i.e. the real
+  // sanctioned loan amount, not a loan-type label.
   const pieEl = document.getElementById('emi-vis-pie');
   if (pieEl) {
     destroyChart('emi-vis-pie');
+    const principals = borrowerNames.map(name => {
+      const row = firstRowFor(LOAN_CALC_ROWS, name);
+      return row ? row[2] : 0;
+    });
+    const total = principals.reduce((s, v) => s + v, 0);
+    const pieColors = ['#2F8F5B', '#F1A646', '#3B82F6'];
+
     CHARTS['emi-vis-pie'] = new Chart(pieEl, {
       type: 'pie',
       data: {
-        labels: ['Vehicle (40%)', 'Personal (33.3%)', 'Home (26.7%)'],
+        labels: borrowerNames.map((name, i) => {
+          const pct = total > 0 ? Math.round((principals[i] / total) * 1000) / 10 : 0;
+          return `${name} (${pct}%)`;
+        }),
         datasets: [{
-          data: [36, 30, 24],
-          backgroundColor: ['#F1A646', '#3B82F6', '#2F8F5B'],
+          data: principals,
+          backgroundColor: pieColors,
           borderColor: '#fff',
           borderWidth: 2
         }]
@@ -3526,6 +3621,11 @@ function renderEmiCheckingCharts() {
             display: true,
             position: 'bottom',
             labels: { font: { size: 9.5, weight: '600' }, boxWidth: 10, padding: 4 }
+          },
+          tooltip: {
+            callbacks: {
+              label: (item) => ` ${item.label.split(' (')[0]}: ₹${item.parsed.toLocaleString('en-IN')}`
+            }
           }
         }
       }

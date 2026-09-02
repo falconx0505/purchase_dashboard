@@ -5,6 +5,11 @@
 :root {
   --maroon: #6C0E12;
   --red: #C22829;
+  --brown: #8A4A24;
+  --brown-light: #B5703B;
+  --brown-dark: #5A2C12;
+  --brown-soft: rgba(138, 74, 36, .18);
+  --brown-gloss: linear-gradient(135deg, var(--brown-light), var(--brown) 55%, var(--brown-dark));
   --orange: #F37A04;
   --amber: #F1A646;
   --cream: #F5E3B5;
@@ -98,7 +103,10 @@ body {
   font-family: var(--display);
   font-weight: 800;
   font-size: 20px;
-  color: var(--red);
+  background: linear-gradient(135deg, var(--brown-light), var(--brown) 60%, var(--brown-dark));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   letter-spacing: -.3px;
   white-space: nowrap;
 }
@@ -141,9 +149,274 @@ body {
   box-shadow: 0 0 0 3px rgba(243, 122, 4, .18);
 }
 
+.hdr-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.hdr-bell:hover {
+  background: var(--bg);
+  color: var(--brown);
+}
+
+/* Notification dot stays red intentionally — it's a genuine attention/
+   alert cue, not general theme chrome, so it keeps the risk color. */
+.hdr-bell-dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  border: 2px solid #fff;
+}
+
 .hdr-accent {
   height: 3px;
-  background: linear-gradient(90deg, var(--red), var(--orange) 55%, var(--amber));
+  background: linear-gradient(90deg, var(--brown), var(--orange) 55%, var(--amber));
+}
+
+.hdr-menu-btn {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  font-size: 19px;
+  color: var(--ink);
+  padding: 6px 10px;
+  border-radius: 8px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.hdr-menu-btn:hover {
+  background: var(--bg);
+}
+
+/* ── CONTROLS PANEL (openable/closable drawer, every page) ──── */
+.controls-panel-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 28, 27, .45);
+  z-index: 150;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+
+.controls-panel-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.controls-panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 272px;
+  max-width: 84vw;
+  background: var(--ink);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform .25s ease;
+  box-shadow: 4px 0 28px rgba(0, 0, 0, .3);
+}
+
+.controls-panel.open {
+  transform: translateX(0);
+}
+
+.cp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 16px 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+  flex-shrink: 0;
+}
+
+.cp-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cp-brand-mark {
+  height: 30px;
+  width: auto;
+  max-width: 34px;
+  object-fit: contain;
+}
+
+.cp-brand-text {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -.2px;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.cp-brand-sub-inline {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--faint);
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+
+.cp-close {
+  border: 0;
+  background: none;
+  color: var(--faint);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.cp-close:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, .08);
+}
+
+.cp-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 12px 8px;
+}
+
+.cp-section-label {
+  font-family: var(--display);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--faint);
+  padding: 14px 10px 8px;
+}
+
+.cp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: none;
+  color: #d8d0ca;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 10px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  margin-bottom: 2px;
+  transition: background .12s, color .12s;
+}
+
+.cp-item:hover {
+  background: rgba(255, 255, 255, .07);
+  color: #fff;
+}
+
+.cp-item.active {
+  background: var(--brown-soft);
+  color: #fff;
+}
+
+.cp-icon {
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icn {
+  display: inline-block;
+  vertical-align: -3px;
+}
+
+.cp-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cp-badge {
+  background: var(--red);
+  color: #fff;
+  font-family: var(--num);
+  font-weight: 700;
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.cp-foot {
+  border-top: 1px solid rgba(255, 255, 255, .09);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brown-gloss);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cp-user-name {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+}
+
+.cp-user-role {
+  font-size: 11px;
+  color: var(--faint);
+}
+
+@media (max-width: 640px) {
+  .controls-panel {
+    width: 250px;
+  }
 }
 
 /* ── USER BADGE (below navbar) ───────────────────────── */
@@ -196,7 +469,7 @@ body {
   border: 0;
   border-radius: 999px;
   padding: 8px 14px;
-  background: var(--red);
+  background: var(--brown-gloss);
   color: #fff;
   font-family: var(--display);
   font-weight: 700;
@@ -206,14 +479,14 @@ body {
 }
 
 .obs-btn:hover {
-  background: var(--maroon);
+  background: var(--brown-dark);
 }
 
 .obs-card-btn {
   border: 0;
   border-radius: 999px;
   padding: 6px 12px;
-  background: var(--red);
+  background: var(--brown-gloss);
   color: #fff;
   font-family: var(--display);
   font-weight: 700;
@@ -224,7 +497,7 @@ body {
 }
 
 .obs-card-btn:hover {
-  background: var(--maroon);
+  background: var(--brown-dark);
 }
 
 .nav-tab {
@@ -243,6 +516,14 @@ body {
   transition: color .15s;
   position: relative;
   bottom: -2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav-tab-icon {
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-tab:hover {
@@ -628,7 +909,7 @@ body.on-home .topnav {
   gap: 10px;
   width: 100%;
   padding: 20px 24px;
-  background: var(--maroon);
+  background: var(--brown-gloss);
   color: #ffffff;
   font-family: var(--display);
   font-weight: 600;
@@ -636,12 +917,12 @@ body.on-home .topnav {
   border: none;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: var(--sh);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), var(--sh);
   transition: transform .15s, box-shadow .15s, background .15s;
 }
 
 .home-btn:hover {
-  background: var(--red);
+  background: linear-gradient(135deg, var(--brown-light), var(--brown) 70%);
   box-shadow: var(--shh);
   transform: translateY(-2px);
 }
@@ -677,10 +958,12 @@ body.on-home .topnav {
 
 /* LOAN AND REPAYMENT SCHEDULE MODULE: the Home screen button for this page
    must stay clickable even while #data-loading (z-index:1000) is covering
-   the screen, since this page needs no workbook data. Without this, the
-   overlay physically sits on top of the button and swallows the click
-   before it reaches it, even though the page looks normal underneath. */
-#loan-repayment-btn {
+   the screen, since this page needs no workbook data. Scoped to only apply
+   while #data-loading is actually visible (not [hidden]) — otherwise this
+   button would also float above the controls-panel sidebar (z-index 200)
+   and its backdrop (z-index 150) whenever the sidebar is opened, which is
+   what caused it to visually overlap the nav menu. */
+#data-loading:not([hidden])~#page-home #loan-repayment-btn {
   position: relative;
   z-index: 1001;
 }
@@ -807,7 +1090,7 @@ body.on-home .topnav {
   top: 0;
   bottom: 0;
   width: 4px;
-  background: var(--accent, var(--red));
+  background: var(--accent, var(--brown));
   border-radius: 2px 0 0 2px;
 }
 
@@ -888,7 +1171,7 @@ body.on-home .topnav {
   top: 0;
   right: 0;
   height: 3px;
-  background: var(--accent, var(--red));
+  background: var(--accent, var(--brown));
 }
 
 .stat-box .s-label {
@@ -1405,12 +1688,14 @@ table.tbl tr.row-warn td {
 }
 
 .btn.primary {
-  background: var(--red);
+  background: var(--brown-gloss);
   color: #fff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 1px 2px rgba(36, 28, 27, .12);
 }
 
 .btn.primary:hover {
-  background: var(--maroon);
+  background: linear-gradient(135deg, var(--brown), var(--brown-dark) 70%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .15), 0 4px 12px rgba(90, 44, 18, .28);
 }
 
 .btn.ghost {
@@ -1450,7 +1735,7 @@ table.tbl tr.row-warn td {
   height: 300px;
   border-radius: 28px;
   transform: rotate(18deg);
-  background: linear-gradient(150deg, var(--red), var(--orange) 60%, var(--amber));
+  background: linear-gradient(150deg, var(--brown), var(--orange) 60%, var(--amber));
   opacity: .09;
 }
 
@@ -1469,7 +1754,7 @@ table.tbl tr.row-warn td {
 }
 
 .hero h1 span {
-  color: var(--red);
+  color: var(--brown);
 }
 
 .hero p {
@@ -1515,6 +1800,9 @@ table.tbl tr.row-warn td {
   font-size: 12px;
   color: var(--orange);
   letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .mod h4 {
@@ -1709,7 +1997,7 @@ table.tbl tr.row-warn td {
 }
 
 .fchip .rm:hover {
-  color: var(--red);
+  color: var(--brown);
 }
 
 /* ── REMARK CELL & BUTTONS ──────────────────────── */
