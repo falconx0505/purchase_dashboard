@@ -5,10 +5,19 @@ import sqlite3
 import tempfile
 import zipfile
 from xml.etree.ElementTree import iterparse
-from flask import Flask, render_template, jsonify, request
 from werkzeug.utils import secure_filename
 import pandas as pd
 import requests
+import os
+import io
+import shutil
+from flask import Flask, request, send_file, jsonify, render_template
+import pandas as pd
+import pytesseract
+from PIL import Image
+from pdf2image import convert_from_bytes
+
+
 
 VALID_CATEGORIES = {
     # Purchase Data Hygiene categories (original module)
@@ -37,6 +46,11 @@ ALL_FIELDS = [
     "ClosureDate", "ClosureReason", "FromDate", "ToDate",
 ]
 
+
+# Setup Tesseract binary path
+TESSERACT_PATH = shutil.which('tesseract') or r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+if TESSERACT_PATH and os.path.exists(TESSERACT_PATH):
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 def safe_value(value):
     """Turn blank/NaN Excel cells into empty string, everything else into text."""
@@ -921,7 +935,7 @@ def _dashboard_payload(payload):
         "months": payload.get("months", []),
     }
 
-LARS_API_URL = "http://localhost:50126/ImportObservationApi.asmx/AddObservations"
+LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 LARS_USERNAME = "admin"
 LARS_PASSWORD = "admin@123"
 
@@ -1238,6 +1252,74 @@ def upload_observation_file():
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+
+
+# Data extraction through OCR 
+@app.route('/data-extraction')
+def data_extraction_page():
+    return render_template('pages/data_extraction.html')
+
+@app.route('/api/extract-kyc', methods=['POST'])
+def extract_kyc():
+    files = request.files.getlist('files')
+    if not files:
+        return jsonify({"error": "No files uploaded"}), 400
+
+    records = []
+    for file in files:
+        filename = file.filename
+        ext = filename.lower().split('.')[-1]
+        try:
+            if ext in ['jpg', 'jpeg', 'png']:
+                img = Image.open(file.stream)
+                text = pytesseract.image_to_string(img, lang="eng")
+            elif ext == 'pdf':
+                file_bytes = file.read()
+                pages = convert_from_bytes(file_bytes, dpi=300)
+                text = "".join([pytesseract.image_to_string(p, lang="eng") for p in pages])
+            else:
+                continue
+
+            # Detect & Extract Document Details
+            t_upper = text.upper()
+            if "AADHAAR" in t_upper or "UIDAI" in t_upper:
+                doc_type = "Aadhaar Card"
+                match = re.search(r"\b\d{4}\s\d{4}\s\d{4}\b", text)
+                doc_number = match.group().replace(" ", "") if match else ""
+            elif "INCOME TAX DEPARTMENT" in t_upper or "PERMANENT ACCOUNT NUMBER" in t_upper:
+                doc_type = "PAN Card"
+                match = re.search(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b", text)
+                doc_number = match.group() if match else ""
+            else:
+                doc_type = "Unknown"
+                doc_number = ""
+
+            records.append({
+                "File Name": filename,
+                "Document Type": doc_type,
+                "Document Number": doc_number,
+                "Person Name": "" # Client-side or backend name extraction logic
+            })
+        except Exception as e:
+            records.append({
+                "File Name": filename,
+                "Document Type": "Error",
+                "Document Number": "",
+                "Person Name": str(e)
+            })
+
+    df = pd.DataFrame(records)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='KYC_Extraction')
+    output.seek(0)
+
+    return send_file(
+        output,
+        download_name="id_extracted_data.xlsx",
+        as_attachment=True,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

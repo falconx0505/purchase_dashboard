@@ -2,3 +2,6 @@ pandas
 flask
 openpyxl
 requests
+
+pytesseract
+pdf2image

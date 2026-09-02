@@ -1,0 +1,64 @@
+<div class="wrap">
+  <!-- Standardized Page Header -->
+  <div class="page-head">
+    <div class="eyebrow">Purchase Internal Control</div>
+    <h1>KYC Document Extraction</h1>
+    <p>Select a folder containing document scans (Images or PDFs). The engine will extract document data and produce a structured downloadable Excel file.</p>
+  </div>
+
+  <!-- Main Card Container -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-h">
+      <div class="grow">
+        <h3 class="ttl">Upload & Process Documents</h3>
+        <p class="desc">Select local folder and run automated OCR extraction</p>
+      </div>
+    </div>
+    
+    <div class="card-b">
+      <form id="extractionForm" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <label class="btn ghost">
+          Choose Folder
+          <input type="file" id="folderInput" webkitdirectory directory multiple accept="image/*,.pdf" style="display: none;" />
+        </label>
+        <span id="fileCount" class="stat-label">No folder chosen</span>
+
+        <button type="button" id="processBtn" class="btn primary" disabled>Upload & Process</button>
+        <button type="button" id="downloadBtn" class="btn ghost" style="display:none;">Download Excel</button>
+      </form>
+
+      <!-- Extraction Progress Indicator -->
+      <div id="statusBox" class="status-box" style="margin-top: 16px;">
+        <div id="statusText" class="stat-label">Initializing extraction engine...</div>
+        <div class="progress-bar-wrap" style="margin-top: 8px; background: var(--line); height: 6px; border-radius: 999px; overflow: hidden;">
+          <div id="progressBar" class="progress-bar" style="background: var(--red); height: 100%; width: 0%; transition: width 0.2s;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Extracted Results Table Section -->
+  <div id="resultsCard" class="card">
+    <div class="card-h">
+      <div class="grow">
+        <h3 class="ttl">Extracted Document Data</h3>
+        <p class="desc">Summary of processed files ready for download</p>
+      </div>
+    </div>
+    <div class="card-b no-pad">
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>File Name</th>
+              <th>Document Type</th>
+              <th>Document Number</th>
+              <th>Person Name</th>
+            </tr>
+          </thead>
+          <tbody id="resultsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

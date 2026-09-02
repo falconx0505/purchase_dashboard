@@ -44,11 +44,12 @@ function destroyChart(id) {
 // without duplicating the button per page.
 function updateGenieVisibility(pageId) {
   const fab = document.getElementById('genie-fab');
-  const show = GENIE_PAGES.includes(pageId);
-  if (fab) fab.classList.toggle('hidden', !show);
-  if (!show) toggleGenieChat(false);
+  
+  // Keep the AI Genie floating action button visible on all pages
+  if (fab) {
+    fab.classList.remove('hidden');
+  }
 }
-
 function toggleGenieChat(force) {
   const panel = document.getElementById('genie-chat');
   if (!panel) return;
@@ -68,19 +69,24 @@ function handleGenieChatSend() {
 }
 
 function goTo(pageId) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = '';
+  });
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.cp-item').forEach(t => t.classList.remove('active'));
   const page = document.getElementById('page-' + pageId);
   const tab = document.querySelector(`.nav-tab[data-page="${pageId}"]`);
   const cpItem = document.querySelector(`.cp-item[data-page="${pageId}"]`);
-  if (page) page.classList.add('active');
+  if (page) {
+    page.classList.add('active');
+  }
   if (tab) tab.classList.add('active');
   if (cpItem) cpItem.classList.add('active');
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction');
   updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
@@ -121,8 +127,19 @@ function toggleControlsPanel() {
 // overlay first" fix used on the Home button applies here too.
 function navFromPanel(pageId) {
   closeControlsPanel();
-  if (pageId === 'loan-repayment') openLoanRepayment();
-  else goTo(pageId);
+
+  // 1. Hide all active dashboard pages
+  document.querySelectorAll('.page').forEach(page => {
+    page.style.display = 'none';
+    page.classList.remove('active');
+  });
+
+  // 2. Route to the requested page
+  if (pageId === 'loan-repayment') {
+    openLoanRepayment();
+  } else {
+    goTo(pageId);
+  }
 }
 
 document.addEventListener('keydown', (e) => {
@@ -523,6 +540,8 @@ function renderCurrentPage(pageId) {
   // OTHER LOAN DETAILS: static hardcoded page, no rendering function needed —
   // markup lives directly in index.html (#page-other-loan), same Home-only pattern.
   if (pageId === 'other-loan') { renderLoan(); return; }
+  // DATA EXTRACTION: Load from separate HTML template file
+  if (pageId === 'data-extraction') { loadDataExtractionPage(); return; }
   // AUDIT TRAIL PAGE: this page uses its own backend endpoint and should render
   // even before the main purchase workbook has finished loading.
   if (pageId === 'audit-trail') { loadAuditTrailData(); return; }
@@ -545,6 +564,42 @@ function renderCurrentPage(pageId) {
     case 'hr-payroll': renderHrPayroll(); break; // unreachable (handled above), kept for safety
     case 'observations': renderObsList(); break;
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// DATA EXTRACTION PAGE
+// Loads HTML from templates/pages/data_extraction.html and inserts
+// it into the #page-data-extraction container
+// ─────────────────────────────────────────────────────────────
+function loadDataExtractionPage() {
+  const pageContainer = document.getElementById('page-data-extraction');
+  if (!pageContainer) return;
+
+  fetch('/data-extraction')
+    .then(response => response.text())
+    .then(html => {
+      // Parse the HTML and extract the content
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const wrap = doc.querySelector('.wrap');
+      
+      if (wrap) {
+        // Find the existing content div in page-data-extraction and insert after it
+        const backBtn = pageContainer.querySelector('.btn.ghost.sm');
+        // Clear everything except the back button
+        while (pageContainer.children.length > 1) {
+          pageContainer.removeChild(pageContainer.lastChild);
+        }
+        // Insert the wrap content
+        pageContainer.appendChild(wrap.cloneNode(true));
+        
+        // Initialize KYC extraction handlers after HTML is loaded
+        if (typeof initializeKycExtractionHandlers === 'function') {
+          initializeKycExtractionHandlers();
+        }
+      }
+    })
+    .catch(err => console.error('Failed to load data extraction page:', err));
 }
 
 // ─────────────────────────────────────────────────────────────
