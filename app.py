@@ -17,6 +17,8 @@ import pytesseract
 from PIL import Image
 from pdf2image import convert_from_bytes
 
+from anomalies_blueprint import anomalies_bp
+
 
 
 VALID_CATEGORIES = {
@@ -73,6 +75,7 @@ def row_is_completely_empty(row):
 
 
 app = Flask(__name__)
+app.register_blueprint(anomalies_bp)
 random.seed(42)
 
 # Disable static-file caching in dev so the browser always loads the latest

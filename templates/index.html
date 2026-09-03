@@ -16,8 +16,10 @@
 
   <!-- Inside templates/index.html <head> -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kyc_extraction.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/anomaly_detection.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 
 <body>
@@ -161,7 +163,7 @@
             <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
         </span>
-        <span class="cp-name">Anomalies Detection</span>
+        <span class="cp-name">Anomaly Detection</span>
       </button>
     </nav>
 
@@ -694,6 +696,11 @@
     <!-- Back navigation: Data Extraction page → Home -->
     <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
     <!-- Content loaded dynamically from templates/pages/data_extraction.html -->
+  </div>
+
+  <!-- PAGE: ANOMALIES DETECTION -->
+  <div class="page" id="page-anomalies-detection" style="max-width:1360px;margin:0 auto;padding:0 26px;">
+    <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
   </div>
 
   <div class="wrap">
@@ -1685,6 +1692,7 @@
 
   <script src="/static/js/main.js"></script>
   <script src="{{ url_for('static', filename='js/kyc_extraction.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/anomaly_detection.js') }}"></script>
 </body>
 
 </html>

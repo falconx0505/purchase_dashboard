@@ -5,3 +5,11 @@ requests
 
 pytesseract
 pdf2image
+
+numpy
+polars
+scikit-learn==1.3.2
+xlrd
+google-generativeai==0.8.6
+google-genai
+fastexcel

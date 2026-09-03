@@ -1,0 +1,149 @@
+<div class="wrap anomaly-page">
+  <div class="page-head">
+    <div class="eyebrow">Tools · Control Monitoring</div>
+    <h1>Anomaly Detection</h1>
+    <p>AI-powered business anomaly detection across your transactions and metrics. Upload data, choose a detection mode, and review flagged patterns.</p>
+  </div>
+
+  <!-- Step 1: Upload -->
+  <div class="card anomaly-step" id="step1">
+    <div class="card-h">
+      <div class="grow">
+        <h3 class="ttl">Step 1: Connect Your Data</h3>
+        <p class="desc">Upload a CSV or Excel file to begin analysis</p>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="anomaly-upload-area" id="uploadArea">
+        <div class="anomaly-upload-icon">📁</div>
+        <p class="anomaly-upload-title">Drop your CSV or Excel file here</p>
+        <p class="anomaly-upload-hint">or click to browse</p>
+      </div>
+      <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
+      <div id="uploadStatus" style="margin-top: 1rem;"></div>
+      <div id="statsGrid" class="anomaly-stats-grid hidden"></div>
+    </div>
+  </div>
+
+  <!-- Step 2: Mode -->
+  <div id="modeSelector" class="card anomaly-step hidden">
+    <div class="card-h">
+      <div class="grow">
+        <h3 class="ttl">Step 2: Select Detection Mode</h3>
+        <p class="desc">Choose automatic or manual configuration</p>
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="anomaly-mode-options">
+        <div class="anomaly-mode-option" data-mode="AUTO">
+          <div class="anomaly-mode-title">AUTO Mode</div>
+          <div class="anomaly-mode-description">
+            <strong>Fully automatic</strong> — System intelligently detects entity columns and selects metrics automatically.
+            <br><br>
+            <span class="anomaly-badge-subtext">Zero configuration needed</span>
+          </div>
+        </div>
+        <div class="anomaly-mode-option" data-mode="FIXED">
+          <div class="anomaly-mode-title">FIXED Mode</div>
+          <div class="anomaly-mode-description">
+            <strong>Full control</strong> — Select grouping columns and manually define aggregated SUMs or FREQUENCY counts.
+            <br><br>
+            <span class="anomaly-badge-subtext">Complete control over analysis</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3: Configuration -->
+  <div class="card anomaly-step hidden" id="step3">
+    <div class="card-h">
+      <div class="grow">
+        <h3 class="ttl">Step 3: Configure Analysis</h3>
+        <p class="desc">Set grouping and metric columns for FIXED mode</p>
+      </div>
+    </div>
+    <div class="card-b">
+      <div id="autoModeMessage" class="hidden">
+        <div class="anomaly-alert anomaly-alert-info">
+          <strong>AUTO Mode Active</strong><br>
+          Analysis will run automatically with intelligent feature selection. Click the button below to start!
+        </div>
+      </div>
+
+      <div id="fixedConfig" class="hidden">
+        <div class="anomaly-dropdown-section">
+          <label for="groupByColumn">Categorize by (Group By Column)</label>
+          <select id="groupByColumn" class="remark-input">
+            <option value="">-- Select Column --</option>
+          </select>
+        </div>
+
+        <div class="anomaly-dropdown-section">
+          <label for="sumColumn">Values to Total (Sum Columns — up to 5)</label>
+          <div class="anomaly-multi-select-display" id="sumColumnDisplay">
+            <span class="anomaly-multi-select-placeholder">Click to select columns...</span>
+          </div>
+          <div class="anomaly-multi-select-dropdown hidden" id="sumColumnDropdown"></div>
+        </div>
+
+        <div class="anomaly-dropdown-section">
+          <label for="frequencyColumn">Volume and Activity Counts (Frequency Column)</label>
+          <select id="frequencyColumn" class="remark-input">
+            <option value="">-- Select Column --</option>
+          </select>
+        </div>
+
+        <div class="anomaly-alert anomaly-alert-info" style="margin-top: 1rem;">
+          <strong>How it works:</strong><br>
+          Data will be grouped by your selected column, then SUM columns are totaled and FREQUENCY counts unique values.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="anomaly-btn-center hidden" id="analyzeBtnContainer">
+    <button id="analyzeBtn" class="btn primary" disabled>Run Anomaly Detection</button>
+  </div>
+
+  <!-- Step 4: Results -->
+  <div class="card anomaly-step hidden" id="step4">
+    <div class="card-h">
+      <div class="grow">
+        <h3 class="ttl">Step 4: Analysis Results</h3>
+        <p class="desc">Review detected anomalies and export findings</p>
+      </div>
+    </div>
+    <div class="card-b">
+      <div id="resultsStats" class="anomaly-stats-grid"></div>
+
+      <div class="anomaly-alert anomaly-alert-info" id="resultsHelpAlert">
+        <strong>What does this mean?</strong><br>
+        These entries show unusual patterns compared to normal behavior. The explanation column outlines specific variances.
+      </div>
+
+      <div class="anomaly-table-header-row" id="resultsTableHeading">
+        <h3 class="anomaly-section-heading">Detected Anomalies</h3>
+      </div>
+      <div id="anomalyTableContainer" class="anomaly-table-container"></div>
+
+      <div class="anomaly-chart-container" id="mainChartContainer">
+        <div id="chartDiv"></div>
+      </div>
+
+      <div class="anomaly-export-buttons">
+        <button id="exportCsvBtn" class="btn ghost">Download CSV</button>
+        <button id="exportExcelBtn" class="btn primary">Download Excel</button>
+      </div>
+
+      <!-- <div id="qaSection" class="hidden" style="margin-top: 2rem;">
+        <h3 class="ttl">Ask AI About Results</h3>
+        <div id="qaHistory" class="anomaly-qa-history"></div>
+        <div style="display: flex; gap: 0.75rem; margin-top: 0.75rem;">
+          <input type="text" id="questionInput" class="remark-input" placeholder="Ask a question about the anomalies..." style="flex: 1;">
+          <button id="askBtn" class="btn primary">Ask</button>
+        </div>
+      </div> -->
+    </div>
+  </div>
+</div>

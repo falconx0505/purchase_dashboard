@@ -86,7 +86,7 @@ function goTo(pageId) {
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection');
   updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
@@ -542,6 +542,8 @@ function renderCurrentPage(pageId) {
   if (pageId === 'other-loan') { renderLoan(); return; }
   // DATA EXTRACTION: Load from separate HTML template file
   if (pageId === 'data-extraction') { loadDataExtractionPage(); return; }
+  // ANOMALIES DETECTION: Load from separate HTML template file
+  if (pageId === 'anomalies-detection') { loadAnomaliesDetectionPage(); return; }
   // AUDIT TRAIL PAGE: this page uses its own backend endpoint and should render
   // even before the main purchase workbook has finished loading.
   if (pageId === 'audit-trail') { loadAuditTrailData(); return; }
@@ -600,6 +602,31 @@ function loadDataExtractionPage() {
       }
     })
     .catch(err => console.error('Failed to load data extraction page:', err));
+}
+
+function loadAnomaliesDetectionPage() {
+  const pageContainer = document.getElementById('page-anomalies-detection');
+  if (!pageContainer) return;
+
+  fetch('/anomalies')
+    .then(response => response.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const wrap = doc.querySelector('.wrap');
+
+      if (wrap) {
+        while (pageContainer.children.length > 1) {
+          pageContainer.removeChild(pageContainer.lastChild);
+        }
+        pageContainer.appendChild(wrap.cloneNode(true));
+
+        if (typeof initializeAnomalyDetectionHandlers === 'function') {
+          initializeAnomalyDetectionHandlers();
+        }
+      }
+    })
+    .catch(err => console.error('Failed to load anomalies detection page:', err));
 }
 
 // ─────────────────────────────────────────────────────────────
