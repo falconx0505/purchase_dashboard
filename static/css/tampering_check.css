@@ -1,0 +1,59 @@
+/* Color Palette Harmony & UI Styling */
+#page-tampering-check {
+  --fail-bg: #fdeaea;
+  --fail-color: var(--red, #c62828);
+  --pass-bg: #e8f5e9;
+  --pass-color: #1f8a4c;
+}
+
+#dropzone:hover, #dropzone.dragover {
+  border-color: var(--orange, #e8703a) !important;
+  background: rgba(232, 112, 58, 0.04);
+}
+
+.run-btn:disabled {
+  background: #d7bcbc !important;
+  cursor: not-allowed;
+}
+
+.spinner-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  padding: 20px 4px;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid var(--line, #e7e2dd);
+  border-top-color: var(--red, #c62828);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.verdict-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.verdict-fail { background: var(--fail-bg); color: var(--fail-color); }
+.verdict-pass { background: var(--pass-bg); color: var(--pass-color); }
+.verdict-unknown { background: #f1f1f1; color: var(--muted); }
+
+.report-body {
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  color: var(--ink, #1f1f1f);
+}

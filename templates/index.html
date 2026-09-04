@@ -17,6 +17,9 @@
   <!-- Inside templates/index.html <head> -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/kyc_extraction.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/anomaly_detection.css') }}" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tampering_check.css') }}" />
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -140,7 +143,7 @@
             <line x1="12" y1="3" x2="12" y2="15" />
           </svg>
         </span>
-        <span class="cp-name">Data Extraction</span>
+        <span class="cp-name">Document Extraction</span>
       </button>
 
       <!-- KYC Tool -->
@@ -164,6 +167,19 @@
           </svg>
         </span>
         <span class="cp-name">Anomaly Detection</span>
+      </button>
+
+      <!-- Document Tampering Check -->
+      <button type="button" class="cp-item" data-page="tampering-check" onclick="navFromPanel('tampering-check')">
+        <span class="cp-icon">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="9" y1="15" x2="15" y2="15" />
+            <line x1="12" y1="12" x2="12" y2="18" />
+          </svg>
+        </span>
+        <span class="cp-name">Tampering Check</span>
       </button>
     </nav>
 
@@ -701,6 +717,52 @@
   <!-- PAGE: ANOMALIES DETECTION -->
   <div class="page" id="page-anomalies-detection" style="max-width:1360px;margin:0 auto;padding:0 26px;">
     <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+  </div>
+
+<!-- PAGE: DOCUMENT TAMPERING CHECK -->
+  <div class="page" id="page-tampering-check" style="display:none; max-width:1360px; margin:0 auto; padding:0 26px;">
+    <div style="margin-bottom: 20px;">
+      <button type="button" class="btn ghost sm" onclick="goTo('home')">← Back</button>
+    </div>
+
+    <div class="page-header" style="margin-bottom: 24px;">
+      <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 6px 0;">Document Tampering Check</h1>
+      <p style="color: var(--muted); margin: 0; font-size: 14px;">Upload identity or institutional documents to run AI-powered pixel and semantic tampering audits.</p>
+    </div>
+
+    <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <!-- LEFT: Upload Panel -->
+      <section class="panel" style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;">
+        <h2 style="font-size: 16px; margin: 0 0 16px 0; font-weight: 600;">Document Upload</h2>
+
+        <div class="dropzone" id="dropzone" style="border: 1.5px dashed var(--line); border-radius: 8px; padding: 30px; text-align: center; color: var(--muted); cursor: pointer; transition: all 0.2s ease;">
+          <span class="dz-icon" style="font-size: 32px; display: block; margin-bottom: 8px;">📄</span>
+          <span style="font-weight: 500;">Drag &amp; drop an image here, or click to choose</span>
+          <div class="hint" style="font-size: 12px; margin-top: 6px; color: var(--muted);">PNG, JPG, JPEG supported</div>
+          <input type="file" id="fileInput" accept=".png,.jpg,.jpeg" style="display: none;">
+        </div>
+
+        <div class="preview-wrap" id="previewWrap" style="display: none; margin-top: 16px; text-align: center;">
+          <img id="previewImg" alt="Uploaded document preview" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--line);">
+          <div class="preview-caption" style="font-size: 12px; color: var(--muted); margin-top: 6px;">Uploaded Document</div>
+        </div>
+
+        <button class="run-btn" id="runBtn" disabled style="margin-top: 18px; width: 100%; padding: 12px; border: none; border-radius: 6px; background: var(--red, #c62828); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.15s ease;">
+          Process
+        </button>
+        <div id="warnBox"></div>
+      </section>
+
+      <!-- RIGHT: Analysis Report Panel -->
+      <section class="panel" style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;">
+        <h2 style="font-size: 16px; margin: 0 0 16px 0; font-weight: 600;">Analysis Report</h2>
+        <div id="reportArea">
+          <div class="empty-report" style="color: var(--muted); font-size: 14px; padding: 40px 10px; text-align: center;">
+            Please upload a document to run digital forensics.
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <div class="wrap">
@@ -1693,6 +1755,8 @@
   <script src="/static/js/main.js"></script>
   <script src="{{ url_for('static', filename='js/kyc_extraction.js') }}"></script>
   <script src="{{ url_for('static', filename='js/anomaly_detection.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/tampering_check.js') }}"></script>
+
 </body>
 
 </html>

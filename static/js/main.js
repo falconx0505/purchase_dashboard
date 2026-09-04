@@ -86,7 +86,7 @@ function goTo(pageId) {
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection' || pageId === 'tampering-check');
   updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);

@@ -16,6 +16,8 @@ import pandas as pd
 import pytesseract
 from PIL import Image
 from pdf2image import convert_from_bytes
+from google import genai
+from google.genai import types
 
 from anomalies_blueprint import anomalies_bp
 
@@ -87,6 +89,23 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 # File and Database Paths
 DATA_PATH = os.path.join(os.path.dirname(__file__), "60rowdata .xlsx")
 DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
+
+def load_env_file(path):
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as env_file:
+        for line in env_file:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("$env:") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEN_MODEL = "gemini-2.5-flash"
+client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 ALL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 MONTH_ORDER = ALL_MONTHS
@@ -938,7 +957,8 @@ def _dashboard_payload(payload):
         "months": payload.get("months", []),
     }
 
-LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+# LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+LARS_API_URL = "https://localhost/json/collection/v2.1.0/collection.json"
 LARS_USERNAME = "admin"
 LARS_PASSWORD = "admin@123"
 
@@ -1323,6 +1343,53 @@ def extract_kyc():
         as_attachment=True,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+
+
+# Tampered document endpoints 
+
+FORENSICS_PROMPT = """You are an elite digital document forensics system tasked with analyzing an image for sophisticated tampering.
+Perform an exhaustive pixel-level and semantic analysis based on standard forensic criteria.
+
+CRITICAL VISUAL ANALYSIS DIRECTION:
+1. FONT TEXTURE AND SOFTNESS COMPARISON: Real documents captured via scans or cameras exhibit a uniform edge softness/fuzziness across both labels and their corresponding values. Closely inspect fields like names, designations, and dates. If a text label (e.g., 'Date of Birth:') looks soft or compressed, but its associated value (e.g., the numerical date) is perfectly crisp, bold, or uses a high-contrast modern digital font, flag this as a critical digital overlay anomaly.
+2. COMPRESSION AND RESAMPLING MISMATCHES: Look for individual words or blocks of text (such as specific job designations or specific numeric fields) that appear visually sharper, heavier in weight, or display brighter compression auras than the baseline template text surrounding them.
+3. GEOGRAPHIC & JURISDICTIONAL LOGIC: Cross-reference the administrative locations. If an issuing authority belongs to one specific district (e.g., Goalpara), but the deployment data or personal address explicitly places them in a non-overlapping district (e.g., Udalguri), flag this as an impossible administrative contradiction.
+
+Provide your forensic report in this exact schema:
+- IDENTIFIED DOCUMENT: [Type of document]
+- COMPREHENSIVE VERDICT: [FAILED / TAMPERED or PASSED / AUTHENTIC]
+- FRAUD RISK CONFIDENCE (0-100%): [Score]
+- DETECTED VISUAL ANOMALIES: [Clearly point out any font edge softness mismatches, sharp digital overlays, or suspicious text boldness gaps compared to their labels]
+- DETECTED TEXTUAL ANOMALIES: [Detail any geographic, chronological, or logical contradictions]
+"""
+
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    if "image" not in request.files:
+        return jsonify({"error": "No image file uploaded."}), 400
+
+    file = request.files["image"]
+    if file.filename == "":
+        return jsonify({"error": "No image file selected."}), 400
+
+    if client is None:
+        return jsonify({"error": "Server is not configured with a Gemini API key."}), 503
+
+    image_bytes = file.read()
+    mime_type = file.mimetype or "image/png"
+
+    try:
+        response = client.models.generate_content(
+            model=GEN_MODEL,
+            contents=[
+                types.Part.from_bytes(data=image_bytes, mime_type=mime_type),
+                FORENSICS_PROMPT,
+            ],
+        )
+        return jsonify({"report": response.text})
+    except Exception as e:
+        return jsonify({"error": f"Pipeline execution failure: {e}"}), 500
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
