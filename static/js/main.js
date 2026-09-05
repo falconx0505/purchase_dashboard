@@ -86,7 +86,7 @@ function goTo(pageId) {
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection' || pageId === 'tampering-check');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection' || pageId === 'tampering-check' || pageId === 'kyc-tool');
   updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
@@ -3959,3 +3959,162 @@ function downloadDynamicExcel(tableId) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('upload-form');
+  const fileInput = document.getElementById('file-input');
+  const chooseFileBtn = document.getElementById('custom-choose-btn');
+  const fileNameLabel = document.getElementById('file-name-label');
+  const tableCard = document.getElementById('table-card');
+  const resultsTable = document.getElementById('results-table');
+  const resultCount = document.getElementById('result-count');
+  const downloadCsvBtn = document.getElementById('download-csv');
+  const downloadXlsxBtn = document.getElementById('download-xlsx');
+
+  let latestRows = [];
+
+  if (chooseFileBtn && fileInput) {
+    chooseFileBtn.addEventListener('click', function () {
+      fileInput.click();
+    });
+  }
+
+  if (fileInput && fileNameLabel) {
+    fileInput.addEventListener('change', function () {
+      fileNameLabel.textContent = fileInput.files.length
+        ? fileInput.files[0].name
+        : 'No file chosen';
+    });
+  }
+
+  function flatten(obj, prefix = '') {
+    const out = {};
+    for (const k in obj) {
+      const val = obj[k];
+      const key = prefix ? `${prefix}_${k}` : k;
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        Object.assign(out, flatten(val, key));
+      } else {
+        out[key] = val;
+      }
+    }
+    return out;
+  }
+
+  function renderTable(rows) {
+    latestRows = rows;
+    if (!rows || rows.length === 0) {
+      if (tableCard) tableCard.style.display = 'none';
+      if (resultCount) resultCount.textContent = 'No results to show';
+      if (downloadCsvBtn) downloadCsvBtn.style.display = 'none';
+      if (downloadXlsxBtn) downloadXlsxBtn.style.display = 'none';
+      return;
+    }
+
+    const flat = rows.map(r => flatten(r));
+    const cols = Array.from(new Set(flat.flatMap(r => Object.keys(r))));
+
+    resultsTable.innerHTML = '';
+    const thead = document.createElement('thead');
+    const hrow = document.createElement('tr');
+    cols.forEach(c => {
+      const th = document.createElement('th');
+      th.textContent = c;
+      hrow.appendChild(th);
+    });
+    thead.appendChild(hrow);
+    resultsTable.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    flat.forEach(r => {
+      const tr = document.createElement('tr');
+      cols.forEach(c => {
+        const td = document.createElement('td');
+        td.textContent = r[c] != null ? r[c] : '';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    resultsTable.appendChild(tbody);
+
+    if (tableCard) tableCard.style.display = 'block';
+    if (resultCount) resultCount.textContent = `${rows.length} records returned`;
+    if (downloadCsvBtn) downloadCsvBtn.style.display = 'inline-block';
+    if (downloadXlsxBtn) downloadXlsxBtn.style.display = 'inline-block';
+  }
+
+  if (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const file = fileInput.files[0];
+      if (!file) return alert('Please select an Excel file (.xlsx)');
+
+      const fd = new FormData();
+      fd.append('file', file);
+
+      if (resultCount) resultCount.textContent = 'Processing…';
+
+      fetch('/upload', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) {
+            if (resultCount) resultCount.textContent = `Error: ${data.error}`;
+            return;
+          }
+          renderTable(data.results || []);
+        })
+        .catch(err => {
+          if (resultCount) resultCount.textContent = `Upload failed: ${err}`;
+        });
+    });
+  }
+
+  if (downloadCsvBtn) {
+    downloadCsvBtn.addEventListener('click', function () {
+      if (!latestRows || latestRows.length === 0) return;
+      const flat = latestRows.map(r => flatten(r));
+      const cols = Array.from(new Set(flat.flatMap(r => Object.keys(r))));
+      const lines = [cols.join(',')];
+      flat.forEach(r => {
+        const vals = cols.map(c => {
+          const v = r[c] != null ? String(r[c]) : '';
+          return `"${v.replace(/"/g, '""')}"`;
+        });
+        lines.push(vals.join(','));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pan_results.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  if (downloadXlsxBtn) {
+    downloadXlsxBtn.addEventListener('click', function () {
+      if (!latestRows || latestRows.length === 0) return;
+      fetch('/download_excel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rows: latestRows })
+      })
+        .then(r => r.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'pan_results.xlsx';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        })
+        .catch(err => alert('Download failed: ' + err));
+    });
+  }
+});

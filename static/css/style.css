@@ -2468,3 +2468,89 @@ table.tbl-compact td.r {
   border-radius: 999px;
   transition: width .4s ease;
 }
+
+
+/* ==========================================
+   KYC Tool & Sub-Page Layout Styles
+   ========================================== */
+
+/* Page Wrapper */
+.page-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 22px 26px 60px;
+}
+
+/* Back Button Margin */
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+/* Page Header Typography */
+.page-head {
+  margin-bottom: 24px;
+}
+
+.page-head .page-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
+  margin: 4px 0;
+}
+
+.page-head .page-desc {
+  color: #6b7280;
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Card Section Utility */
+.card-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.card-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+/* Form Layout */
+.form-inline {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.file-label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Results Section */
+.result-count-label {
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.table-card-container {
+  display: none;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}

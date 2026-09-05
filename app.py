@@ -18,7 +18,7 @@ from PIL import Image
 from pdf2image import convert_from_bytes
 from google import genai
 from google.genai import types
-
+import api
 from anomalies_blueprint import anomalies_bp
 
 
@@ -87,7 +87,7 @@ app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # File and Database Paths
-DATA_PATH = os.path.join(os.path.dirname(__file__), "60rowdata .xlsx")
+DATA_PATH = os.path.join(os.path.dirname(__file__), "60rowdata.xlsx")
 DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
 
 def load_env_file(path):
@@ -1390,6 +1390,69 @@ def analyze():
         return jsonify({"report": response.text})
     except Exception as e:
         return jsonify({"error": f"Pipeline execution failure: {e}"}), 500
+
+
+# ── KYC / PAN VERIFICATION ENDPOINTS( api key) ─────────────────────────
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    """Reads uploaded Excel, extracts PAN column, calls api.py verification, returns results."""
+    f = request.files.get('file')
+    if f is None:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    try:
+        df = pd.read_excel(f)
+    except Exception:
+        return jsonify({'error': 'Unable to read Excel file'}), 400
+
+    # Auto-detect PAN column name or fallback to first column[cite: 14]
+    pan_col = None
+    for c in df.columns:
+        if c.lower() in ('pan', 'pan_number', 'pan no', 'pan_no'):
+            pan_col = c
+            break
+    if pan_col is None:
+        pan_col = df.columns[0]
+
+    results = []
+    for pan in df[pan_col].dropna().astype(str).tolist():
+        pan = pan.strip()
+        try:
+            resp = api.verify_pan_kyc(pan)  # Calls api.py function[cite: 14, 18]
+            if isinstance(resp, dict):
+                data = resp.get('data') or resp.get('Data') or {}
+                if data and 'pan' not in data:
+                    data['pan'] = pan
+                results.append(data if data else {'pan': pan, 'error': 'no data'})
+            else:
+                results.append({'pan': pan, 'error': 'no response'})
+        except Exception as e:
+            results.append({'pan': pan, 'error': str(e)})
+
+    return jsonify({'results': results})
+
+
+@app.route('/download_excel', methods=['POST'])
+def download_excel():
+    """Generates an Excel spreadsheet from JSON verification results for download."""
+    payload = request.get_json() or {}
+    rows = payload.get('rows') or []
+    if not rows:
+        return jsonify({'error': 'no rows provided'}), 400
+
+    df = pd.DataFrame(rows)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='results')
+    output.seek(0)
+    
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='pan_results.xlsx'
+    )
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)

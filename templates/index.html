@@ -714,6 +714,71 @@
     <!-- Content loaded dynamically from templates/pages/data_extraction.html -->
   </div>
 
+  <!-- PAGE: KYC TOOL -->
+  <div class="page page-container" id="page-kyc-tool">
+    <!-- Back Button -->
+    <div class="mb-20">
+      <button type="button" class="btn ghost sm" onclick="goTo('home')">
+        ← Back
+      </button>
+    </div>
+
+    <!-- Header Section -->
+    <div class="page-head">
+      <div class="eyebrow">Purchase Internal Control</div>
+      <h1 class="page-title">PAN Verification Dashboard</h1>
+      <p class="page-desc">
+        Upload an Excel file containing PAN numbers. The service will verify each PAN against the KYC API and return the verification data.
+      </p>
+    </div>
+
+    <!-- Form Upload Card -->
+    <div class="card card-section">
+      <div class="card-title">Upload & Process File</div>
+      <div class="card-subtitle">Select an Excel file (.xlsx, .xls) containing a column of PAN numbers.</div>
+      
+      <form id="upload-form" class="form-inline">
+        <input type="file" id="file-input" name="file" accept=".xlsx,.xls" required style="display: none;" />
+
+        <button type="button" id="custom-choose-btn" class="btn ghost">
+          Choose File
+        </button>
+
+        <span id="file-name-label" class="file-label">No file chosen</span>
+
+        <button type="submit" class="btn primary">
+          Upload & Verify
+        </button>
+
+        <button type="button" id="download-csv" class="btn ghost" style="display:none;">
+          Download CSV
+        </button>
+        <button type="button" id="download-xlsx" class="btn ghost" style="display:none;">
+          Download Excel
+        </button>
+      </form>
+    </div>
+
+    <!-- Results Table Card -->
+    <div id="result-count" class="result-count-label"></div>
+    
+    <div class="card table-card-container" id="table-card">
+      <div class="card-h">
+        <div class="grow">
+          <h3 class="ttl">Verification Results</h3>
+          <div class="desc">Only the API response data payload is displayed below.</div>
+        </div>
+      </div>
+      <div class="card-b no-pad">
+        <div class="tbl-wrap-full">
+          <table class="tbl" id="results-table">
+            <!-- Dynamically populated by JS -->
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- PAGE: ANOMALIES DETECTION -->
   <div class="page" id="page-anomalies-detection" style="max-width:1360px;margin:0 auto;padding:0 26px;">
     <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
