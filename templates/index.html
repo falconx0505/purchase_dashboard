@@ -29,14 +29,15 @@
 
   <!-- ── HEADER ─────────────────────────────────── -->
   <header class="hdr">
-    <button type="button" class="hdr-menu-btn" id="controls-panel-toggle" onclick="toggleControlsPanel()"
-      aria-label="Open controls menu" aria-controls="controls-panel" aria-expanded="false">☰</button>
     <a class="hdr-brand" href="#" onclick="goTo('home'); return false;">
-      <img src="/static/images/logo.png" alt="LASER logo" class="hdr-logo-mark" />
+      <!-- <img src="/static/images/logo.png" alt="LASER logo" class="hdr-logo-mark" />
       <span class="hdr-brand-text">
         <span class="hdr-logo">LASER</span>
-      </span>
+      </span> -->
     </a>
+    <div class="hdr-breadcrumb" id="hdr-breadcrumb" aria-label="Current page">
+      <span>Continuous control monitoring</span><span class="hdr-breadcrumb-separator">/</span><strong>Dashboard</strong>
+    </div>
     <div class="hdr-right">
       <div class="chip"><span class="dot"></span> FY 2026–27</div>
       <button type="button" class="hdr-bell" aria-label="Notifications" title="Notifications">
@@ -52,14 +53,12 @@
   <div class="hdr-accent"></div>
 
   <!-- ── CONTROLS PANEL (openable/closable on every page) ─────── -->
-  <div class="controls-panel-backdrop" id="controls-panel-backdrop" onclick="closeControlsPanel()"></div>
-  <aside class="controls-panel" id="controls-panel" aria-hidden="true">
+  <aside class="controls-panel" id="controls-panel" aria-hidden="false">
     <div class="cp-head">
       <div class="cp-brand">
         <img src="/static/images/logo.png" alt="" class="cp-brand-mark" />
         <span class="cp-brand-text">LASER<span class="cp-brand-sub-inline">GRC</span></span>
       </div>
-      <button type="button" class="cp-close" onclick="closeControlsPanel()" aria-label="Close controls menu">✕</button>
     </div>
     <nav class="cp-body">
       <div class="cp-section-label">Overview</div>
@@ -187,7 +186,7 @@
     <div class="cp-foot">
       <div class="cp-avatar">SD</div>
       <div>
-        <div class="cp-user-name">Sundeep</div>
+        <div class="cp-user-name">Sandeep</div>
         <div class="cp-user-role">Internal audit</div>
       </div>
     </div>
@@ -271,9 +270,9 @@
   </nav>
 
   <!-- ── USER BADGE (below navbar, all pages) ─────── -->
-  <div class="user-badge-row">
-    <div class="chip chip-user">Welcome, Sundeep</div>
-  </div>
+  <!-- <div class="user-badge-row">
+    <div class="chip chip-user">Welcome, Sandeep</div>
+  </div> -->
 
   <!-- ── PAGES CONTAINER ────────────────────────── -->
   <div id="data-loading" class="data-loading" role="status" aria-live="polite">

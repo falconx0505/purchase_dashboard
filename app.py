@@ -248,9 +248,15 @@ def init_db_schema(conn):
         ClosureReason TEXT,
         FromDate DATE,
         ToDate DATE,
+        lars_observ_req_id TEXT,
+        lars_plan_id TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    observation_columns = {row[1] for row in conn.execute("PRAGMA table_info(observations)")}
+    for column_name in ["lars_observ_req_id", "lars_plan_id"]:
+        if column_name not in observation_columns:
+            conn.execute(f"ALTER TABLE observations ADD COLUMN {column_name} TEXT")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -957,8 +963,8 @@ def _dashboard_payload(payload):
         "months": payload.get("months", []),
     }
 
-# LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-LARS_API_URL = "https://localhost/json/collection/v2.1.0/collection.json"
+LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+# LARS_API_URL = "https://localhost/json/collection/v2.1.0/collection.json"
 LARS_USERNAME = "admin"
 LARS_PASSWORD = "admin@123"
 
@@ -999,7 +1005,34 @@ def send_observation_to_lars(data):
     # Make outbound call to LARS endpoint
     response = requests.post(LARS_API_URL, json=payload, headers=headers, timeout=10)
     response.raise_for_status()
-    return response.json()
+    res_data = response.json()
+    print("RAW LARS RESPONSE:", res_data) # testing
+
+    # Extract dynamic IDs returned from LARS response
+    # Adjust key paths according to LARS's actual returned JSON structure
+    def find_response_value(value, names):
+        if isinstance(value, dict):
+            for key, item in value.items():
+                if str(key).lower() in names and item not in (None, ""):
+                    return item
+                found = find_response_value(item, names)
+                if found not in (None, ""):
+                    return found
+        elif isinstance(value, list):
+            for item in value:
+                found = find_response_value(item, names)
+                if found not in (None, ""):
+                    return found
+        return None
+
+    plan_id = find_response_value(res_data, {"planid", "plan_id"})
+    observ_req_id = find_response_value(res_data, {"observreqid", "observ_req_id"})
+
+    return {
+        "raw_response": res_data,
+        "planid": plan_id,
+        "ObservReqID": observ_req_id
+    }
 
 @app.route("/")
 def index():
@@ -1134,26 +1167,40 @@ def save_observation():
             if obs_id:
                 set_clause = ", ".join([f"{f} = ?" for f in fields])
                 conn.execute(f"UPDATE observations SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (*vals, obs_id))
+                saved_obs_id = obs_id
             else:
                 cols = ", ".join(fields)
                 placeholders = ", ".join(["?"] * len(fields))
-                conn.execute(f"INSERT INTO observations ({cols}) VALUES ({placeholders})", vals)
+                cursor = conn.execute(f"INSERT INTO observations ({cols}) VALUES ({placeholders})", vals)
+                saved_obs_id = cursor.lastrowid
             conn.commit()
 
         # --- NEW CODE: Forward to LARS API ---
         lars_status = "not_sent"
+        lars_ids = {}
         try:
             lars_res = send_observation_to_lars(data)
             lars_status = "success"
+            lars_ids = {
+                "planid": lars_res.get("planid"),
+                "ObservReqID": lars_res.get("ObservReqID")
+            }
+            if lars_ids["planid"] and lars_ids["ObservReqID"]:
+                with get_db_connection() as conn:
+                    conn.execute(
+                        "UPDATE observations SET lars_observ_req_id = ?, lars_plan_id = ? WHERE id = ?",
+                        (str(lars_ids["ObservReqID"]), str(lars_ids["planid"]), saved_obs_id),
+                    )
+                    conn.commit()
         except Exception as lars_err:
             print("LARS API Sync Warning:", str(lars_err))
             lars_status = f"failed: {str(lars_err)}"
 
         return jsonify({
             "success": True,
-            "lars_sync": lars_status
+            "lars_sync": lars_status,
+            "lars_data": lars_ids
         })
-
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

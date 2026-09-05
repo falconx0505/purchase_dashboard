@@ -26,6 +26,32 @@ updateGenieVisibility('home');
 let F = { company: [], state: [], product: [], customer: [], month: [] };
 let RAW = null;
 let currentObsCategory = '';
+
+const BREADCRUMB_LABELS = {
+  home: 'Dashboard',
+  welcome: 'Dashboard',
+  filters: 'Filters',
+  hygiene: 'Purchase hygiene',
+  'po-summary': 'PO vs invoice vs GRN vs bank',
+  'po-detail': 'PO detail',
+  purchase: 'Purchase analytics',
+  'ai-dashboard': 'AI dashboard',
+  formula: 'Calculation check',
+  'it-controls': 'IT controls',
+  'control-inventory': 'Control inventory',
+  'hr-payroll': 'HR & payroll',
+  'audit-trail': 'Audit trail',
+  'loan-repayment': 'EMI checking',
+  kyc: 'KYC checks',
+  'other-loan': 'Loan checklist',
+  'data-extraction': 'Document extraction',
+  'kyc-tool': 'KYC tool',
+  'anomalies-detection': 'Anomaly detection',
+  'tampering-check': 'Tampering check',
+  addition: 'Additional modules',
+  observations: 'Observations',
+  'upload-observation': 'Observation import'
+};
 // Cached monthly split for the Home "Monthly Error Trend" chart — declared
 // up top (not down near the chart function) because renderHomeCharts() is
 // invoked immediately below on page load, before the script has finished
@@ -83,6 +109,7 @@ function goTo(pageId) {
   }
   if (tab) tab.classList.add('active');
   if (cpItem) cpItem.classList.add('active');
+  updateBreadcrumb(pageId);
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
@@ -90,6 +117,13 @@ function goTo(pageId) {
   updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
+}
+
+function updateBreadcrumb(pageId) {
+  const breadcrumb = document.getElementById('hdr-breadcrumb');
+  if (!breadcrumb) return;
+  const label = BREADCRUMB_LABELS[pageId] || pageId.replace(/-/g, ' ');
+  breadcrumb.innerHTML = `<span>Continuous control monitoring</span><span class="hdr-breadcrumb-separator">/</span><strong>${esc(label)}</strong>`;
 }
 
 document.querySelectorAll('.nav-tab').forEach(btn => {
@@ -2815,7 +2849,7 @@ async function renderObsList() {
                   <td>${esc(item.Auditee || '—')}</td>
                   <td>
                     <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Edit</button>
-                    <button class="btn-rmk btn-rmk-info" type="button" title="Observation Info" aria-label="Observation Info">i</button>
+                    <button class="btn-rmk btn-rmk-info" type="button" title="Open Observation Info" aria-label="Open Observation Info" onclick="openLarsObservation('${esc(item.lars_observ_req_id || '')}', '${esc(item.lars_plan_id || '')}')">i</button>
                     <button class="btn-rmk btn-rmk-del" onclick="deleteObservation(${item.id})">Delete</button>
                   </td>
                 </tr>
@@ -2829,6 +2863,17 @@ async function renderObsList() {
     console.error('Failed to load observations:', err);
     body.innerHTML = '<div style="padding:20px;color:red">Failed to load observations.</div>';
   }
+}
+
+function openLarsObservation(observReqId, planId) {
+  if (!observReqId || !planId) {
+    alert('LARS observation link is not available for this record.');
+    return;
+  }
+  const url = new URL('http://10.0.77.99/LORS_DEMO_ONLINE/ObsevationRequest.aspx');
+  url.searchParams.set('ObservReqID', observReqId);
+  url.searchParams.set('planID', planId);
+  window.open(url.href, '_blank', 'noopener,noreferrer');
 }
 
 function showObsForm(data = null) {
