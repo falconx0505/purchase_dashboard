@@ -2815,6 +2815,7 @@ async function renderObsList() {
                   <td>${esc(item.Auditee || '—')}</td>
                   <td>
                     <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Edit</button>
+                    <button class="btn-rmk btn-rmk-info" type="button" title="Observation Info" aria-label="Observation Info">i</button>
                     <button class="btn-rmk btn-rmk-del" onclick="deleteObservation(${item.id})">Delete</button>
                   </td>
                 </tr>

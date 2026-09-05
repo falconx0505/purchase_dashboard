@@ -2127,6 +2127,16 @@ table.tbl tr.row-warn td {
   color: #fff;
 }
 
+.btn-rmk-info {
+  background: #e0f2fe;
+  color: #0369a1;
+  min-width: 20px;
+  justify-content: center;
+  font-size: 12px;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
 .btn-rmk-del {
   background: #fee2e2;
   color: var(--red);
