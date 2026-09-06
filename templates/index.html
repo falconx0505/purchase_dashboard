@@ -71,6 +71,16 @@
           </svg></span><span class="cp-name">Dashboard</span>
       </button>
 
+      <!-- ADD THIS BUTTON RIGHT HERE BELOW DASHBOARD -->
+      <button type="button" class="cp-item" data-page="anomaly-journey" onclick="navFromPanel('anomaly-journey')">
+        <span class="cp-icon">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+        </span>
+        <span class="cp-name">Anomaly Journey</span>
+      </button>
+
       <div class="cp-section-label">Control Monitoring</div>
       <button type="button" class="cp-item" data-page="it-controls" onclick="navFromPanel('it-controls')">
         <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
@@ -402,18 +412,36 @@
       </div>
 
       <!-- Bar Graph 1: Sequential Order (Table Order) -->
-      <div class="card home-chart-card home-bar-card">
-        <div class="card-h">
-          <div class="grow">
-            <div class="ttl">Count of Errors by Control</div>
-            <div class="desc">Error count across all 7 controls in sequential order (1 to 7)</div>
+        <div class="card home-chart-card home-bar-card">
+          <div class="card-h">
+            <div class="grow">
+              <div class="ttl">Count of Errors by Control</div>
+              <div class="desc">Error count across all 7 controls in sequential order (1 to 7)</div>
+            </div>
+            <span class="chip chip-sm" style="background:var(--peach);color:var(--maroon);border-color:var(--orange);">7
+              Controls</span>
           </div>
-          <span class="chip chip-sm" style="background:var(--peach);color:var(--maroon);border-color:var(--orange);">7
-            Controls</span>
+          <div class="card-b">
+            <div class="chart-wrap chart-wrap-home-bar">
+              <canvas id="chart-home-bar-seq"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scatter / Bubble Chart Card -->
+      <div class="card home-chart-card">
+        <div class="card-h" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div class="ttl">Risk vs. Aging Distribution</div>
+            <div class="desc">Control error count vs. average days open (Bubble size = Financial Risk Exposure)</div>
+          </div>
+          <span class="chip chip-sm" style="font-size:11px; font-weight:700;">
+            <span class="dot" style="background-color: #2563eb;"></span> 7 Controls Mapped
+          </span>
         </div>
         <div class="card-b">
-          <div class="chart-wrap chart-wrap-home-bar">
-            <canvas id="chart-home-bar-seq"></canvas>
+          <div class="chart-wrap" style="position: relative; height: 320px; width: 100%;">
+            <canvas id="chart-scatter-risk"></canvas>
           </div>
         </div>
       </div>
@@ -449,6 +477,219 @@
 
     </div>
   </div>
+
+
+
+
+  <!-- anomaly-journey -->
+<div class="page" id="page-anomaly-journey">
+  <div class="aj-container">
+    
+    <!-- Top Header -->
+    <div class="aj-header">
+      <div>
+        <div class="aj-eyebrow">CCM TEAM · ALL CONTROLS</div>
+        <h2 class="aj-title">Anomaly journey — detection to closure</h2>
+      </div>
+      <div class="aj-filters">
+        <select class="aj-select">
+          <option>All modules</option>
+        </select>
+        <select class="aj-select">
+          <option>Q1 FY 26–27</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 6 Stage Metric Cards -->
+    <div class="aj-stage-cards">
+      
+      <div class="aj-stage-card card-red">
+        <div class="stage-label">1 · DETECTED</div>
+        <div class="stage-value">201</div>
+        <div class="stage-sub">in triage · CCM</div>
+      </div>
+
+      <div class="aj-stage-card card-orange">
+        <div class="stage-label">2 · OBSERVATION RAISED</div>
+        <div class="stage-value">42</div>
+        <div class="stage-sub">in LARS</div>
+      </div>
+
+      <div class="aj-stage-card card-yellow">
+        <div class="stage-label">3 · ASSIGNED TO AUDITEE</div>
+        <div class="stage-value">31</div>
+        <div class="stage-sub">awaiting response</div>
+      </div>
+
+      <div class="aj-stage-card card-blue">
+        <div class="stage-label">4 · ACTION PLAN RECEIVED</div>
+        <div class="stage-value">24</div>
+        <div class="stage-sub">under review</div>
+      </div>
+
+      <div class="aj-stage-card card-teal">
+        <div class="stage-label">5 · RESOLUTION</div>
+        <div class="stage-value">17</div>
+        <div class="stage-sub">with resolver</div>
+      </div>
+
+      <div class="aj-stage-card card-green">
+        <div class="stage-label">6 · CLOSED</div>
+        <div class="stage-value">152</div>
+        <div class="stage-sub">this FY</div>
+      </div>
+
+    </div>
+
+    <!-- Main Table Container -->
+    <div class="aj-table-card">
+      
+      <div class="aj-table-header">
+        <h3 class="aj-table-title">ANOMALIES IN FLIGHT</h3>
+        
+        <!-- Legend Indicators -->
+        <div class="aj-legend">
+          <span><span class="dot dot-red"></span> Detected</span>
+          <span><span class="dot dot-orange"></span> Observation</span>
+          <span><span class="dot dot-yellow"></span> Assigned</span>
+          <span><span class="dot dot-blue"></span> Action plan</span>
+          <span><span class="dot dot-teal"></span> Resolution</span>
+          <span><span class="dot dot-green"></span> Closed</span>
+        </div>
+      </div>
+
+      <!-- Table Content -->
+      <div class="aj-table-wrapper">
+        <table class="aj-table">
+          <thead>
+            <tr>
+              <th>CONTROL</th>
+              <th>ANOMALY</th>
+              <th>AUDITEE / RESOLVER</th>
+              <th>STAGE</th>
+              <th>DAYS IN STAGE</th>
+              <th>JOURNEY</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td class="font-medium">Access After Last Working Day</td>
+              <td>System access retained after employee exit</td>
+              <td>Anurag Sharma</td>
+              <td><span class="badge badge-teal">Resolution</span></td>
+              <td>4</td>
+              <td>
+                <div class="journey-dots">
+                  <span class="d dot-red"></span>
+                  <span class="d dot-orange"></span>
+                  <span class="d dot-yellow"></span>
+                  <span class="d dot-blue"></span>
+                  <span class="d dot-teal"></span>
+                  <span class="d dot-empty"></span>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="font-medium">Users Not Logged In for 90+ Days</td>
+              <td>Dormant accounts still active in the system</td>
+              <td>Amit Patil</td>
+              <td><span class="badge badge-yellow">Assigned</span></td>
+              <td>9</td>
+              <td>
+                <div class="journey-dots">
+                  <span class="d dot-red"></span>
+                  <span class="d dot-orange"></span>
+                  <span class="d dot-yellow"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="font-medium">Password Not Changed</td>
+              <td>Accounts exceeding password rotation policy</td>
+              <td>Priya Sharma</td>
+              <td><span class="badge badge-blue">Action plan</span></td>
+              <td>2</td>
+              <td>
+                <div class="journey-dots">
+                  <span class="d dot-red"></span>
+                  <span class="d dot-orange"></span>
+                  <span class="d dot-yellow"></span>
+                  <span class="d dot-blue"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="font-medium">Login Outside Business Hours</td>
+              <td>Sign-ins recorded outside approved working hours</td>
+              <td>Rajesh Bansal</td>
+              <td><span class="badge badge-red">Detected</span></td>
+              <td>1</td>
+              <td>
+                <div class="journey-dots">
+                  <span class="d dot-red"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                  <span class="d dot-empty"></span>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="font-medium">Multiple Failed Login Attempts</td>
+              <td>Repeated unsuccessful sign-in attempts</td>
+              <td>Manoj Tiwari</td>
+              <td><span class="badge badge-green">Closed</span></td>
+              <td>—</td>
+              <td>
+                <div class="journey-dots">
+                  <span class="d dot-red"></span>
+                  <span class="d dot-orange"></span>
+                  <span class="d dot-yellow"></span>
+                  <span class="d dot-blue"></span>
+                  <span class="d dot-teal"></span>
+                  <span class="d dot-green"></span>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="font-medium">Approved Above Authorized Limit</td>
+              <td>Transactions approved beyond the approver’s authority</td>
+              <td>Ajay Mathur</td>
+              <td><span class="badge badge-green">Closed</span></td>
+              <td>-</td>
+              <td>
+                <div class="journey-dots">
+                  <span class="d dot-red"></span>
+                  <span class="d dot-orange"></span>
+                  <span class="d dot-yellow"></span>
+                  <span class="d dot-blue"></span>
+                  <span class="d dot-teal"></span>
+                  <span class="d dot-green"></span>
+                </div>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+  </div>
+</div>
 
   <!-- PAGE: IT CONTROLS -->
   <!-- ══════════════════════════════════════════════════════════════

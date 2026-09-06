@@ -113,7 +113,7 @@ function goTo(pageId) {
   // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
-  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection' || pageId === 'tampering-check' || pageId === 'kyc-tool');
+  document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'it-controls' || pageId === 'control-inventory' || pageId === 'hr-payroll' || pageId === 'loan-repayment' || pageId === 'audit-trail' || pageId === 'kyc' || pageId === 'other-loan' || pageId === 'data-extraction' || pageId === 'anomalies-detection' || pageId === 'tampering-check' || pageId === 'kyc-tool' || pageId === 'anomaly-journey');
   updateGenieVisibility(pageId);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   renderCurrentPage(pageId);
@@ -4162,5 +4162,104 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(err => alert('Download failed: ' + err));
     });
+  }
+});
+
+const ctxScatter = document.getElementById('chart-scatter-risk').getContext('2d');
+
+new Chart(ctxScatter, {
+  type: 'bubble', // 'bubble' is Chart.js's native 3D scatter chart
+  data: {
+    datasets: [
+      {
+        label: 'IT Control',
+        data: [{ x: 12, y: 48, r: 18 }], // x: Avg Days Open, y: Error Count, r: Bubble Size (Risk Exposure)
+        backgroundColor: 'rgba(217, 56, 58, 0.7)',
+        borderColor: '#d9383a'
+      },
+      {
+        label: 'HR Management',
+        data: [{ x: 18, y: 35, r: 14 }],
+        backgroundColor: 'rgba(249, 115, 22, 0.7)',
+        borderColor: '#f97316'
+      },
+      {
+        label: 'Audit Trail',
+        data: [{ x: 5, y: 10, r: 8 }],
+        backgroundColor: 'rgba(234, 179, 8, 0.7)',
+        borderColor: '#eab308'
+      },
+      {
+        label: 'EMI Checking',
+        data: [{ x: 22, y: 16, r: 12 }],
+        backgroundColor: 'rgba(37, 99, 235, 0.7)',
+        borderColor: '#2563eb'
+      },
+      {
+        label: 'Purchase',
+        data: [{ x: 8, y: 14, r: 10 }],
+        backgroundColor: 'rgba(139, 92, 246, 0.7)',
+        borderColor: '#8b5cf6'
+      },
+      {
+        label: 'KYC Checks',
+        data: [{ x: 28, y: 42, r: 22 }],
+        backgroundColor: 'rgba(13, 148, 136, 0.7)',
+        borderColor: '#0d9488'
+      },
+      {
+        label: 'Loan Checklist',
+        data: [{ x: 15, y: 36, r: 16 }],
+        backgroundColor: 'rgba(22, 163, 74, 0.7)',
+        borderColor: '#16a34a'
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          usePointStyle: true,
+          boxWidth: 8,
+          font: { size: 12 }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.dataset.label || '';
+            const raw = context.raw;
+            return `${label}: ${raw.y} Errors, ${raw.x} Days Avg, Risk Impact Rating: ${raw.r}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Average Days Open (Aging)',
+          font: { size: 12, weight: 'bold' },
+          color: '#64748b'
+        },
+        grid: { color: '#f1f5f9' },
+        min: 0,
+        max: 35
+      },
+      y: {
+        title: {
+          display: true,
+          text: 'Error Count',
+          font: { size: 12, weight: 'bold' },
+          color: '#64748b'
+        },
+        grid: { color: '#f1f5f9' },
+        min: 0,
+        max: 60
+      }
+    }
   }
 });
