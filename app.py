@@ -4,6 +4,8 @@ import re
 import sqlite3
 import tempfile
 import zipfile
+import json
+from datetime import datetime
 from xml.etree.ElementTree import iterparse
 from werkzeug.utils import secure_filename
 import pandas as pd
@@ -963,13 +965,68 @@ def _dashboard_payload(payload):
         "months": payload.get("months", []),
     }
 
-LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-# LARS_API_URL = "https://localhost/json/collection/v2.1.0/collection.json"
+# LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+LARS_API_URL = "https://lars.lasergrc.net/ImportObservationApi.asmx/AddObservations"
 LARS_USERNAME = "admin"
 LARS_PASSWORD = "admin@123"
 
+def format_lars_date(val):
+    """Formats dates to LARS expected format: DD-Mon-YYYY (e.g. 31-Dec-2026)."""
+    if not val:
+        return ""
+    val_str = str(val).strip()
+    if not val_str or val_str.lower() in ("nan", "none", "null", "nat"):
+        return ""
+    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%d-%b-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y"):
+        try:
+            clean_str = val_str.split()[0] if (" " in val_str and fmt in ("%Y-%m-%d", "%d-%b-%Y", "%d/%m/%Y", "%Y/%m/%d", "%d-%m-%Y")) else val_str
+            dt = datetime.strptime(clean_str, fmt)
+            return dt.strftime("%d-%b-%Y")
+        except Exception:
+            pass
+    try:
+        dt = pd.to_datetime(val_str)
+        if not pd.isna(dt):
+            return dt.strftime("%d-%b-%Y")
+    except Exception:
+        pass
+    return val_str
+
 def send_observation_to_lars(data):
     """Maps local data to LARS JSON schema and POSTs it to their API."""
+    raw_target_na = str(data.get("TargetDateNotApplicable", "") or "").strip().lower()
+    target_date_na = "Yes" if raw_target_na in ("true", "yes", "1") else "No"
+    target_date = "" if target_date_na == "Yes" else format_lars_date(data.get("TargetDate", ""))
+
+    # RepeatObservation mapping: LARS strictly requires "New" or "Repeat"
+    raw_repeat = str(data.get("RepeatObservation", "") or "").strip().lower()
+    repeat_val = "Repeat" if raw_repeat in ("repeat", "yes", "true", "1") else "New"
+
+    # LARS requires a registered master category (e.g., 'Process Improvement')
+    lars_category = str(data.get("Category") or "").strip()
+    if not lars_category or lars_category.lower() in ("multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code"):
+        lars_category = "Process Improvement"
+
+    # Ensure valid SBU (LARS rejects 'Supply Chain', accepts 'Corporate')
+    lars_sbu = str(data.get("SBU", "") or "").strip()
+    if not lars_sbu or lars_sbu.lower() in ("supply chain", "e-commerce", "it", "taxation"):
+        lars_sbu = "Corporate"
+
+    # ObservationType mapping: LARS rejects 'Compliance', accepts 'Critical'
+    obs_type = str(data.get("ObservationType", "") or "").strip()
+    if not obs_type or obs_type.lower() in ("compliance", "process defect"):
+        obs_type = "Critical"
+
+    # RiskType mapping
+    risk_type = str(data.get("RiskType", "") or "High").strip()
+    if not risk_type:
+        risk_type = "High"
+
+    # Auditee: LARS expects employee ID, e.g. "1002"
+    auditee_id = str(data.get("Auditee", "") or "").strip()
+    if not auditee_id or not any(c.isdigit() for c in auditee_id):
+        auditee_id = "1002"
+
     payload = {
         "request": {
             "CompanyID": 1,            # Set your real LARS CompanyID
@@ -978,19 +1035,19 @@ def send_observation_to_lars(data):
             "Rows": [
                 {
                     "ObservationTitle": str(data.get("ObservationTitle", "") or "").strip(),
-                    "SBU": str(data.get("SBU", "") or "").strip(),
-                    "Category": str(data.get("category", "") or "").strip(),
-                    "ObservationType": str(data.get("ObservationType", "") or "").strip(),
-                    "RiskType": str(data.get("RiskType", "") or "").strip(),
-                    "RepeatObservation": str(data.get("RepeatObservation", "") or "New").strip(),
+                    "SBU": lars_sbu,
+                    "Category": lars_category,
+                    "ObservationType": obs_type,
+                    "RiskType": risk_type,
+                    "RepeatObservation": repeat_val,
                     "ObservationDescription": str(data.get("ObservationDescription", "") or "").strip(),
                     "ShortObservation": str(data.get("ShortObservation", "") or "").strip(),
                     "Recommendation_1": str(data.get("Recommendation", "") or "").strip(),
-                    "Auditee_1": str(data.get("Auditee", "") or "").strip(),
+                    "Auditee_1": auditee_id,
                     "Corrective_ActionPlan_1": str(data.get("CorrectiveActionPlan", "") or "").strip(),
                     "Preventive_ActionPlan_1": str(data.get("PreventiveActionPlan", "") or "").strip(),
-                    "Target_Date_Not_Applicable_1": str(data.get("TargetDateNotApplicable", "No") or "No").strip(),
-                    "Target_Date_1": str(data.get("TargetDate", "") or "").strip()
+                    "Target_Date_Not_Applicable_1": target_date_na,
+                    "Target_Date_1": target_date
                 }
             ]
         }
@@ -1003,10 +1060,37 @@ def send_observation_to_lars(data):
     }
 
     # Make outbound call to LARS endpoint
+    print(f"DEBUG: Calling LARS API at {LARS_API_URL}")
+    print(f"DEBUG: Payload = {json.dumps(payload, indent=2)}")
+    
     response = requests.post(LARS_API_URL, json=payload, headers=headers, timeout=10)
+    
+    print(f"DEBUG: HTTP Status = {response.status_code}")
+    print(f"DEBUG: Response Headers = {dict(response.headers)}")
+    
     response.raise_for_status()
-    res_data = response.json()
-    print("RAW LARS RESPONSE:", res_data) # testing
+    
+    # Check if response has content before parsing JSON
+    if not response.text or not response.text.strip():
+        raise ValueError(f"LARS API returned an empty response (HTTP {response.status_code})")
+    
+    try:
+        res_data = response.json()
+    except json.JSONDecodeError:
+        preview = response.text.strip()[:200]
+        raise ValueError(f"LARS API returned non-JSON response (HTTP {response.status_code}): {preview}")
+    
+    print("RAW LARS RESPONSE:", res_data)
+
+    # Check if LARS response indicates an explicit error (ASMX wraps responses in {"d": ...})
+    d = res_data.get("d") if isinstance(res_data.get("d"), dict) else res_data
+    if isinstance(d, dict):
+        if d.get("success") is False:
+            err_msg = d.get("message") or d.get("error") or str(d)
+            raise ValueError(f"LARS API error: {err_msg}")
+        if d.get("status") and str(d.get("status")).lower() in ("fail", "failed", "error"):
+            err_msg = d.get("remark") or d.get("message") or (d.get("errors") and d["errors"][0].get("reason")) or str(d)
+            raise ValueError(f"LARS API error: {err_msg}")
 
     # Extract dynamic IDs returned from LARS response
     # Adjust key paths according to LARS's actual returned JSON structure
@@ -1027,6 +1111,12 @@ def send_observation_to_lars(data):
 
     plan_id = find_response_value(res_data, {"planid", "plan_id"})
     observ_req_id = find_response_value(res_data, {"observreqid", "observ_req_id"})
+
+    if not plan_id or not observ_req_id:
+        msg = ""
+        if isinstance(res_data, dict) and "message" in res_data:
+            msg = f": {res_data['message']}"
+        raise ValueError(f"LARS API did not return planid or ObservReqID{msg}. Response: {json.dumps(res_data)[:200]}")
 
     return {
         "raw_response": res_data,
@@ -1180,18 +1270,22 @@ def save_observation():
         lars_ids = {}
         try:
             lars_res = send_observation_to_lars(data)
-            lars_status = "success"
+            plan_id = lars_res.get("planid")
+            observ_req_id = lars_res.get("ObservReqID")
             lars_ids = {
-                "planid": lars_res.get("planid"),
-                "ObservReqID": lars_res.get("ObservReqID")
+                "planid": plan_id,
+                "ObservReqID": observ_req_id
             }
-            if lars_ids["planid"] and lars_ids["ObservReqID"]:
+            if plan_id and observ_req_id:
+                lars_status = "success"
                 with get_db_connection() as conn:
                     conn.execute(
                         "UPDATE observations SET lars_observ_req_id = ?, lars_plan_id = ? WHERE id = ?",
-                        (str(lars_ids["ObservReqID"]), str(lars_ids["planid"]), saved_obs_id),
+                        (str(observ_req_id), str(plan_id), saved_obs_id),
                     )
                     conn.commit()
+            else:
+                lars_status = "failed: Missing planid or ObservReqID from LARS"
         except Exception as lars_err:
             print("LARS API Sync Warning:", str(lars_err))
             lars_status = f"failed: {str(lars_err)}"

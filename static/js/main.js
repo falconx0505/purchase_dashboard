@@ -2870,7 +2870,7 @@ function openLarsObservation(observReqId, planId) {
     alert('LARS observation link is not available for this record.');
     return;
   }
-  const url = new URL('http://10.0.77.99/LORS_DEMO_ONLINE/ObsevationRequest.aspx');
+  const url = new URL('https://lars.lasergrc.net/ObsevationRequest.aspx');
   url.searchParams.set('ObservReqID', observReqId);
   url.searchParams.set('planID', planId);
   window.open(url.href, '_blank', 'noopener,noreferrer');

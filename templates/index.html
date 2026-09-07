@@ -36,7 +36,8 @@
       </span> -->
     </a>
     <div class="hdr-breadcrumb" id="hdr-breadcrumb" aria-label="Current page">
-      <span>Continuous control monitoring</span><span class="hdr-breadcrumb-separator">/</span><strong>Dashboard</strong>
+      <span>Continuous control monitoring</span><span
+        class="hdr-breadcrumb-separator">/</span><strong>Dashboard</strong>
     </div>
     <div class="hdr-right">
       <div class="chip"><span class="dot"></span> FY 2026–27</div>
@@ -74,7 +75,8 @@
       <!-- ADD THIS BUTTON RIGHT HERE BELOW DASHBOARD -->
       <button type="button" class="cp-item" data-page="anomaly-journey" onclick="navFromPanel('anomaly-journey')">
         <span class="cp-icon">
-          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
         </span>
@@ -146,7 +148,8 @@
       <!-- Data Extraction -->
       <button type="button" class="cp-item" data-page="data-extraction" onclick="navFromPanel('data-extraction')">
         <span class="cp-icon">
-          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
@@ -158,7 +161,8 @@
       <!-- KYC Tool -->
       <button type="button" class="cp-item" data-page="kyc-tool" onclick="navFromPanel('kyc-tool')">
         <span class="cp-icon">
-          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
@@ -167,9 +171,11 @@
       </button>
 
       <!-- Anomalies Detection -->
-      <button type="button" class="cp-item" data-page="anomalies-detection" onclick="navFromPanel('anomalies-detection')">
+      <button type="button" class="cp-item" data-page="anomalies-detection"
+        onclick="navFromPanel('anomalies-detection')">
         <span class="cp-icon">
-          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -181,7 +187,8 @@
       <!-- Document Tampering Check -->
       <button type="button" class="cp-item" data-page="tampering-check" onclick="navFromPanel('tampering-check')">
         <span class="cp-icon">
-          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
             <polyline points="14 2 14 8 20 8" />
             <line x1="9" y1="15" x2="15" y2="15" />
@@ -412,23 +419,23 @@
       </div>
 
       <!-- Bar Graph 1: Sequential Order (Table Order) -->
-        <div class="card home-chart-card home-bar-card">
-          <div class="card-h">
-            <div class="grow">
-              <div class="ttl">Count of Errors by Control</div>
-              <div class="desc">Error count across all 7 controls in sequential order (1 to 7)</div>
-            </div>
-            <span class="chip chip-sm" style="background:var(--peach);color:var(--maroon);border-color:var(--orange);">7
-              Controls</span>
+      <div class="card home-chart-card home-bar-card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Count of Errors by Control</div>
+            <div class="desc">Error count across all 7 controls in sequential order (1 to 7)</div>
           </div>
-          <div class="card-b">
-            <div class="chart-wrap chart-wrap-home-bar">
-              <canvas id="chart-home-bar-seq"></canvas>
-            </div>
+          <span class="chip chip-sm" style="background:var(--peach);color:var(--maroon);border-color:var(--orange);">7
+            Controls</span>
+        </div>
+        <div class="card-b">
+          <div class="chart-wrap chart-wrap-home-bar">
+            <canvas id="chart-home-bar-seq"></canvas>
           </div>
         </div>
+      </div>
 
-        <!-- Scatter / Bubble Chart Card -->
+      <!-- Scatter / Bubble Chart Card -->
       <div class="card home-chart-card">
         <div class="card-h" style="display: flex; justify-content: space-between; align-items: center;">
           <div>
@@ -482,214 +489,214 @@
 
 
   <!-- anomaly-journey -->
-<div class="page" id="page-anomaly-journey">
-  <div class="aj-container">
-    
-    <!-- Top Header -->
-    <div class="aj-header">
-      <div>
-        <div class="aj-eyebrow">CCM TEAM · ALL CONTROLS</div>
-        <h2 class="aj-title">Anomaly journey — detection to closure</h2>
-      </div>
-      <div class="aj-filters">
-        <select class="aj-select">
-          <option>All modules</option>
-        </select>
-        <select class="aj-select">
-          <option>Q1 FY 26–27</option>
-        </select>
-      </div>
-    </div>
+  <div class="page" id="page-anomaly-journey">
+    <div class="aj-container">
 
-    <!-- 6 Stage Metric Cards -->
-    <div class="aj-stage-cards">
-      
-      <div class="aj-stage-card card-red">
-        <div class="stage-label">1 · DETECTED</div>
-        <div class="stage-value">201</div>
-        <div class="stage-sub">in triage · CCM</div>
-      </div>
-
-      <div class="aj-stage-card card-orange">
-        <div class="stage-label">2 · OBSERVATION RAISED</div>
-        <div class="stage-value">42</div>
-        <div class="stage-sub">in LARS</div>
-      </div>
-
-      <div class="aj-stage-card card-yellow">
-        <div class="stage-label">3 · ASSIGNED TO AUDITEE</div>
-        <div class="stage-value">31</div>
-        <div class="stage-sub">awaiting response</div>
-      </div>
-
-      <div class="aj-stage-card card-blue">
-        <div class="stage-label">4 · ACTION PLAN RECEIVED</div>
-        <div class="stage-value">24</div>
-        <div class="stage-sub">under review</div>
-      </div>
-
-      <div class="aj-stage-card card-teal">
-        <div class="stage-label">5 · RESOLUTION</div>
-        <div class="stage-value">17</div>
-        <div class="stage-sub">with resolver</div>
-      </div>
-
-      <div class="aj-stage-card card-green">
-        <div class="stage-label">6 · CLOSED</div>
-        <div class="stage-value">152</div>
-        <div class="stage-sub">this FY</div>
-      </div>
-
-    </div>
-
-    <!-- Main Table Container -->
-    <div class="aj-table-card">
-      
-      <div class="aj-table-header">
-        <h3 class="aj-table-title">ANOMALIES IN FLIGHT</h3>
-        
-        <!-- Legend Indicators -->
-        <div class="aj-legend">
-          <span><span class="dot dot-red"></span> Detected</span>
-          <span><span class="dot dot-orange"></span> Observation</span>
-          <span><span class="dot dot-yellow"></span> Assigned</span>
-          <span><span class="dot dot-blue"></span> Action plan</span>
-          <span><span class="dot dot-teal"></span> Resolution</span>
-          <span><span class="dot dot-green"></span> Closed</span>
+      <!-- Top Header -->
+      <div class="aj-header">
+        <div>
+          <div class="aj-eyebrow">CCM TEAM · ALL CONTROLS</div>
+          <h2 class="aj-title">Anomaly journey — detection to closure</h2>
+        </div>
+        <div class="aj-filters">
+          <select class="aj-select">
+            <option>All modules</option>
+          </select>
+          <select class="aj-select">
+            <option>Q1 FY 26–27</option>
+          </select>
         </div>
       </div>
 
-      <!-- Table Content -->
-      <div class="aj-table-wrapper">
-        <table class="aj-table">
-          <thead>
-            <tr>
-              <th>CONTROL</th>
-              <th>ANOMALY</th>
-              <th>AUDITEE / RESOLVER</th>
-              <th>STAGE</th>
-              <th>DAYS IN STAGE</th>
-              <th>JOURNEY</th>
-            </tr>
-          </thead>
-          <tbody>
-            
-            <tr>
-              <td class="font-medium">Access After Last Working Day</td>
-              <td>System access retained after employee exit</td>
-              <td>Anurag Sharma</td>
-              <td><span class="badge badge-teal">Resolution</span></td>
-              <td>4</td>
-              <td>
-                <div class="journey-dots">
-                  <span class="d dot-red"></span>
-                  <span class="d dot-orange"></span>
-                  <span class="d dot-yellow"></span>
-                  <span class="d dot-blue"></span>
-                  <span class="d dot-teal"></span>
-                  <span class="d dot-empty"></span>
-                </div>
-              </td>
-            </tr>
+      <!-- 6 Stage Metric Cards -->
+      <div class="aj-stage-cards">
 
-            <tr>
-              <td class="font-medium">Users Not Logged In for 90+ Days</td>
-              <td>Dormant accounts still active in the system</td>
-              <td>Amit Patil</td>
-              <td><span class="badge badge-yellow">Assigned</span></td>
-              <td>9</td>
-              <td>
-                <div class="journey-dots">
-                  <span class="d dot-red"></span>
-                  <span class="d dot-orange"></span>
-                  <span class="d dot-yellow"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                </div>
-              </td>
-            </tr>
+        <div class="aj-stage-card card-red">
+          <div class="stage-label">1 · DETECTED</div>
+          <div class="stage-value">201</div>
+          <div class="stage-sub">in triage · CCM</div>
+        </div>
 
-            <tr>
-              <td class="font-medium">Password Not Changed</td>
-              <td>Accounts exceeding password rotation policy</td>
-              <td>Priya Sharma</td>
-              <td><span class="badge badge-blue">Action plan</span></td>
-              <td>2</td>
-              <td>
-                <div class="journey-dots">
-                  <span class="d dot-red"></span>
-                  <span class="d dot-orange"></span>
-                  <span class="d dot-yellow"></span>
-                  <span class="d dot-blue"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                </div>
-              </td>
-            </tr>
+        <div class="aj-stage-card card-orange">
+          <div class="stage-label">2 · OBSERVATION RAISED</div>
+          <div class="stage-value">42</div>
+          <div class="stage-sub">in LARS</div>
+        </div>
 
-            <tr>
-              <td class="font-medium">Login Outside Business Hours</td>
-              <td>Sign-ins recorded outside approved working hours</td>
-              <td>Rajesh Bansal</td>
-              <td><span class="badge badge-red">Detected</span></td>
-              <td>1</td>
-              <td>
-                <div class="journey-dots">
-                  <span class="d dot-red"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                  <span class="d dot-empty"></span>
-                </div>
-              </td>
-            </tr>
+        <div class="aj-stage-card card-yellow">
+          <div class="stage-label">3 · ASSIGNED TO AUDITEE</div>
+          <div class="stage-value">31</div>
+          <div class="stage-sub">awaiting response</div>
+        </div>
 
-            <tr>
-              <td class="font-medium">Multiple Failed Login Attempts</td>
-              <td>Repeated unsuccessful sign-in attempts</td>
-              <td>Manoj Tiwari</td>
-              <td><span class="badge badge-green">Closed</span></td>
-              <td>—</td>
-              <td>
-                <div class="journey-dots">
-                  <span class="d dot-red"></span>
-                  <span class="d dot-orange"></span>
-                  <span class="d dot-yellow"></span>
-                  <span class="d dot-blue"></span>
-                  <span class="d dot-teal"></span>
-                  <span class="d dot-green"></span>
-                </div>
-              </td>
-            </tr>
+        <div class="aj-stage-card card-blue">
+          <div class="stage-label">4 · ACTION PLAN RECEIVED</div>
+          <div class="stage-value">24</div>
+          <div class="stage-sub">under review</div>
+        </div>
 
-            <tr>
-              <td class="font-medium">Approved Above Authorized Limit</td>
-              <td>Transactions approved beyond the approver’s authority</td>
-              <td>Ajay Mathur</td>
-              <td><span class="badge badge-green">Closed</span></td>
-              <td>-</td>
-              <td>
-                <div class="journey-dots">
-                  <span class="d dot-red"></span>
-                  <span class="d dot-orange"></span>
-                  <span class="d dot-yellow"></span>
-                  <span class="d dot-blue"></span>
-                  <span class="d dot-teal"></span>
-                  <span class="d dot-green"></span>
-                </div>
-              </td>
-            </tr>
+        <div class="aj-stage-card card-teal">
+          <div class="stage-label">5 · RESOLUTION</div>
+          <div class="stage-value">17</div>
+          <div class="stage-sub">with resolver</div>
+        </div>
 
-          </tbody>
-        </table>
+        <div class="aj-stage-card card-green">
+          <div class="stage-label">6 · CLOSED</div>
+          <div class="stage-value">152</div>
+          <div class="stage-sub">this FY</div>
+        </div>
+
+      </div>
+
+      <!-- Main Table Container -->
+      <div class="aj-table-card">
+
+        <div class="aj-table-header">
+          <h3 class="aj-table-title">ANOMALIES IN FLIGHT</h3>
+
+          <!-- Legend Indicators -->
+          <div class="aj-legend">
+            <span><span class="dot dot-red"></span> Detected</span>
+            <span><span class="dot dot-orange"></span> Observation</span>
+            <span><span class="dot dot-yellow"></span> Assigned</span>
+            <span><span class="dot dot-blue"></span> Action plan</span>
+            <span><span class="dot dot-teal"></span> Resolution</span>
+            <span><span class="dot dot-green"></span> Closed</span>
+          </div>
+        </div>
+
+        <!-- Table Content -->
+        <div class="aj-table-wrapper">
+          <table class="aj-table">
+            <thead>
+              <tr>
+                <th>CONTROL</th>
+                <th>ANOMALY</th>
+                <th>AUDITEE / RESOLVER</th>
+                <th>STAGE</th>
+                <th>DAYS IN STAGE</th>
+                <th>JOURNEY</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <tr>
+                <td class="font-medium">Access After Last Working Day</td>
+                <td>System access retained after employee exit</td>
+                <td>Anurag Sharma</td>
+                <td><span class="badge badge-teal">Resolution</span></td>
+                <td>4</td>
+                <td>
+                  <div class="journey-dots">
+                    <span class="d dot-red"></span>
+                    <span class="d dot-orange"></span>
+                    <span class="d dot-yellow"></span>
+                    <span class="d dot-blue"></span>
+                    <span class="d dot-teal"></span>
+                    <span class="d dot-empty"></span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="font-medium">Users Not Logged In for 90+ Days</td>
+                <td>Dormant accounts still active in the system</td>
+                <td>Amit Patil</td>
+                <td><span class="badge badge-yellow">Assigned</span></td>
+                <td>9</td>
+                <td>
+                  <div class="journey-dots">
+                    <span class="d dot-red"></span>
+                    <span class="d dot-orange"></span>
+                    <span class="d dot-yellow"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="font-medium">Password Not Changed</td>
+                <td>Accounts exceeding password rotation policy</td>
+                <td>Priya Sharma</td>
+                <td><span class="badge badge-blue">Action plan</span></td>
+                <td>2</td>
+                <td>
+                  <div class="journey-dots">
+                    <span class="d dot-red"></span>
+                    <span class="d dot-orange"></span>
+                    <span class="d dot-yellow"></span>
+                    <span class="d dot-blue"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="font-medium">Login Outside Business Hours</td>
+                <td>Sign-ins recorded outside approved working hours</td>
+                <td>Rajesh Bansal</td>
+                <td><span class="badge badge-red">Detected</span></td>
+                <td>1</td>
+                <td>
+                  <div class="journey-dots">
+                    <span class="d dot-red"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                    <span class="d dot-empty"></span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="font-medium">Multiple Failed Login Attempts</td>
+                <td>Repeated unsuccessful sign-in attempts</td>
+                <td>Manoj Tiwari</td>
+                <td><span class="badge badge-green">Closed</span></td>
+                <td>—</td>
+                <td>
+                  <div class="journey-dots">
+                    <span class="d dot-red"></span>
+                    <span class="d dot-orange"></span>
+                    <span class="d dot-yellow"></span>
+                    <span class="d dot-blue"></span>
+                    <span class="d dot-teal"></span>
+                    <span class="d dot-green"></span>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td class="font-medium">Approved Above Authorized Limit</td>
+                <td>Transactions approved beyond the approver’s authority</td>
+                <td>Ajay Mathur</td>
+                <td><span class="badge badge-green">Closed</span></td>
+                <td>-</td>
+                <td>
+                  <div class="journey-dots">
+                    <span class="d dot-red"></span>
+                    <span class="d dot-orange"></span>
+                    <span class="d dot-yellow"></span>
+                    <span class="d dot-blue"></span>
+                    <span class="d dot-teal"></span>
+                    <span class="d dot-green"></span>
+                  </div>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+
       </div>
 
     </div>
-
   </div>
-</div>
 
   <!-- PAGE: IT CONTROLS -->
   <!-- ══════════════════════════════════════════════════════════════
@@ -968,7 +975,8 @@
       <div class="eyebrow">Purchase Internal Control</div>
       <h1 class="page-title">PAN Verification Dashboard</h1>
       <p class="page-desc">
-        Upload an Excel file containing PAN numbers. The service will verify each PAN against the KYC API and return the verification data.
+        Upload an Excel file containing PAN numbers. The service will verify each PAN against the KYC API and return the
+        verification data.
       </p>
     </div>
 
@@ -976,7 +984,7 @@
     <div class="card card-section">
       <div class="card-title">Upload & Process File</div>
       <div class="card-subtitle">Select an Excel file (.xlsx, .xls) containing a column of PAN numbers.</div>
-      
+
       <form id="upload-form" class="form-inline">
         <input type="file" id="file-input" name="file" accept=".xlsx,.xls" required style="display: none;" />
 
@@ -1001,7 +1009,7 @@
 
     <!-- Results Table Card -->
     <div id="result-count" class="result-count-label"></div>
-    
+
     <div class="card table-card-container" id="table-card">
       <div class="card-h">
         <div class="grow">
@@ -1024,7 +1032,7 @@
     <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
   </div>
 
-<!-- PAGE: DOCUMENT TAMPERING CHECK -->
+  <!-- PAGE: DOCUMENT TAMPERING CHECK -->
   <div class="page" id="page-tampering-check" style="display:none; max-width:1360px; margin:0 auto; padding:0 26px;">
     <div style="margin-bottom: 20px;">
       <button type="button" class="btn ghost sm" onclick="goTo('home')">← Back</button>
@@ -1032,37 +1040,46 @@
 
     <div class="page-header" style="margin-bottom: 24px;">
       <h1 style="font-size: 24px; font-weight: 700; margin: 0 0 6px 0;">Document Tampering Check</h1>
-      <p style="color: var(--muted); margin: 0; font-size: 14px;">Upload identity or institutional documents to run AI-powered pixel and semantic tampering audits.</p>
+      <p style="color: var(--muted); margin: 0; font-size: 14px;">Upload identity or institutional documents to run
+        AI-powered pixel and semantic tampering audits.</p>
     </div>
 
     <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
       <!-- LEFT: Upload Panel -->
-      <section class="panel" style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;">
+      <section class="panel"
+        style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;">
         <h2 style="font-size: 16px; margin: 0 0 16px 0; font-weight: 600;">Document Upload</h2>
 
-        <div class="dropzone" id="dropzone" style="border: 1.5px dashed var(--line); border-radius: 8px; padding: 30px; text-align: center; color: var(--muted); cursor: pointer; transition: all 0.2s ease;">
+        <div class="dropzone" id="dropzone"
+          style="border: 1.5px dashed var(--line); border-radius: 8px; padding: 30px; text-align: center; color: var(--muted); cursor: pointer; transition: all 0.2s ease;">
           <span class="dz-icon" style="font-size: 32px; display: block; margin-bottom: 8px;">📄</span>
           <span style="font-weight: 500;">Drag &amp; drop an image here, or click to choose</span>
-          <div class="hint" style="font-size: 12px; margin-top: 6px; color: var(--muted);">PNG, JPG, JPEG supported</div>
+          <div class="hint" style="font-size: 12px; margin-top: 6px; color: var(--muted);">PNG, JPG, JPEG supported
+          </div>
           <input type="file" id="fileInput" accept=".png,.jpg,.jpeg" style="display: none;">
         </div>
 
         <div class="preview-wrap" id="previewWrap" style="display: none; margin-top: 16px; text-align: center;">
-          <img id="previewImg" alt="Uploaded document preview" style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--line);">
-          <div class="preview-caption" style="font-size: 12px; color: var(--muted); margin-top: 6px;">Uploaded Document</div>
+          <img id="previewImg" alt="Uploaded document preview"
+            style="max-width: 100%; max-height: 320px; border-radius: 8px; border: 1px solid var(--line);">
+          <div class="preview-caption" style="font-size: 12px; color: var(--muted); margin-top: 6px;">Uploaded Document
+          </div>
         </div>
 
-        <button class="run-btn" id="runBtn" disabled style="margin-top: 18px; width: 100%; padding: 12px; border: none; border-radius: 6px; background: var(--red, #c62828); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.15s ease;">
+        <button class="run-btn" id="runBtn" disabled
+          style="margin-top: 18px; width: 100%; padding: 12px; border: none; border-radius: 6px; background: var(--red, #c62828); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.15s ease;">
           Process
         </button>
         <div id="warnBox"></div>
       </section>
 
       <!-- RIGHT: Analysis Report Panel -->
-      <section class="panel" style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;">
+      <section class="panel"
+        style="background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px;">
         <h2 style="font-size: 16px; margin: 0 0 16px 0; font-weight: 600;">Analysis Report</h2>
         <div id="reportArea">
-          <div class="empty-report" style="color: var(--muted); font-size: 14px; padding: 40px 10px; text-align: center;">
+          <div class="empty-report"
+            style="color: var(--muted); font-size: 14px; padding: 40px 10px; text-align: center;">
             Please upload a document to run digital forensics.
           </div>
         </div>
@@ -2057,7 +2074,7 @@
     <img src="/static/images/genie-icon.png" alt="Genie" />
   </button>
 
-  <script src="/static/js/main.js"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}?v=2"></script>
   <script src="{{ url_for('static', filename='js/kyc_extraction.js') }}"></script>
   <script src="{{ url_for('static', filename='js/anomaly_detection.js') }}"></script>
   <script src="{{ url_for('static', filename='js/tampering_check.js') }}"></script>
