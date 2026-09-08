@@ -1012,14 +1012,14 @@ def send_observation_to_lars(data):
     raw_repeat = str(data.get("RepeatObservation", "") or "").strip().lower()
     repeat_val = "Repeat" if raw_repeat in ("repeat", "yes", "true", "1") else "New"
 
-    # LARS requires a registered master category (e.g., 'Market Risk')
+    # LARS requires a registered master category ('Market Risk')
     lars_category = str(data.get("Category") or data.get("category") or "").strip()
-    if not lars_category or lars_category.lower() in ("multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code", "process improvement"):
+    if not lars_category or lars_category.lower() in ("multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code", "process improvement") or lars_category.lower() not in ("market risk",):
         lars_category = "Market Risk"
 
-    # Ensure valid SBU (LARS rejects 'Supply Chain', accepts 'Corporate')
+    # Ensure valid SBU (LARS only accepts 'Corporate' in this system)
     lars_sbu = str(data.get("SBU", "") or "").strip()
-    if not lars_sbu or lars_sbu.lower() in ("supply chain", "e-commerce", "it", "taxation"):
+    if not lars_sbu or lars_sbu.lower() != "corporate":
         lars_sbu = "Corporate"
 
     # ObservationType mapping: LARS rejects 'Compliance', accepts 'Critical'
@@ -1033,8 +1033,12 @@ def send_observation_to_lars(data):
         risk_type = "High"
 
     # Auditee: LARS expects registered employee/auditee in system (e.g., 'Amey')
+    # Reject full names with spaces, emails, or legacy demo codes
     auditee_id = str(data.get("Auditee", "") or "").strip()
-    if not auditee_id or auditee_id.lower() in ("rahul mehta", "rahul", "1002", "1001"):
+    if (not auditee_id 
+        or " " in auditee_id 
+        or "@" in auditee_id 
+        or auditee_id.lower() in ("rahul mehta", "rahul", "1002", "1001", "sneha kulkarni", "sneha", "pooja shah", "amit verma")):
         auditee_id = "Amey"
 
     # Read CompanyID, EmpId, ReportNo from data (with defaults)
