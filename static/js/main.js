@@ -2849,7 +2849,7 @@ async function renderObsList() {
                   <td>${esc(item.Auditee || '—')}</td>
                   <td>
                     <button class="btn-rmk btn-rmk-edit" onclick='showObsForm(${JSON.stringify(item).replace(/'/g, "&apos;")})'>Edit</button>
-                    <button class="btn-rmk btn-rmk-info" type="button" title="Open Observation Info" aria-label="Open Observation Info" onclick="openLarsObservation('${esc(item.lars_observ_req_id || '')}', '${esc(item.lars_plan_id || '')}')">i</button>
+                    <button class="btn-rmk btn-rmk-info" type="button" title="Open Observation Info" aria-label="Open Observation Info" onclick="openLarsObservation('${esc(item.lars_observ_req_id || '')}', '${esc(item.lars_plan_id || '')}', '${esc(item.lars_url || '')}')">i</button>
                     <button class="btn-rmk btn-rmk-del" onclick="deleteObservation(${item.id})">Delete</button>
                   </td>
                 </tr>
@@ -2865,12 +2865,22 @@ async function renderObsList() {
   }
 }
 
-function openLarsObservation(observReqId, planId) {
-  if (!observReqId || !planId) {
-    alert('LARS observation link is not available for this record.');
+function openLarsObservation(observReqId, planId, larsUrl) {
+  // If LARS returned a direct URL in the response, rewrite internal IP (10.0.77.99) to public IP if needed
+  if (larsUrl && larsUrl !== 'null' && larsUrl !== '') {
+    let target = larsUrl;
+    if (target.includes('10.0.77.99')) {
+      target = target.replace('10.0.77.99', '45.248.67.66');
+    }
+    window.open(target, '_blank', 'noopener,noreferrer');
     return;
   }
-  const url = new URL('https://lars.lasergrc.net/ObsevationRequest.aspx');
+  if (!observReqId || !planId) {
+    alert('LARS observation link is not available for this record. Please save the observation first.');
+    return;
+  }
+  const url = new URL('http://45.248.67.66/LARS_Demo_bank/ObsevationRequestView.aspx');
+  url.searchParams.set('step', '1');
   url.searchParams.set('ObservReqID', observReqId);
   url.searchParams.set('planID', planId);
   window.open(url.href, '_blank', 'noopener,noreferrer');
@@ -2891,6 +2901,10 @@ function showObsForm(data = null) {
       </div>
 
       <div class="obs-field-grid">
+        <div class="obs-field"><span class="obs-field-label">Company ID</span><input type="number" name="CompanyID" class="remark-input" value="${esc(item.CompanyID != null && item.CompanyID !== '' ? item.CompanyID : 1)}"></div>
+        <div class="obs-field"><span class="obs-field-label">Emp ID</span><input type="text" name="EmpId" class="remark-input" value="${esc(item.EmpId || 'P0005')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Report No</span><input type="text" name="ReportNo" class="remark-input" value="${esc(item.ReportNo || '2025 - 2026-0023')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Category</span><input type="text" name="Category" class="remark-input" value="${esc(item.Category || 'Market Risk')}"></div>
         <div class="obs-field"><span class="obs-field-label">Observation Title</span><input type="text" name="ObservationTitle" class="remark-input" value="${esc(item.ObservationTitle || '')}" required></div>
         <div class="obs-field"><span class="obs-field-label">Observation Sub Process</span><input type="text" name="ObservationSubProcess" class="remark-input" value="${esc(item.ObservationSubProcess || '')}"></div>
         <div class="obs-field"><span class="obs-field-label">Repeat Observation</span>${renderDropdown('RepeatObservation', item.RepeatObservation)}</div>
@@ -2909,7 +2923,7 @@ function showObsForm(data = null) {
         <div class="obs-field"><span class="obs-field-label">Recommendation</span><textarea name="Recommendation" class="remark-input" rows="2">${esc(item.Recommendation || '')}</textarea></div>
         <div class="obs-field"><span class="obs-field-label">Corrective Action Plan</span><textarea name="CorrectiveActionPlan" class="remark-input" rows="2">${esc(item.CorrectiveActionPlan || '')}</textarea></div>
         <div class="obs-field"><span class="obs-field-label">Preventive Action Plan</span><textarea name="PreventiveActionPlan" class="remark-input" rows="2">${esc(item.PreventiveActionPlan || '')}</textarea></div>
-        <div class="obs-field"><span class="obs-field-label">Auditee</span><input type="text" name="Auditee" class="remark-input" value="${esc(item.Auditee || '')}"></div>
+        <div class="obs-field"><span class="obs-field-label">Auditee</span><input type="text" name="Auditee" class="remark-input" value="${esc(item.Auditee || 'Amey')}"></div>
         <div class="obs-field"><span class="obs-field-label">Other Auditee</span><input type="text" name="OtherAuditee" class="remark-input" value="${esc(item.OtherAuditee || '')}"></div>
         <div class="obs-field"><span class="obs-field-label">Escalator 1</span><input type="text" name="Escalator1" class="remark-input" value="${esc(item.Escalator1 || '')}"></div>
         <div class="obs-field"><span class="obs-field-label">Escalator 2</span><input type="text" name="Escalator2" class="remark-input" value="${esc(item.Escalator2 || '')}"></div>

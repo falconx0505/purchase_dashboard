@@ -50,6 +50,7 @@ ALL_FIELDS = [
     "TargetDateNotApplicable", "TargetDate", "RevisedTargetDate",
     "PercentageCompletedAuditee", "PercentageCompletedAuditor",
     "ClosureDate", "ClosureReason", "FromDate", "ToDate",
+    "CompanyID", "EmpId", "ReportNo",
 ]
 
 
@@ -250,13 +251,17 @@ def init_db_schema(conn):
         ClosureReason TEXT,
         FromDate DATE,
         ToDate DATE,
+        CompanyID INTEGER DEFAULT 1,
+        EmpId TEXT,
+        ReportNo TEXT,
         lars_observ_req_id TEXT,
         lars_plan_id TEXT,
+        lars_url TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
     observation_columns = {row[1] for row in conn.execute("PRAGMA table_info(observations)")}
-    for column_name in ["lars_observ_req_id", "lars_plan_id"]:
+    for column_name in ["CompanyID", "EmpId", "ReportNo", "lars_observ_req_id", "lars_plan_id", "lars_url"]:
         if column_name not in observation_columns:
             conn.execute(f"ALTER TABLE observations ADD COLUMN {column_name} TEXT")
 
@@ -966,9 +971,13 @@ def _dashboard_payload(payload):
     }
 
 # LARS_API_URL = "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-LARS_API_URL = "https://lars.lasergrc.net/ImportObservationApi.asmx/AddObservations"
+LARS_API_URL = "http://45.248.67.66/LARS_Demo_bank/ImportObservationApi.asmx/AddObservations"
+LARS_OBS_VIEW_URL = "http://45.248.67.66/LARS_Demo_bank/ObsevationRequestView.aspx"
 LARS_USERNAME = "admin"
 LARS_PASSWORD = "admin@123"
+LARS_COMPANY_ID = 1           # CompanyID configured in LARS
+LARS_EMP_ID = "P0005"         # EmpId of the LARS user submitting observations
+LARS_REPORT_NO = "2025 - 2026-0023"  # ReportNo to associate observations with
 
 def format_lars_date(val):
     """Formats dates to LARS expected format: DD-Mon-YYYY (e.g. 31-Dec-2026)."""
@@ -1002,10 +1011,10 @@ def send_observation_to_lars(data):
     raw_repeat = str(data.get("RepeatObservation", "") or "").strip().lower()
     repeat_val = "Repeat" if raw_repeat in ("repeat", "yes", "true", "1") else "New"
 
-    # LARS requires a registered master category (e.g., 'Process Improvement')
-    lars_category = str(data.get("Category") or "").strip()
-    if not lars_category or lars_category.lower() in ("multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code"):
-        lars_category = "Process Improvement"
+    # LARS requires a registered master category (e.g., 'Market Risk')
+    lars_category = str(data.get("Category") or data.get("category") or "").strip()
+    if not lars_category or lars_category.lower() in ("multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code", "process improvement"):
+        lars_category = "Market Risk"
 
     # Ensure valid SBU (LARS rejects 'Supply Chain', accepts 'Corporate')
     lars_sbu = str(data.get("SBU", "") or "").strip()
@@ -1022,16 +1031,26 @@ def send_observation_to_lars(data):
     if not risk_type:
         risk_type = "High"
 
-    # Auditee: LARS expects employee ID, e.g. "1002"
+    # Auditee: LARS expects registered employee/auditee in system (e.g., 'Amey')
     auditee_id = str(data.get("Auditee", "") or "").strip()
-    if not auditee_id or not any(c.isdigit() for c in auditee_id):
-        auditee_id = "1002"
+    if not auditee_id or auditee_id.lower() in ("rahul mehta", "rahul"):
+        auditee_id = "Amey"
+
+    # Read CompanyID, EmpId, ReportNo from data (with defaults)
+    raw_company_id = data.get("CompanyID") or data.get("lars_company_id")
+    try:
+        lars_company_id = int(raw_company_id) if raw_company_id not in (None, "") else LARS_COMPANY_ID
+    except Exception:
+        lars_company_id = LARS_COMPANY_ID
+
+    lars_emp_id = str(data.get("EmpId") or data.get("lars_emp_id") or LARS_EMP_ID).strip()
+    lars_report_no = str(data.get("ReportNo") or data.get("lars_report_no") or LARS_REPORT_NO).strip()
 
     payload = {
         "request": {
-            "CompanyID": 1,            # Set your real LARS CompanyID
-            "EmpId": "1001",           # Set valid LARS EmpId
-            "ReportNo": "Rep2408",     # Set/generate valid LARS ReportNo
+            "CompanyID": lars_company_id,
+            "EmpId": lars_emp_id,
+            "ReportNo": lars_report_no,
             "Rows": [
                 {
                     "ObservationTitle": str(data.get("ObservationTitle", "") or "").strip(),
@@ -1118,10 +1137,20 @@ def send_observation_to_lars(data):
             msg = f": {res_data['message']}"
         raise ValueError(f"LARS API did not return planid or ObservReqID{msg}. Response: {json.dumps(res_data)[:200]}")
 
+    # Extract the direct observation URL returned by LARS (in importedObservations[0].url)
+    lars_url = None
+    try:
+        imported = d.get("importedObservations") or []
+        if imported and isinstance(imported, list) and len(imported) > 0:
+            lars_url = imported[0].get("url") or None
+    except Exception:
+        lars_url = None
+
     return {
         "raw_response": res_data,
         "planid": plan_id,
-        "ObservReqID": observ_req_id
+        "ObservReqID": observ_req_id,
+        "lars_url": lars_url
     }
 
 @app.route("/")
@@ -1248,7 +1277,8 @@ def save_observation():
         "CorrectiveActionPlan", "PreventiveActionPlan", "ShortActionPlan",
         "TargetDateNotApplicable", "TargetDate", "RevisedTargetDate",
         "PercentageCompletedAuditee", "PercentageCompletedAuditor",
-        "ClosureDate", "ClosureReason", "FromDate", "ToDate"
+        "ClosureDate", "ClosureReason", "FromDate", "ToDate",
+        "CompanyID", "EmpId", "ReportNo"
     ]
     vals = [str(data.get(f, "") or "").strip() for f in fields]
 
@@ -1272,16 +1302,18 @@ def save_observation():
             lars_res = send_observation_to_lars(data)
             plan_id = lars_res.get("planid")
             observ_req_id = lars_res.get("ObservReqID")
+            lars_url = lars_res.get("lars_url")
             lars_ids = {
                 "planid": plan_id,
-                "ObservReqID": observ_req_id
+                "ObservReqID": observ_req_id,
+                "lars_url": lars_url
             }
             if plan_id and observ_req_id:
                 lars_status = "success"
                 with get_db_connection() as conn:
                     conn.execute(
-                        "UPDATE observations SET lars_observ_req_id = ?, lars_plan_id = ? WHERE id = ?",
-                        (str(observ_req_id), str(plan_id), saved_obs_id),
+                        "UPDATE observations SET lars_observ_req_id = ?, lars_plan_id = ?, lars_url = ? WHERE id = ?",
+                        (str(observ_req_id), str(plan_id), lars_url, saved_obs_id),
                     )
                     conn.commit()
             else:
