@@ -5,6 +5,7 @@ import sqlite3
 import tempfile
 import zipfile
 import json
+import time
 from datetime import datetime
 from xml.etree.ElementTree import iterparse
 from werkzeug.utils import secure_filename
@@ -1033,7 +1034,7 @@ def send_observation_to_lars(data):
 
     # Auditee: LARS expects registered employee/auditee in system (e.g., 'Amey')
     auditee_id = str(data.get("Auditee", "") or "").strip()
-    if not auditee_id or auditee_id.lower() in ("rahul mehta", "rahul"):
+    if not auditee_id or auditee_id.lower() in ("rahul mehta", "rahul", "1002", "1001"):
         auditee_id = "Amey"
 
     # Read CompanyID, EmpId, ReportNo from data (with defaults)
@@ -1082,7 +1083,17 @@ def send_observation_to_lars(data):
     print(f"DEBUG: Calling LARS API at {LARS_API_URL}")
     print(f"DEBUG: Payload = {json.dumps(payload, indent=2)}")
     
-    response = requests.post(LARS_API_URL, json=payload, headers=headers, timeout=10)
+    response = None
+    for attempt in range(2):
+        try:
+            response = requests.post(LARS_API_URL, json=payload, headers=headers, timeout=30)
+            break
+        except requests.exceptions.Timeout as to_err:
+            if attempt == 0:
+                print("LARS API connect timed out (30s), retrying once...")
+                time.sleep(1)
+                continue
+            raise to_err
     
     print(f"DEBUG: HTTP Status = {response.status_code}")
     print(f"DEBUG: Response Headers = {dict(response.headers)}")
@@ -1388,8 +1399,14 @@ def upload_observation_file():
     try:
         uploaded.save(temp_path)
         df = pd.read_excel(temp_path, dtype=str)
-        df.columns = [str(c).strip() for c in df.columns]
         df = normalize_observation_headers(df)
+        # Auto-fill LARS fields if missing in Excel so template is flexible
+        if "CompanyID" not in df.columns:
+            df["CompanyID"] = str(LARS_COMPANY_ID)
+        if "EmpId" not in df.columns:
+            df["EmpId"] = LARS_EMP_ID
+        if "ReportNo" not in df.columns:
+            df["ReportNo"] = LARS_REPORT_NO
 
         missing_headers = [field for field in ALL_FIELDS if field not in df.columns]
         if missing_headers:
