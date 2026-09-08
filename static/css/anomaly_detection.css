@@ -448,7 +448,9 @@
 }
 
 @keyframes anomaly-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .anomaly-page .hidden {
@@ -461,7 +463,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* Adds space between the spinner and text */
+  gap: 8px;
+  /* Adds space between the spinner and text */
 }
 
 /* Ensure the inline spinner stays properly sized and aligned */
@@ -469,4 +472,9 @@
   margin: 0;
   display: inline-block;
   vertical-align: middle;
+}
+
+/* Back button spacing — was flush against navbar */
+#page-anomalies-detection>.btn.ghost.sm {
+  margin: 22px 0 0 26px;
 }
