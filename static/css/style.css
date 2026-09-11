@@ -975,7 +975,7 @@ body.on-home .topnav {
 
 /* Direct pages sit beside the fixed navigation rail. Pages inside .wrap
    inherit that reserved space from the wrapper and must not be shifted twice. */
-body > .page {
+body>.page {
   width: 100%;
   max-width: none;
   margin-left: 0 !important;
@@ -1482,6 +1482,15 @@ table.tbl tr.row-flag:hover td {
 
 table.tbl tr.row-warn td {
   background: var(--warnbg);
+}
+
+/* PO Split — Vendor Trend row tinting (rising vendor spend = green, falling = red) */
+table.tbl tr.row-up td {
+  background: var(--okbg);
+}
+
+table.tbl tr.row-down td {
+  background: var(--flagbg);
 }
 
 .tag {
@@ -2626,7 +2635,7 @@ table.tbl-compact td.r {
     gap: 6px;
   }
 
-  .hdr-breadcrumb > span:first-child {
+  .hdr-breadcrumb>span:first-child {
     display: none;
   }
 }
@@ -2709,12 +2718,29 @@ table.tbl-compact td.r {
   height: 4px;
 }
 
-.card-red::before    { background-color: #d9383a; }
-.card-orange::before { background-color: #f97316; }
-.card-yellow::before { background-color: #eab308; }
-.card-blue::before   { background-color: #2563eb; }
-.card-teal::before   { background-color: #0d9488; }
-.card-green::before  { background-color: #16a34a; }
+.card-red::before {
+  background-color: #d9383a;
+}
+
+.card-orange::before {
+  background-color: #f97316;
+}
+
+.card-yellow::before {
+  background-color: #eab308;
+}
+
+.card-blue::before {
+  background-color: #2563eb;
+}
+
+.card-teal::before {
+  background-color: #0d9488;
+}
+
+.card-green::before {
+  background-color: #16a34a;
+}
 
 .stage-label {
   font-size: 0.7rem;
@@ -2732,12 +2758,29 @@ table.tbl-compact td.r {
   margin-bottom: 8px;
 }
 
-.card-red .stage-value    { color: #d9383a; }
-.card-orange .stage-value { color: #f97316; }
-.card-yellow .stage-value { color: #ca8a04; }
-.card-blue .stage-value   { color: #2563eb; }
-.card-teal .stage-value   { color: #0d9488; }
-.card-green .stage-value  { color: #16a34a; }
+.card-red .stage-value {
+  color: #d9383a;
+}
+
+.card-orange .stage-value {
+  color: #f97316;
+}
+
+.card-yellow .stage-value {
+  color: #ca8a04;
+}
+
+.card-blue .stage-value {
+  color: #2563eb;
+}
+
+.card-teal .stage-value {
+  color: #0d9488;
+}
+
+.card-green .stage-value {
+  color: #16a34a;
+}
 
 .stage-sub {
   font-size: 0.8rem;
@@ -2785,13 +2828,34 @@ table.tbl-compact td.r {
 }
 
 /* Status Colors */
-.dot-red    { background-color: #d9383a; }
-.dot-orange { background-color: #f97316; }
-.dot-yellow { background-color: #eab308; }
-.dot-blue   { background-color: #2563eb; }
-.dot-teal   { background-color: #0d9488; }
-.dot-green  { background-color: #16a34a; }
-.dot-empty { border: 1.5px solid #cbd5e1; background-color: transparent; }
+.dot-red {
+  background-color: #d9383a;
+}
+
+.dot-orange {
+  background-color: #f97316;
+}
+
+.dot-yellow {
+  background-color: #eab308;
+}
+
+.dot-blue {
+  background-color: #2563eb;
+}
+
+.dot-teal {
+  background-color: #0d9488;
+}
+
+.dot-green {
+  background-color: #16a34a;
+}
+
+.dot-empty {
+  border: 1.5px solid #cbd5e1;
+  background-color: transparent;
+}
 
 .dot {
   width: 8px;
@@ -2839,11 +2903,25 @@ table.tbl-compact td.r {
   color: #ffffff;
 }
 
-.badge-red    { background-color: #d9383a; }
-.badge-yellow { background-color: #eab308; }
-.badge-blue   { background-color: #2563eb; }
-.badge-teal   { background-color: #0d9488; }
-.badge-green  { background-color: #16a34a; }
+.badge-red {
+  background-color: #d9383a;
+}
+
+.badge-yellow {
+  background-color: #eab308;
+}
+
+.badge-blue {
+  background-color: #2563eb;
+}
+
+.badge-teal {
+  background-color: #0d9488;
+}
+
+.badge-green {
+  background-color: #16a34a;
+}
 
 /* Journey Step Indicator Dots */
 .journey-dots {
@@ -2860,5 +2938,6 @@ table.tbl-compact td.r {
 
 .home-chart-card,
 .card {
-  margin-bottom: 24px; /* Increases space between vertically stacked chart cards */
+  margin-bottom: 24px;
+  /* Increases space between vertically stacked chart cards */
 }

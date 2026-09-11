@@ -258,6 +258,14 @@
           <circle cx="20" cy="21" r="1" />
           <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
         </svg></span>Purchase</button>
+    <button class="nav-tab" data-page="po-split"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
+          width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+          stroke-linejoin="round">
+          <path d="M6 3v12" />
+          <circle cx="6" cy="18" r="3" />
+          <circle cx="18" cy="6" r="3" />
+          <path d="M18 9a9 9 0 0 1-9 9" />
+        </svg></span>PO Split</button>
     <button class="nav-tab" data-page="ai-dashboard"><span class="nav-tab-icon"><svg class="icn" viewBox="0 0 24 24"
           width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
           stroke-linejoin="round">
@@ -1930,6 +1938,92 @@
                 </table>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: PO SPLIT (fully hardcoded demo data — see PO_SPLIT_BILLS /
+       PO_SPLIT_VARIANCE / PO_SPLIT_TREND + renderPoSplit() in main.js.
+       No RAW dependency, same pattern as IT Controls / HR & Payroll.) -->
+    <div class="page" id="page-po-split">
+      <!-- Back navigation: PO Split page → Home -->
+      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
+      <div class="page-head">
+        <div class="eyebrow">Vendor Risk</div>
+        <h1>Bill Split</h1>
+        <p>Same-vendor invoices split to stay under approval thresholds, unit-price variance by vendor and product,
+          and 5-year vendor purchase trends.</p>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Same Vendor Bill Split</div>
+          </div>
+        </div>
+        <div class="card-b no-pad">
+          <div class="tbl-wrap-full">
+            <table class="tbl" id="tbl-po-split-bills">
+              <thead>
+                <tr>
+                  <th>Vendor Name</th>
+                  <th>Bill No</th>
+                  <th class="r">Amount</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Price Purchase Variance</div>
+          </div>
+        </div>
+        <div class="card-b no-pad">
+          <div class="tbl-wrap-full">
+            <table class="tbl" id="tbl-po-split-variance">
+              <thead>
+                <tr>
+                  <th>Vendor Name</th>
+                  <th>Product Name</th>
+                  <th class="r">Maximum</th>
+                  <th class="r">Min</th>
+                  <th class="r">Avg</th>
+                  <th class="c">Count</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">
+          <div class="grow">
+            <div class="ttl">Vendor Trend</div>
+          </div>
+        </div>
+        <div class="card-b no-pad">
+          <div class="tbl-wrap-full">
+            <table class="tbl" id="tbl-po-split-trend">
+              <thead>
+                <tr>
+                  <th>Vendor Name</th>
+                  <th class="r">2021-2022</th>
+                  <th class="r">2022-2023</th>
+                  <th class="r">2023-2024</th>
+                  <th class="r">2024-2025</th>
+                  <th class="r">2025-2026</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
       </div>

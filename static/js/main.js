@@ -35,6 +35,7 @@ const BREADCRUMB_LABELS = {
   'po-summary': 'PO vs invoice vs GRN vs bank',
   'po-detail': 'PO detail',
   purchase: 'Purchase analytics',
+  'po-split': 'PO Split',
   'ai-dashboard': 'AI dashboard',
   formula: 'Calculation check',
   'it-controls': 'IT controls',
@@ -70,7 +71,7 @@ function destroyChart(id) {
 // without duplicating the button per page.
 function updateGenieVisibility(pageId) {
   const fab = document.getElementById('genie-fab');
-  
+
   // Keep the AI Genie floating action button visible on all pages
   if (fab) {
     fab.classList.remove('hidden');
@@ -574,6 +575,9 @@ function renderCurrentPage(pageId) {
   // OTHER LOAN DETAILS: static hardcoded page, no rendering function needed —
   // markup lives directly in index.html (#page-other-loan), same Home-only pattern.
   if (pageId === 'other-loan') { renderLoan(); return; }
+  // PO SPLIT: renders from hardcoded local data (PO_SPLIT_BILLS /
+  // PO_SPLIT_VARIANCE / PO_SPLIT_TREND), same reason as it-controls above.
+  if (pageId === 'po-split') { renderPoSplit(); return; }
   // DATA EXTRACTION: Load from separate HTML template file
   if (pageId === 'data-extraction') { loadDataExtractionPage(); return; }
   // ANOMALIES DETECTION: Load from separate HTML template file
@@ -618,7 +622,7 @@ function loadDataExtractionPage() {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const wrap = doc.querySelector('.wrap');
-      
+
       if (wrap) {
         // Find the existing content div in page-data-extraction and insert after it
         const backBtn = pageContainer.querySelector('.btn.ghost.sm');
@@ -628,7 +632,7 @@ function loadDataExtractionPage() {
         }
         // Insert the wrap content
         pageContainer.appendChild(wrap.cloneNode(true));
-        
+
         // Initialize KYC extraction handlers after HTML is loaded
         if (typeof initializeKycExtractionHandlers === 'function') {
           initializeKycExtractionHandlers();
@@ -1931,6 +1935,91 @@ function renderLoanRepayment() {
 // END LOAN AND REPAYMENT SCHEDULE MODULE
 // ═════════════════════════════════════════════════════════════
 
+// ═════════════════════════════════════════════════════════════
+// PO SPLIT MODULE — fully hardcoded demo data (no RAW / backend
+// dependency, same pattern as IT_TABLES / HR_TABLES above). Three
+// tables: same-vendor bill splitting, unit-price variance, and a
+// 5-year vendor purchase trend. Same 6 vendors reused across all
+// three so the page tells one consistent story.
+// ─────────────────────────────────────────────────────────────
+const PO_SPLIT_BILLS = [
+  { vendor: 'Om Sai Distributors', billNo: 'OSD/INV/1042', amount: 142000 },
+  { vendor: 'Om Sai Distributors', billNo: 'OSD/INV/1043', amount: 138500 },
+  { vendor: 'Sunrise Traders Pvt Ltd', billNo: 'STPL/SB-887', amount: 1560000 },
+  { vendor: 'Sunrise Traders Pvt Ltd', billNo: 'STPL/SB-888', amount: 1545000 },
+  { vendor: 'Metro Industrial Supplies', billNo: 'MIS/2210', amount: 105750 },
+  { vendor: 'Metro Industrial Supplies', billNo: 'MIS/2211', amount: 112300 },
+  { vendor: 'Krishna Enterprises', billNo: 'KE/0451', amount: 1620000 },
+  { vendor: 'Krishna Enterprises', billNo: 'KE/0452', amount: 1590500 },
+  { vendor: 'Vardhman Packaging Co', billNo: 'VPC/778', amount: 108400 },
+  { vendor: 'Vardhman Packaging Co', billNo: 'VPC/779', amount: 104900 },
+  { vendor: 'Shreeji Logistics Pvt Ltd', billNo: 'SL/3390', amount: 1510000 },
+  { vendor: 'Shreeji Logistics Pvt Ltd', billNo: 'SL/3391', amount: 1525600 },
+];
+
+const PO_SPLIT_VARIANCE = [
+  { vendor: 'Om Sai Distributors', product: 'Steel Rods (12mm)', max: 690.00, min: 220.00, avg: 455.00, count: 24 },
+  { vendor: 'Sunrise Traders Pvt Ltd', product: 'Packaging Film', max: 960.00, min: 340.00, avg: 650.00, count: 31 },
+  { vendor: 'Metro Industrial Supplies', product: 'Corrugated Boxes', max: 710.00, min: 250.00, avg: 480.00, count: 18 },
+  { vendor: 'Krishna Enterprises', product: 'Industrial Lubricant', max: 890.00, min: 610.00, avg: 750.00, count: 12 },
+  { vendor: 'Vardhman Packaging Co', product: 'Cotton Yarn', max: 315.00, min: 260.00, avg: 287.50, count: 27 },
+  { vendor: 'Shreeji Logistics Pvt Ltd', product: 'PVC Pipes', max: 780.00, min: 220.00, avg: 500.00, count: 15 },
+  { vendor: 'Om Sai Distributors', product: 'Adhesive Tape', max: 640.00, min: 210.00, avg: 425.00, count: 40 },
+  { vendor: 'Metro Industrial Supplies', product: 'Printing Ink', max: 520.00, min: 410.00, avg: 465.00, count: 9 },
+];
+
+const PO_SPLIT_TREND = [
+  { vendor: 'Om Sai Distributors', values: [1820000, 2250000, 2780000, 3410000, 4160000] },          // increasing
+  { vendor: 'Sunrise Traders Pvt Ltd', values: [5240000, 4790000, 4120000, 3560000, 2980000] },      // decreasing
+  { vendor: 'Metro Industrial Supplies', values: [3870000, 3320000, 2950000, 2410000, 1960000] },    // decreasing
+  { vendor: 'Krishna Enterprises', values: [2100000, 2640000, 3390000, 4020000, 4870000] },          // increasing
+  { vendor: 'Vardhman Packaging Co', values: [4530000, 3980000, 3460000, 2820000, 2290000] },        // decreasing
+  { vendor: 'Shreeji Logistics Pvt Ltd', values: [1560000, 1930000, 2480000, 3150000, 3840000] },    // increasing
+];
+
+function renderPoSplit() {
+  // NOTE: use fillTable() (targets "#id tbody", not the <table> itself) —
+  // setting innerHTML directly on the <table> element wipes out <thead>,
+  // which is why the column headers went missing before this fix.
+
+  // Group bill-split rows by vendor: one row per vendor, bill numbers and
+  // their matching amounts listed comma-separated in the same order.
+  const billsByVendor = [];
+  PO_SPLIT_BILLS.forEach(r => {
+    let entry = billsByVendor.find(v => v.vendor === r.vendor);
+    if (!entry) { entry = { vendor: r.vendor, bills: [] }; billsByVendor.push(entry); }
+    entry.bills.push(r);
+  });
+  fillTable('tbl-po-split-bills', billsByVendor, r => `
+      <tr>
+        <td class="grp">${esc(r.vendor)}</td>
+        <td>${r.bills.map(b => esc(b.billNo)).join(', ')}</td>
+        <td class="r">${fmtINRk(r.bills.reduce((sum, b) => sum + b.amount, 0))}</td>
+      </tr>`);
+
+  fillTable('tbl-po-split-variance', PO_SPLIT_VARIANCE, r => `
+      <tr>
+        <td class="grp">${esc(r.vendor)}</td>
+        <td>${esc(r.product)}</td>
+        <td class="r">₹${r.max.toFixed(2)}</td>
+        <td class="r">₹${r.min.toFixed(2)}</td>
+        <td class="r">₹${r.avg.toFixed(2)}</td>
+        <td class="c">${r.count}</td>
+      </tr>`);
+
+  fillTable('tbl-po-split-trend', PO_SPLIT_TREND, r => {
+    const rising = r.values[r.values.length - 1] > r.values[0];
+    return `
+      <tr class="${rising ? 'row-up' : 'row-down'}">
+        <td class="grp">${esc(r.vendor)}</td>
+        ${r.values.map(v => `<td class="r">${fmtINRk(v)}</td>`).join('')}
+      </tr>`;
+  });
+}
+// ═════════════════════════════════════════════════════════════
+// END PO SPLIT MODULE
+// ═════════════════════════════════════════════════════════════
+
 function renderWelcome() {
   const modules = [
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>', id: 'filters', title: 'Dashboard Filters', desc: 'Set global filters for company, state, product, customer, and month.' },
@@ -1938,6 +2027,7 @@ function renderWelcome() {
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', id: 'po-summary', title: 'PO vs Invoice vs GRN vs Bank', desc: 'Full reconciliation across purchase orders, invoices, GRNs, and payments.' },
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6a1 1 0 0 1 1 1v2H8V3a1 1 0 0 1 1-1z"/><rect x="5" y="4" width="14" height="18" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>', id: 'po-detail', title: 'PO Detail — Exceptions', desc: 'GRN without invoice, open POs, bank account count, and payment ageing.' },
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>', id: 'purchase', title: 'Purchase Analytics', desc: 'Blocked vendor detection, purchase vs return combo chart, full register.' },
+    { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v12"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>', id: 'po-split', title: 'PO Split', desc: 'Same-vendor bill splitting, unit price variance, and 5-year vendor purchase trend.' },
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.2L18 9l-4.4 1.8L12 15l-1.6-4.2L6 9l4.4-1.8L12 3z"/><path d="M19 14l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/></svg>', id: 'ai-dashboard', title: 'AI Dashboard', desc: 'AI-driven distribution pie, month trend, and company bar with smart filters.' },
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>', id: 'formula', title: 'Formula Check', desc: 'GST rate variance and discount difference validation per invoice.' },
     { icon: '<svg class="icn" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>', id: 'addition', title: 'Additional Modules', desc: 'Roadmap: MIS reporting, fraud analysis, inventory, trial balance.' },
@@ -4243,7 +4333,7 @@ new Chart(ctxScatter, {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             const label = context.dataset.label || '';
             const raw = context.raw;
             return `${label}: ${raw.y} Errors, ${raw.x} Days Avg, Risk Impact Rating: ${raw.r}`;
