@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sign up</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body.auth-body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            font-family: var(--body);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 380px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            box-shadow: var(--sh);
+            padding: 32px 28px;
+        }
+
+        .auth-title {
+            font-family: var(--display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0 0 6px;
+        }
+
+        .auth-sub {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0 0 22px;
+        }
+
+        .auth-field {
+            margin-bottom: 16px;
+        }
+
+        .auth-field label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+
+        .auth-field input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line2);
+            border-radius: var(--rs);
+            font-size: 0.92rem;
+            font-family: var(--body);
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .auth-field input:focus {
+            outline: none;
+            border-color: var(--orange);
+        }
+
+        .auth-hint {
+            font-size: 0.76rem;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .auth-error {
+            background: var(--flagbg);
+            color: var(--flag);
+            border-left: 4px solid var(--flag);
+            padding: 10px 12px;
+            border-radius: var(--rs);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: var(--rs);
+            background: var(--orange);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .auth-switch a {
+            color: var(--orange);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body class="auth-body">
+    <form class="auth-card" id="signupForm">
+        <div class="auth-title">Create your account</div>
+        <div class="auth-sub">Set up access to the audit dashboard.</div>
+
+        <div class="auth-error" id="authError"></div>
+
+        <div class="auth-field">
+            <label for="name">Full name</label>
+            <input type="text" id="name" required autocomplete="name">
+        </div>
+        <div class="auth-field">
+            <label for="email">Email</label>
+            <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="auth-field">
+            <label for="password">Password</label>
+            <input type="password" id="password" required autocomplete="new-password" minlength="8">
+            <div class="auth-hint">At least 8 characters.</div>
+        </div>
+
+        <button type="submit" class="auth-btn" id="submitBtn">Sign up</button>
+
+        <div class="auth-switch">
+            Already have an account? <a href="/login">Log in</a>
+        </div>
+    </form>
+
+    <script>
+        const form = document.getElementById('signupForm');
+        const errorBox = document.getElementById('authError');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating account…';
+
+            try {
+                const res = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('name').value,
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value,
+                    }),
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errorBox.textContent = data.error || 'Something went wrong. Try again.';
+                    errorBox.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Sign up';
+                    return;
+                }
+
+                window.location.href = '/';
+            } catch (err) {
+                errorBox.textContent = 'Could not reach the server. Is the app running?';
+                errorBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Sign up';
+            }
+        });
+    </script>
+</body>
+
+</html>

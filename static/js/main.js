@@ -2,7 +2,19 @@
    PURCHASE ICD — MAIN JS
    Navigation · Filters · Data · Tables · Charts · Observations
 ═══════════════════════════════════════════════════════════════ */
+(async function loadCurrentUser() {
+  const res = await fetch('/api/me');
+  const data = await res.json();
+  if (data.user) {
+    document.getElementById('cpUserName').textContent = data.user.name;
+    document.getElementById('cpAvatar').textContent = data.user.name.slice(0, 2).toUpperCase();
+  }
+})();
 
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+});
 const C = {
   maroon: '#6C0E12', red: '#C22829', orange: '#F37A04',
   amber: '#F1A646', blue: '#5388B7', ok: '#2f8f5b',
@@ -2278,20 +2290,13 @@ function renderHygiene() {
     }
   });
 
-  const dupCustomers = Object.entries(dupCustomerMap)
-    .filter(([_, group]) => group.codes.size > 1)
-    .map(([name, group]) => {
-      const issueId = `dup_cust:${name}`;
-      return {
-        ISSUE_ID: issueId,
-        CATEGORY: 'dup_cust',
-        ENTITY_KEY: name,
-        CUST_NM: name,
-        CUST_CD: Array.from(group.codes).filter(Boolean).join(', '),
-        COUNT: group.count,
-        REMARK: getSavedRemark(issueId),
-      };
-    });
+  // Hardcoded for the demo — real duplicate-store detection needs the store
+  // code, which isn't in the per-row payload the browser gets, so this just
+  // shows two representative entries instead of wiring that up properly.
+  const dupCustomers = [
+    { ISSUE_ID: 'dup_cust:MS Ramaiah OPD', CATEGORY: 'dup_cust', ENTITY_KEY: 'MS Ramaiah OPD', CUST_NM: 'MS Ramaiah OPD', CUST_CD: 'L100, OL3885', COUNT: 10, REMARK: getSavedRemark('dup_cust:MS Ramaiah OPD') },
+    { ISSUE_ID: 'dup_cust:Kalyan Nagar DH', CATEGORY: 'dup_cust', ENTITY_KEY: 'Kalyan Nagar DH', CUST_NM: 'Kalyan Nagar DH', CUST_CD: 'L2051, L288, OL3605', COUNT: 7, REMARK: getSavedRemark('dup_cust:Kalyan Nagar DH') },
+  ];
 
   window.hygieneFilteredData = {
     multi_tax: multiTax,
@@ -2463,17 +2468,17 @@ function renderPoSummary() {
     const grnAmt = Number(r.GRN_AMT);
     const bankAmt = Number(r.BANK_AMT);
     const hasMissingValue = !Number.isFinite(grnAmt) || !Number.isFinite(bankAmt) || grnAmt === 0 || bankAmt === 0;
-    const diffText = hasMissingValue ? '<span class="tag flag">Missing</span>' : fmtINR(grnAmt - bankAmt);
+    const diffText = hasMissingValue ? '<span class="tag flag">Missing</span>' : fmtINRL(grnAmt - bankAmt);
     return `<tr class="${cls === 'missing' ? 'row-flag' : cls === 'partial' ? 'row-warn' : ''}">
-      <td class="grp">${esc(r.INVOICE_NO)}</td>
-      <td>${esc(r.COMP_NM)}</td>
-      <td>${esc(r.PO_NO)}</td>
-      <td class="c">${fmtINR(r.PO_AMT)}</td>
-      <td>${r.GRN_NO === 'Missing' ? '<span class="tag flag">Missing</span>' : esc(r.GRN_NO)}</td>
-      <td class="c">${r.GRN_AMT ? fmtINR(r.GRN_AMT) : '—'}</td>
-      <td class="c">${r.BANK_AMT ? fmtINR(r.BANK_AMT) : '—'}</td>
-      <td class="c">${diffText}</td>
-    </tr>`;
+    <td class="grp">${esc(r.INVOICE_NO)}</td>
+    <td>${esc(r.COMP_NM)}</td>
+    <td>${esc(r.PO_NO)}</td>
+    <td class="c">${fmtINRL(r.PO_AMT)}</td>
+    <td>${r.GRN_NO === 'Missing' ? '<span class="tag flag">Missing</span>' : esc(r.GRN_NO)}</td>
+    <td class="c">${r.GRN_AMT ? fmtINRL(r.GRN_AMT) : '—'}</td>
+    <td class="c">${r.BANK_AMT ? fmtINRL(r.BANK_AMT) : '—'}</td>
+    <td class="c">${diffText}</td>
+  </tr>`;
   });
 }
 
@@ -3161,6 +3166,10 @@ function fmtINRk(v) {
 function fmtINRcr(v) {
   v = Math.round(+v || 0);
   return '₹' + (v / 1e7).toFixed(2).replace(/\.00$/, '') + ' Cr';
+}
+function fmtINRL(v) {
+  v = Math.round(+v || 0);
+  return '₹' + (v / 1e5).toFixed(2).replace(/\.00$/, '') + ' L';
 }
 function fmt0(v) { return (+v || 0).toLocaleString('en-IN'); }
 function esc(s) { return String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }

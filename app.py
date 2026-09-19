@@ -1,4 +1,21 @@
 import os
+import os
+
+def load_env_file(path):
+    if not os.path.exists(path):
+        return
+
+    with open(path, encoding="utf-8") as env_file:
+        for line in env_file:
+            line = line.strip()
+
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, _, value = line.partition("=")
+            os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
 import random
 import re
 import sqlite3
@@ -14,7 +31,7 @@ import requests
 import os
 import io
 import shutil
-from flask import Flask, request, send_file, jsonify, render_template
+from flask import Flask, request, send_file, jsonify, render_template, session, redirect
 import pandas as pd
 import pytesseract
 from PIL import Image
@@ -23,8 +40,8 @@ from google import genai
 from google.genai import types
 import api
 from anomalies_blueprint import anomalies_bp
-
-
+from auth import auth_bp
+from db_postgres import init_users_table
 
 VALID_CATEGORIES = {
     # Purchase Data Hygiene categories (original module)
@@ -81,7 +98,14 @@ def row_is_completely_empty(row):
 
 
 app = Flask(__name__)
+
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
+
 app.register_blueprint(anomalies_bp)
+app.register_blueprint(auth_bp)
+
+init_users_table()
+
 random.seed(42)
 
 # Disable static-file caching in dev so the browser always loads the latest
@@ -114,6 +138,7 @@ client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 ALL_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 MONTH_ORDER = ALL_MONTHS
 PROMINENT_REGIONS = ["Bangalore", "Mumbai", "Delhi NCR", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad"]
+DEMO_AMOUNT_SCALE = 850  # multiplies PO/GRN/Bank amounts on the comparison page — calculated from your 60rowdata.xlsx to land ~₹0.75 Cr total
 BANKS = ["HDFC Bank", "ICICI Bank", "SBI", "Axis Bank", "Kotak Bank"]
 
 USE_COLUMNS = {
@@ -775,6 +800,17 @@ def load_excel_data():
     for col in numeric_columns:
         df[col] = pd.to_numeric(df.get(col, 0), errors="coerce").fillna(0.0)
 
+        # Scale every money column together (not the GST-rate percentages or
+    # quantity) so all downstream checks — GST variance, discount variance,
+    # PO/GRN/Bank comparison — keep their exact same ratios, just at a
+    # realistic invoice size instead of the tiny raw sample amounts.
+    money_columns = [
+        "product cgst amount", "product sgst amount", "net sale",
+        "gross sale", "item price", "marketing discount amount", "loyalty discount amount",
+    ]
+    for col in money_columns:
+        df[col] = df[col] * DEMO_AMOUNT_SCALE
+
     df["bill date time"] = parse_excel_dates(df.get("bill date time", df.get("business day date")))
     df["business day date"] = parse_excel_dates(df.get("business day date", df["bill date time"]))
 
@@ -845,6 +881,19 @@ def load_excel_data():
                 "BANK": rand_bank(), "INVOICE_NO": safe_text(inv), "COMP_NM": comp,
                 "PAYMENT_DAYS": 15 + (idx * 7) % 90, "AMT": round(amt * random.uniform(0.96, 1.04), 2),
             })
+             # Synthetic "GRN without PO" exceptions — every GRN above is generated
+    # from an existing invoice, so this case never occurs naturally. These
+    # entries populate the "GRN Without Purchase Invoice" exceptions table
+    # on the PO Detail page with a couple of realistic-looking flags.
+    orphan_grn_companies = companies[:3] if companies else ["Unknown Vendor"]
+    for n, comp in enumerate(orphan_grn_companies, start=1):
+        grn_data.append({
+            "GRN_NO": rand_grn(),
+            "INVOICE_NO": f"ORPHAN-INV-{300 + n}",
+            "COMP_NM": comp,
+            "CUST_NM": comp,
+            "AMT": round(random.uniform(20000, 280000), 2),
+        })
 
     vendor_stats = df.groupby("COMP_NM").agg({"DISCOUNT": "sum", "INVOICE_AMT": "sum"}).reset_index()
     vendor_stats["RATIO"] = vendor_stats.apply(lambda row: row["DISCOUNT"] / row["INVOICE_AMT"] if row["INVOICE_AMT"] else 0, axis=1)
@@ -1170,6 +1219,8 @@ def send_observation_to_lars(data):
 
 @app.route("/")
 def index():
+    if not session.get("user_id"):
+        return redirect("/login")
     return render_template("index.html")
 
 # load purchase record

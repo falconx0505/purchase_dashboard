@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Log in</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        body.auth-body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg);
+            font-family: var(--body);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 380px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--r);
+            box-shadow: var(--sh);
+            padding: 32px 28px;
+        }
+
+        .auth-title {
+            font-family: var(--display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 0 0 6px;
+        }
+
+        .auth-sub {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin: 0 0 22px;
+        }
+
+        .auth-field {
+            margin-bottom: 16px;
+        }
+
+        .auth-field label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 6px;
+        }
+
+        .auth-field input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line2);
+            border-radius: var(--rs);
+            font-size: 0.92rem;
+            font-family: var(--body);
+            background: #fff;
+            color: var(--ink);
+        }
+
+        .auth-field input:focus {
+            outline: none;
+            border-color: var(--orange);
+        }
+
+        .auth-error {
+            background: var(--flagbg);
+            color: var(--flag);
+            border-left: 4px solid var(--flag);
+            padding: 10px 12px;
+            border-radius: var(--rs);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 11px;
+            border: none;
+            border-radius: var(--rs);
+            background: var(--orange);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.92rem;
+            cursor: pointer;
+        }
+
+        .auth-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        .auth-switch a {
+            color: var(--orange);
+            font-weight: 600;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body class="auth-body">
+    <form class="auth-card" id="loginForm">
+        <div class="auth-title">Welcome back</div>
+        <div class="auth-sub">Log in to your audit dashboard.</div>
+
+        <div class="auth-error" id="authError"></div>
+
+        <div class="auth-field">
+            <label for="email">Email</label>
+            <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="auth-field">
+            <label for="password">Password</label>
+            <input type="password" id="password" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="auth-btn" id="submitBtn">Log in</button>
+
+        <div class="auth-switch">
+            Don't have an account? <a href="/signup">Sign up</a>
+        </div>
+    </form>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const errorBox = document.getElementById('authError');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorBox.style.display = 'none';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Logging in…';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value,
+                    }),
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    errorBox.textContent = data.error || 'Something went wrong. Try again.';
+                    errorBox.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Log in';
+                    return;
+                }
+
+                window.location.href = '/';
+            } catch (err) {
+                errorBox.textContent = 'Could not reach the server. Is the app running?';
+                errorBox.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Log in';
+            }
+        });
+    </script>
+</body>
+
+</html>
