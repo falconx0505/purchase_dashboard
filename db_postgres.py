@@ -9,11 +9,7 @@ PG_PORT = os.getenv("PG_PORT", "5433")
 PG_DB = os.getenv("PG_DB", "audit_tool")
 PG_USER = os.getenv("PG_USER", "audit_app")
 PG_PASSWORD = os.getenv("PG_PASSWORD", "")
-print("DEBUG PG_HOST:", PG_HOST)
-print("DEBUG PG_PORT:", PG_PORT)
-print("DEBUG PG_DB:", PG_DB)
-print("DEBUG PG_USER:", PG_USER)
-print("DEBUG PG_PASSWORD EXISTS:", bool(PG_PASSWORD))
+
 
 def get_pg_connection():
     """Open a new Postgres connection. Rows come back as dicts."""
