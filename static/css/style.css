@@ -906,26 +906,26 @@ body.on-home .topnav {
 .home-table-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 18px;
-  background: #fdfbf7;
+  padding: 0;
+  background: transparent;
   color: var(--ink);
   font-family: var(--display);
   font-weight: 600;
   font-size: 13px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
+  border: none;
+  border-radius: 0;
   cursor: pointer;
-  box-shadow: var(--sh);
-  transition: transform .15s, box-shadow .15s, background .15s, color .15s;
+  box-shadow: none;
   text-decoration: none;
+  transition: color .15s;
 }
 
 .home-table-btn:hover {
-  background: #f3efe6;
+  background: transparent;
   color: var(--maroon);
-  box-shadow: var(--shh);
-  transform: translateY(-1px);
+  box-shadow: none;
+  transform: none;
+  text-decoration: underline;
 }
 
 .font-bold {
