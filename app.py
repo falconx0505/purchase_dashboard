@@ -1063,7 +1063,6 @@ def load_excel_data() -> dict:
         elif len(names) > 1:
             prod_code_check.append({"PROD_CODE": code, "STATUS": "Multiple products"})
 
-    # STEP: Calculate expected GST and flag differences outside the configured tolerance.
     # --- GST check ---
     gst_frame = purchase_frame.select(["INVOICE_NO", "INVOICE_AMT", "GST_RATE", "GST_AMT"])
     gst_frame = gst_frame.with_columns([
@@ -1077,7 +1076,6 @@ def load_excel_data() -> dict:
     ])
     gst_check = gst_frame.to_dicts()
 
-    # STEP: Compare recorded discounts with calculated discounts and flag large differences.
     # --- Discount check ---
     disc_frame = purchase_frame.select(["INVOICE_NO", "INVOICE_AMT", "DISCOUNT", "CALC_DISCOUNT", "DISC_DIFF"])
     disc_frame = disc_frame.with_columns([
@@ -1121,7 +1119,6 @@ def ensure_data_loaded():
     return DATA
 
 
-# PURPOSE: Aggregates purchase rows for dashboard display and limits large lists sent to the frontend.
 def _dashboard_payload(payload: dict) -> dict:
     purchase_list = payload["purchase"]
     if purchase_list:
@@ -1220,7 +1217,7 @@ def send_observation_to_lars(data: dict) -> dict:
         obs_type = "Critical"
 
     risk_type = str(data.get("RiskType", "") or "High").strip() or "High"
-
+#hardcoded values for observation table 
     auditee_id = str(data.get("Auditee", "") or "").strip()
     if (not auditee_id or " " in auditee_id or "@" in auditee_id
             or auditee_id.lower() in ("rahul mehta", "rahul", "1002", "1001",
