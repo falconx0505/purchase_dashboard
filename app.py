@@ -5,6 +5,7 @@ import os
 # LOAD .ENV FIRST
 # ============================================================
 
+# PURPOSE: Reads key=value settings from the .env file and places them in environment variables.
 def load_env_file(path):
     if not os.path.exists(path):
         print(f"WARNING: .env file not found at: {path}")
@@ -105,8 +106,7 @@ VALID_CATEGORIES = {
     "hr_dup_bank", "hr_dup_pan_aadhaar", "hr_missing_ids",
     "hr_missing_master", "hr_same_pan",
 }
-
-
+#observation table fields
 ALL_FIELDS = [
     "category", "table_name", "entity_key", "ObservationTitle",
     "ObservationSubProcess", "RepeatObservation", "ObservationType",
@@ -131,6 +131,7 @@ if TESSERACT_PATH and os.path.exists(TESSERACT_PATH):
 # Null / NaN helpers (replaces pd.isna)
 # ---------------------------------------------------------------------------
 
+# PURPOSE: Checks whether a value should be treated as missing, including None, NaN, and blank-like strings.
 def _is_na(value) -> bool:
     """True for None, float NaN, or the string 'nan'/'none'/'nat'/'null'."""
     if value is None:
@@ -141,7 +142,8 @@ def _is_na(value) -> bool:
         return True
     return False
 
-
+#if nan convert to empty string
+# PURPOSE: Converts a value to clean text and represents missing values as an empty string.
 def safe_value(value) -> str:
     """Turn blank / NaN cells into empty string, everything else into text."""
     if _is_na(value):
@@ -150,18 +152,21 @@ def safe_value(value) -> str:
     return "" if text.lower() == "nan" else text
 
 
+# PURPOSE: Converts a non-missing value to trimmed text, or returns the supplied default.
 def safe_text(value, default="") -> str:
     if _is_na(value):
         return default
     return str(value).strip()
 
-
+#converiting text to simpler unique identifier
+# PURPOSE: Creates a simple normalized identifier from a title, table name, or row number.
 def make_entity_key(title, table_name, row_num):
     base = title or table_name or f"row-{row_num}"
     slug = re.sub(r"[^a-zA-Z0-9]+", "_", base).strip("_").lower()
     return slug or f"row-{row_num}"
 
 
+# PURPOSE: Checks whether every configured observation field is blank in this row.
 def row_is_completely_empty(row: dict) -> bool:
     return all(safe_value(row.get(field)) == "" for field in ALL_FIELDS)
 
@@ -169,12 +174,12 @@ def row_is_completely_empty(row: dict) -> bool:
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
-
+#flask logic 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")
-app.register_blueprint(anomalies_bp)
+app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")#check if secret key exists
+app.register_blueprint(anomalies_bp)#organize Flask routes into separate modules
 app.register_blueprint(auth_bp)
-
+#initialise db tables 
 init_users_table()
 init_encrypted_tables()
 
@@ -209,18 +214,22 @@ XML_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 RE_COL = re.compile(r"([A-Z]+)")
 
 
+# PURPOSE: Generates a demo purchase-order number.
 def rand_po():
     return f"PO-{random.randint(1000, 9999)}"
 
 
+# PURPOSE: Generates a demo goods-receipt-note number.
 def rand_grn():
     return f"GRN-{random.randint(100, 999)}"
 
 
+# PURPOSE: Selects a bank name from the configured demo bank list.
 def rand_bank():
     return random.choice(BANKS)
 
 
+# PURPOSE: Trims and lowercases column names to make header matching consistent.
 def normalize_columns(columns):
     return [str(c).strip().lower() for c in columns]
 
@@ -228,7 +237,8 @@ def normalize_columns(columns):
 # ---------------------------------------------------------------------------
 # SQLite helpers
 # ---------------------------------------------------------------------------
-
+#add missing columns to an existing audit_trail_records table
+# PURPOSE: Checks the audit-trail table and adds any expected columns that are missing.
 def ensure_audit_trail_schema(conn):
     try:
         existing_columns = {row[1] for row in conn.execute("PRAGMA table_info(audit_trail_records)")}
@@ -245,6 +255,7 @@ def ensure_audit_trail_schema(conn):
             conn.execute(f"ALTER TABLE audit_trail_records ADD COLUMN {column_name} {column_type}")
 
 
+# PURPOSE: Creates the local SQLite tables used for remarks, audit trail, and observations; also handles schema additions.
 def init_db_schema(conn):
     conn.execute("""
     CREATE TABLE IF NOT EXISTS hygiene_remarks (
@@ -292,6 +303,7 @@ def init_db_schema(conn):
             conn.execute(f"ALTER TABLE observations ADD COLUMN {column_name} TEXT")
 
 
+# PURPOSE: Opens a SQLite connection, enables row-name access and foreign keys, and ensures tables exist.
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -304,6 +316,7 @@ def get_db_connection():
 # Observation helpers
 # ---------------------------------------------------------------------------
 
+# PURPOSE: Matches uploaded observation headers to the standard field names, ignoring punctuation and case.
 def normalize_observation_headers(df: pl.DataFrame) -> pl.DataFrame:
     canonical_map = {re.sub(r"[^a-zA-Z0-9]+", "", str(name)).lower(): name for name in ALL_FIELDS}
     rename_map = {}
@@ -330,10 +343,12 @@ AUDIT_TRAIL_ALIASES = {
 }
 
 
+# PURPOSE: Removes punctuation and case differences from an audit-trail column name.
 def normalize_audit_header(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", str(name).strip().lower())
 
 
+# PURPOSE: Maps one audit-trail row into the dashboard’s standard field names and fills unavailable values.
 def normalize_audit_row(row: dict) -> dict:
     normalized = {}
     for key, value in row.items():
@@ -404,6 +419,7 @@ def normalize_audit_row(row: dict) -> dict:
     }
 
 
+# PURPOSE: Normalizes each DataFrame row and collects usable audit-trail records.
 def parse_audit_trail_rows(df: pl.DataFrame) -> list[dict]:
     rows = []
     for row in df.to_dicts():
@@ -413,6 +429,7 @@ def parse_audit_trail_rows(df: pl.DataFrame) -> list[dict]:
     return rows
 
 
+# PURPOSE: Replaces the stored audit-trail records with the supplied normalized rows and source filename.
 def save_audit_trail_rows(rows: list[dict], source_file: str):
     with get_db_connection() as conn:
         conn.execute("DELETE FROM audit_trail_records")
@@ -442,6 +459,7 @@ def save_audit_trail_rows(rows: list[dict], source_file: str):
         conn.commit()
 
 
+# PURPOSE: Loads audit-trail data from the default workbook when available, otherwise reads saved SQLite records.
 def get_audit_trail_rows() -> list[dict]:
     default_path = os.path.join(os.path.dirname(__file__), "audittrailmasterdata.xlsx")
     if os.path.exists(default_path):
@@ -494,6 +512,7 @@ def get_audit_trail_rows() -> list[dict]:
     return []
 
 
+# PURPOSE: Builds dashboard-ready audit-trail rows, vendor/field summaries, counts, and filter values.
 def build_audit_trail_payload(rows: list[dict]) -> dict:
     normalized_rows = [r for row in rows if (r := normalize_audit_row(row))]
 
@@ -567,6 +586,7 @@ def build_audit_trail_payload(rows: list[dict]) -> dict:
     }
 
 
+# PURPOSE: Loads saved encrypted hygiene remarks and returns an empty mapping if loading fails.
 def get_hygiene_remarks() -> dict:
     try:
         return load_hygiene_remarks_encrypted()
@@ -579,12 +599,14 @@ def get_hygiene_remarks() -> dict:
 # SQLite load helpers (replaces pd.read_sql_query)
 # ---------------------------------------------------------------------------
 
+# PURPOSE: Reads all rows from a SQLite table and converts them into dictionaries.
 def _sqlite_table_to_records(conn, table: str) -> list[dict]:
     cursor = conn.execute(f"SELECT * FROM {table}")
     columns = [d[0] for d in cursor.description]
     return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
+# PURPOSE: Attempts to load the saved purchase snapshot and related SQLite tables for reuse.
 def load_from_sqlite():
     if not os.path.exists(DB_PATH):
         return None
@@ -629,6 +651,7 @@ def load_from_sqlite():
     }
 
 
+# PURPOSE: Recreates the demo PO, GRN, bank, blocked-vendor, GST, and discount tables from supplied records.
 def persist_sqlite_tables(po_data, grn_data, bank_data, blocked_vendors, gst_check, disc_check):
     with get_db_connection() as conn:
         # po
@@ -674,6 +697,7 @@ def persist_sqlite_tables(po_data, grn_data, bank_data, blocked_vendors, gst_che
 # Excel streaming parser (unchanged — intentional low-level XML approach)
 # ---------------------------------------------------------------------------
 
+# PURPOSE: Converts an Excel column reference such as A or AB into a zero-based column index.
 def _col_letter_to_index(ref: str) -> int:
     letters = RE_COL.match(ref)
     if not letters:
@@ -685,6 +709,7 @@ def _col_letter_to_index(ref: str) -> int:
     return idx - 1
 
 
+# PURPOSE: Reads the shared-string table inside an XLSX file, which stores repeated cell text.
 def _extract_shared_strings(z) -> list[str]:
     try:
         with z.open("xl/sharedStrings.xml") as f:
@@ -704,6 +729,7 @@ def _extract_shared_strings(z) -> list[str]:
         return []
 
 
+# PURPOSE: Finds a worksheet XML file inside the XLSX archive.
 def _find_sheet_path(z) -> str:
     if "xl/worksheets/sheet1.xml" in z.namelist():
         return "xl/worksheets/sheet1.xml"
@@ -717,6 +743,7 @@ def _find_sheet_path(z) -> str:
 # Date parsing (Polars version — replaces parse_excel_dates with pd)
 # ---------------------------------------------------------------------------
 
+# PURPOSE: Converts an Excel day-serial number into a Python date; returns None if it cannot parse it.
 def _parse_excel_serial_date(value: str):
     """Convert an Excel serial date string to a Python date, or return None."""
     try:
@@ -728,6 +755,7 @@ def _parse_excel_serial_date(value: str):
         return None
 
 
+# PURPOSE: Tries to interpret a value as an Excel serial date or one of the supported text date formats.
 def _parse_date_value(value: str):
     """Parse a cell value that may be an Excel serial or a text date string."""
     if not value or value.strip() == "":
@@ -750,10 +778,12 @@ def _parse_date_value(value: str):
 # Main data loading (Polars)
 # ---------------------------------------------------------------------------
 
+# PURPOSE: Loads the source workbook, cleans and derives purchase fields, creates demo audit datasets, runs checks, saves results, and returns the combined data.
 def load_excel_data() -> dict:
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"Excel source not found: {DATA_PATH}")
 
+    # STEP: Open the XLSX archive and stream its worksheet XML into header and row values.
     # --- low-level XML streaming parse (kept as-is for performance) ---
     with zipfile.ZipFile(DATA_PATH, "r") as z:
         shared_strings = _extract_shared_strings(z)
@@ -796,10 +826,12 @@ def load_excel_data() -> dict:
         for row_values in rows
     ]
 
+    # STEP: Turn selected worksheet values into a Polars table for cleaning and calculations.
     # --- build Polars DataFrame ---
     df = pl.DataFrame(selected_rows, schema={h: pl.Utf8 for h in selected_headers})
     df = df.rename({c: c.strip().lower() for c in df.columns})
 
+    # STEP: Ensure text fields exist, are strings, and have surrounding whitespace removed.
     # String columns — ensure Utf8 and strip
     text_cols = ["bill no", "store code", "store name", "ordering channel", "source",
                  "region", "product code", "product name"]
@@ -809,6 +841,7 @@ def load_excel_data() -> dict:
         else:
             df = df.with_columns(pl.col(col).cast(pl.Utf8).str.strip_chars().fill_null(""))
 
+    # STEP: Convert amount/rate/quantity fields to numbers; invalid or missing values become zero.
     # Numeric columns
     numeric_cols = [
         "product cgst rate", "product sgst rate", "product cgst amount", "product sgst amount",
@@ -824,6 +857,7 @@ def load_excel_data() -> dict:
                 .cast(pl.Float64, strict=False).fill_null(0.0).alias(col)
             )
 
+    # STEP: Scale demo monetary values using the configured demo multiplier.
     # Scale money columns
     money_cols = ["product cgst amount", "product sgst amount", "net sale", "gross sale",
                   "item price", "marketing discount amount", "loyalty discount amount"]
@@ -831,6 +865,7 @@ def load_excel_data() -> dict:
         (pl.col(c) * DEMO_AMOUNT_SCALE).alias(c) for c in money_cols
     ])
 
+    # STEP: Parse dates and derive month/year labels for grouping and filtering.
     # Parse dates
     date_col = "bill date time" if "bill date time" in df.columns else "business day date"
     fallback_col = "business day date" if "business day date" in df.columns else date_col
@@ -853,6 +888,7 @@ def load_excel_data() -> dict:
         pl.Series("YEAR", years, dtype=pl.Int64),
     ])
 
+    # STEP: Calculate GST, invoice, total, discount, and standardized entity fields.
     # Derived columns
     df = df.with_columns([
         (pl.col("product cgst rate") + pl.col("product sgst rate")).alias("GST_RATE"),
@@ -872,6 +908,7 @@ def load_excel_data() -> dict:
         (pl.col("DISCOUNT") - pl.col("CALC_DISCOUNT")).alias("DISC_DIFF"),
     )
 
+    # STEP: Build a readable tax description from the CGST and SGST rates.
     # TAX_DESC
     tax_desc = [
         f"{round(cgst, 2)}% CGST, {round(sgst, 2)}% SGST"
@@ -882,6 +919,7 @@ def load_excel_data() -> dict:
     ]
     df = df.with_columns(pl.Series("TAX_DESC", tax_desc, dtype=pl.Utf8))
 
+    # STEP: Select the cleaned columns and rename them into the purchase-data schema.
     # purchase_frame — select + rename
     purchase_frame = df.select([
         pl.col("bill no").alias("INVOICE_NO"),
@@ -911,6 +949,7 @@ def load_excel_data() -> dict:
     products = sorted(df["PROD_NM"].drop_nulls().unique().to_list())
     customers = sorted(df["CUST_NM"].drop_nulls().unique().to_list())
 
+    # STEP: Group rows by invoice and create illustrative PO, GRN, and bank-payment records.
     # --- PO / GRN / Bank generation ---
     invoice_agg = (
         df.group_by("bill no").agg([
@@ -956,6 +995,7 @@ def load_excel_data() -> dict:
             "AMT": round(random.uniform(20000, 280000), 2),
         })
 
+    # STEP: Rank vendors by discount-to-invoice ratio and mark the top entries for review.
     # --- blocked vendors ---
     vendor_stats = (
         df.group_by("COMP_NM").agg([
@@ -981,6 +1021,7 @@ def load_excel_data() -> dict:
             "INV_NO": invoice_no, "AMT": round(float(row["INVOICE_AMT_SUM"]), 2),
         })
 
+    # STEP: Look for inconsistent tax rates, duplicate mappings, and missing/conflicting product codes.
     # --- hygiene checks ---
     multi_tax = []
     for prod_code, group in df.group_by("PROD_CODE"):
@@ -1022,6 +1063,7 @@ def load_excel_data() -> dict:
         elif len(names) > 1:
             prod_code_check.append({"PROD_CODE": code, "STATUS": "Multiple products"})
 
+    # STEP: Calculate expected GST and flag differences outside the configured tolerance.
     # --- GST check ---
     gst_frame = purchase_frame.select(["INVOICE_NO", "INVOICE_AMT", "GST_RATE", "GST_AMT"])
     gst_frame = gst_frame.with_columns([
@@ -1035,6 +1077,7 @@ def load_excel_data() -> dict:
     ])
     gst_check = gst_frame.to_dicts()
 
+    # STEP: Compare recorded discounts with calculated discounts and flag large differences.
     # --- Discount check ---
     disc_frame = purchase_frame.select(["INVOICE_NO", "INVOICE_AMT", "DISCOUNT", "CALC_DISCOUNT", "DISC_DIFF"])
     disc_frame = disc_frame.with_columns([
@@ -1070,6 +1113,7 @@ def load_excel_data() -> dict:
 DATA = None
 
 
+# PURPOSE: Loads dashboard data only when the in-memory DATA cache is empty.
 def ensure_data_loaded():
     global DATA
     if DATA is None:
@@ -1077,6 +1121,7 @@ def ensure_data_loaded():
     return DATA
 
 
+# PURPOSE: Aggregates purchase rows for dashboard display and limits large lists sent to the frontend.
 def _dashboard_payload(payload: dict) -> dict:
     purchase_list = payload["purchase"]
     if purchase_list:
@@ -1137,6 +1182,7 @@ LARS_EMP_ID = "P0005"
 LARS_REPORT_NO = "2025 - 2026-0023"
 
 
+# PURPOSE: Converts supported date strings into the date format expected by LARS.
 def format_lars_date(val) -> str:
     if not val:
         return ""
@@ -1152,6 +1198,7 @@ def format_lars_date(val) -> str:
     return val_str
 
 
+# PURPOSE: Builds the LARS observation request, sends it, checks the response, and extracts returned IDs/URL.
 def send_observation_to_lars(data: dict) -> dict:
     raw_target_na = str(data.get("TargetDateNotApplicable", "") or "").strip().lower()
     target_date_na = "Yes" if raw_target_na in ("true", "yes", "1") else "No"
@@ -1295,6 +1342,7 @@ def send_observation_to_lars(data: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 @app.route("/")
+# PURPOSE: Protects the main dashboard page with a session check and then renders its HTML template.
 def index():
     if not session.get("user_id"):
         return redirect("/login")
@@ -1302,6 +1350,7 @@ def index():
 
 
 @app.route("/api/data")
+# PURPOSE: Creates the dashboard API response, including PO/GRN/bank comparisons and summary metrics.
 def get_data():
     payload = _dashboard_payload(ensure_data_loaded())
     po_data = payload["po"]
@@ -1354,12 +1403,14 @@ def get_data():
 
 
 @app.route("/api/audit-trail", methods=["GET"])
+# PURPOSE: Returns audit-trail rows and their summary information as JSON.
 def get_audit_trail_data():
     rows = get_audit_trail_rows()
     return jsonify(build_audit_trail_payload(rows))
 
 
 @app.route("/api/audit-trail/upload", methods=["POST"])
+# PURPOSE: Validates an uploaded Excel audit-trail file, parses it, saves its rows, and reports the result.
 def upload_audit_trail_file():
     uploaded = request.files.get("file")
     if not uploaded or not uploaded.filename:
@@ -1387,6 +1438,7 @@ def upload_audit_trail_file():
 # ── OBSERVATIONS ENDPOINTS ──────────────────────────────────────
 
 @app.route("/api/observations", methods=["GET"])
+# PURPOSE: Returns saved observations, optionally filtered by category.
 def get_observations():
     category = request.args.get("category", "").strip()
     try:
@@ -1403,6 +1455,7 @@ def get_observations():
 
 
 @app.route("/api/observations", methods=["POST"])
+# PURPOSE: Creates or updates an observation in SQLite and then attempts to sync it with LARS.
 def save_observation():
     data = request.get_json(silent=True) or {}
     obs_id = data.get("id")
@@ -1465,6 +1518,7 @@ def save_observation():
 
 
 @app.route("/api/observations/delete", methods=["POST"])
+# PURPOSE: Deletes the observation identified by the supplied ID.
 def delete_observation():
     data = request.get_json(silent=True) or {}
     obs_id = data.get("id")
@@ -1480,6 +1534,7 @@ def delete_observation():
 
 
 @app.route("/api/hygiene/remark", methods=["POST"])
+# PURPOSE: Saves or deletes an encrypted remark associated with a hygiene issue.
 def save_hygiene_remark():
     data = request.get_json(silent=True) or {}
     issue_id = data.get("issue_id")
@@ -1502,6 +1557,7 @@ def save_hygiene_remark():
 
 
 @app.route("/api/observations/upload", methods=["POST"])
+# PURPOSE: Validates an observation workbook, normalizes headers, checks rows/categories, and imports valid records.
 def upload_observation_file():
     uploaded = request.files.get("file")
     if not uploaded or not uploaded.filename:
@@ -1580,11 +1636,13 @@ def upload_observation_file():
 # ── Document OCR / KYC extraction ───────────────────────────────
 
 @app.route("/data-extraction")
+# PURPOSE: Renders the document data-extraction page.
 def data_extraction_page():
     return render_template("pages/data_extraction.html")
 
 
 @app.route("/api/extract-kyc", methods=["POST"])
+# PURPOSE: Runs OCR on uploaded image/PDF files, identifies Aadhaar/PAN-like text patterns, and returns an Excel file.
 def extract_kyc():
     files = request.files.getlist("files")
     if not files:
@@ -1657,6 +1715,7 @@ Provide your forensic report in this exact schema:
 
 
 @app.route("/analyze", methods=["POST"])
+# PURPOSE: Sends an uploaded document image and forensic-analysis prompt to Gemini, then returns its report.
 def analyze():
     if "image" not in request.files:
         return jsonify({"error": "No image file uploaded."}), 400
@@ -1681,6 +1740,7 @@ def analyze():
 # ── KYC / PAN verification ───────────────────────────────────────
 
 @app.route("/upload", methods=["POST"])
+# PURPOSE: Reads PAN values from an uploaded Excel file and calls the PAN KYC verification function for each value.
 def upload():
     f = request.files.get("file")
     if f is None:
@@ -1718,6 +1778,7 @@ def upload():
 
 
 @app.route("/download_excel", methods=["POST"])
+# PURPOSE: Converts supplied JSON rows into an Excel workbook and sends it as a download.
 def download_excel():
     payload = request.get_json() or {}
     rows = payload.get("rows") or []
