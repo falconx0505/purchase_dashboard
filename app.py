@@ -75,16 +75,9 @@ from flask import (
     redirect,
 )
 
-import pytesseract
-from PIL import Image
-from pdf2image import convert_from_bytes
 
-from google import genai
-from google.genai import types
 
-import api
 
-from anomalies_blueprint import anomalies_bp
 from auth import auth_bp
 
 from db_postgres import init_users_table
@@ -101,10 +94,7 @@ from db_encrypted_store import (
 
 VALID_CATEGORIES = {
     "multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code",
-    "itc_access_lwd", "itc_inactive_90", "itc_pwd_stale",
-    "itc_after_hours", "itc_failed_login", "itc_above_limit",
-    "hr_dup_bank", "hr_dup_pan_aadhaar", "hr_missing_ids",
-    "hr_missing_master", "hr_same_pan",
+    
 }
 #observation table fields
 ALL_FIELDS = [
@@ -120,12 +110,6 @@ ALL_FIELDS = [
     "ClosureDate", "ClosureReason", "FromDate", "ToDate",
     "CompanyID", "EmpId", "ReportNo",
 ]
-
-
-TESSERACT_PATH = shutil.which('tesseract') or r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-
-if TESSERACT_PATH and os.path.exists(TESSERACT_PATH):
-    pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 # ---------------------------------------------------------------------------
 # Null / NaN helpers (replaces pd.isna)
@@ -177,7 +161,6 @@ def row_is_completely_empty(row: dict) -> bool:
 #flask logic 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")#check if secret key exists
-app.register_blueprint(anomalies_bp)#organize Flask routes into separate modules
 app.register_blueprint(auth_bp)
 #initialise db tables 
 init_users_table()
@@ -191,17 +174,9 @@ app.config["TEMPLATES_AUTO_RELOAD"] = True
 DATA_PATH = os.path.join(os.path.dirname(__file__), "60rowdata.xlsx")
 DB_PATH = os.path.join(os.path.dirname(__file__), "data.db")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEN_MODEL = "gemini-2.5-flash"
-client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
-
 ALL_MONTHS = ["January", "February", "March", "April", "May", "June",
               "July", "August", "September", "October", "November", "December"]
 MONTH_ORDER = ALL_MONTHS
-PROMINENT_REGIONS = ["Bangalore", "Mumbai", "Delhi NCR", "Hyderabad",
-                     "Chennai", "Kolkata", "Pune", "Ahmedabad"]
-DEMO_AMOUNT_SCALE = 850
-BANKS = ["HDFC Bank", "ICICI Bank", "SBI", "Axis Bank", "Kotak Bank"]
 
 USE_COLUMNS = {
     "bill no", "store code", "store name", "ordering channel", "source", "region",
@@ -212,22 +187,6 @@ USE_COLUMNS = {
 }
 XML_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 RE_COL = re.compile(r"([A-Z]+)")
-
-
-# PURPOSE: Generates a demo purchase-order number.
-def rand_po():
-    return f"PO-{random.randint(1000, 9999)}"
-
-
-# PURPOSE: Generates a demo goods-receipt-note number.
-def rand_grn():
-    return f"GRN-{random.randint(100, 999)}"
-
-
-# PURPOSE: Selects a bank name from the configured demo bank list.
-def rand_bank():
-    return random.choice(BANKS)
-
 
 # PURPOSE: Trims and lowercases column names to make header matching consistent.
 def normalize_columns(columns):
@@ -633,7 +592,7 @@ def load_from_sqlite():
 
     companies = sorted({r.get("COMP_NM") for r in purchase if r.get("COMP_NM")})
     db_states = {r.get("COMP_STATE") for r in purchase if r.get("COMP_STATE") and r.get("COMP_STATE") != "Unknown"}
-    states = sorted(list(set(PROMINENT_REGIONS + list(db_states))))
+    states = sorted(list(db_states))
     products = sorted({r.get("PROD_NM") for r in purchase if r.get("PROD_NM")})
     customers = sorted({r.get("CUST_NM") for r in purchase if r.get("CUST_NM")})
 
@@ -861,9 +820,7 @@ def load_excel_data() -> dict:
     # Scale money columns
     money_cols = ["product cgst amount", "product sgst amount", "net sale", "gross sale",
                   "item price", "marketing discount amount", "loyalty discount amount"]
-    df = df.with_columns([
-        (pl.col(c) * DEMO_AMOUNT_SCALE).alias(c) for c in money_cols
-    ])
+
 
     # STEP: Parse dates and derive month/year labels for grouping and filtering.
     # Parse dates
@@ -945,7 +902,7 @@ def load_excel_data() -> dict:
 
     companies = sorted(df["COMP_NM"].drop_nulls().unique().to_list())
     excel_states = [s for s in df["COMP_STATE"].drop_nulls().unique().to_list() if s and s != "Unknown"]
-    states = sorted(list(set(PROMINENT_REGIONS + excel_states)))
+    states = sorted(excel_states)
     products = sorted(df["PROD_NM"].drop_nulls().unique().to_list())
     customers = sorted(df["CUST_NM"].drop_nulls().unique().to_list())
 
@@ -965,62 +922,8 @@ def load_excel_data() -> dict:
     grn_data = []
     bank_data = []
 
-    for idx, row in enumerate(invoice_agg.to_dicts()):
-        inv = safe_text(row["bill no"])
-        comp = safe_text(row["COMP_NM"])
-        cust = safe_text(row["CUST_NM"])
-        amt = round(float(row["INVOICE_AMT"] or 0), 2)
-        po_data.append({
-            "PO_NO": rand_po(), "INVOICE_NO": inv, "COMP_NM": comp,
-            "CUST_NM": cust, "AMT": amt,
-            "MONTH": safe_text(row["MONTH"]), "YEAR": int(row["YEAR"] or 0),
-        })
-        if idx % 5 != 0:
-            grn_data.append({
-                "GRN_NO": rand_grn(), "INVOICE_NO": inv, "COMP_NM": comp,
-                "CUST_NM": cust, "AMT": round(amt * random.uniform(0.95, 1.05), 2),
-            })
-        if idx % 4 != 0:
-            bank_data.append({
-                "BANK": rand_bank(), "INVOICE_NO": inv, "COMP_NM": comp,
-                "PAYMENT_DAYS": 15 + (idx * 7) % 90,
-                "AMT": round(amt * random.uniform(0.96, 1.04), 2),
-            })
-
-    orphan_grn_companies = companies[:3] if companies else ["Unknown Vendor"]
-    for n, comp in enumerate(orphan_grn_companies, start=1):
-        grn_data.append({
-            "GRN_NO": rand_grn(), "INVOICE_NO": f"ORPHAN-INV-{300 + n}",
-            "COMP_NM": comp, "CUST_NM": comp,
-            "AMT": round(random.uniform(20000, 280000), 2),
-        })
-
-    # STEP: Rank vendors by discount-to-invoice ratio and mark the top entries for review.
-    # --- blocked vendors ---
-    vendor_stats = (
-        df.group_by("COMP_NM").agg([
-            pl.col("DISCOUNT").sum().alias("DISCOUNT_SUM"),
-            pl.col("INVOICE_AMT").sum().alias("INVOICE_AMT_SUM"),
-        ])
-        .with_columns(
-            (pl.col("DISCOUNT_SUM") / pl.col("INVOICE_AMT_SUM").replace(0, None)).fill_null(0).alias("RATIO")
-        )
-        .sort("RATIO", descending=True)
-        .head(4)
-    )
-
     blocked_vendors = []
-    for row in vendor_stats.to_dicts():
-        comp = safe_text(row["COMP_NM"])
-        if not comp:
-            continue
-        inv_rows = df.filter(pl.col("COMP_NM") == comp)["bill no"]
-        invoice_no = safe_text(inv_rows[0]) if len(inv_rows) > 0 else ""
-        blocked_vendors.append({
-            "VENDOR": comp, "REASON": "High discount ratio / unusual pricing",
-            "INV_NO": invoice_no, "AMT": round(float(row["INVOICE_AMT_SUM"]), 2),
-        })
-
+    
     # STEP: Look for inconsistent tax rates, duplicate mappings, and missing/conflicting product codes.
     # --- hygiene checks ---
     multi_tax = []
@@ -1736,66 +1639,6 @@ def analyze():
         return jsonify({"report": response.text})
     except Exception as e:
         return jsonify({"error": f"Pipeline execution failure: {e}"}), 500
-
-
-# ── KYC / PAN verification ───────────────────────────────────────
-
-@app.route("/upload", methods=["POST"])
-# PURPOSE: Reads PAN values from an uploaded Excel file and calls the PAN KYC verification function for each value.
-def upload():
-    f = request.files.get("file")
-    if f is None:
-        return jsonify({"error": "No file uploaded"}), 400
-
-    try:
-        df = pl.read_excel(f, infer_schema_length=0)
-    except Exception:
-        return jsonify({"error": "Unable to read Excel file"}), 400
-
-    pan_col = None
-    for c in df.columns:
-        if c.lower() in ("pan", "pan_number", "pan no", "pan_no"):
-            pan_col = c
-            break
-    if pan_col is None:
-        pan_col = df.columns[0]
-
-    results = []
-    for pan in df[pan_col].drop_nulls().cast(pl.Utf8).to_list():
-        pan = pan.strip()
-        try:
-            resp = api.verify_pan_kyc(pan)
-            if isinstance(resp, dict):
-                data = resp.get("data") or resp.get("Data") or {}
-                if data and "pan" not in data:
-                    data["pan"] = pan
-                results.append(data if data else {"pan": pan, "error": "no data"})
-            else:
-                results.append({"pan": pan, "error": "no response"})
-        except Exception as e:
-            results.append({"pan": pan, "error": str(e)})
-
-    return jsonify({"results": results})
-
-
-@app.route("/download_excel", methods=["POST"])
-# PURPOSE: Converts supplied JSON rows into an Excel workbook and sends it as a download.
-def download_excel():
-    payload = request.get_json() or {}
-    rows = payload.get("rows") or []
-    if not rows:
-        return jsonify({"error": "no rows provided"}), 400
-
-    output = io.BytesIO()
-    pl.DataFrame(rows).write_excel(output)
-    output.seek(0)
-    return send_file(
-        output,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        as_attachment=True,
-        download_name="pan_results.xlsx",
-    )
-
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
