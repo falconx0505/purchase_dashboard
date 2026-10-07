@@ -217,8 +217,7 @@ const HR_TABLES = [
 // ─────────────────────────────────────────────────────────────
 // LOAN REPAYMENT SCHEDULE  (demo)
 // Each row: [Person, Month, Opening, Interest, Principal, EMI, Closing, Rate, OtherCharge?]
-// ─────────────────────────────────────────────────────────────
-
+// emi checking page
 const LOAN_TYPE_OPTIONS = ['Home Loan', 'Vehicle Loan', 'Personal Loan', 'Business Loan', 'Education Loan'];
 const LOAN_LOCATION_OPTIONS = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Pune'];
 
