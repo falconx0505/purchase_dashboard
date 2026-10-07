@@ -25,6 +25,9 @@ const PIE_COLORS = [
   '#C22829', '#F37A04', '#F1A646', '#5388B7', '#6C0E12',
   '#2f8f5b', '#857a74', '#B45309', '#1D4ED8', '#7C3AED',
 ];
+const FORM_CONFIG = {
+  percentageCompletion: { min: 0, max: 100, step: 0.01 },
+};
 // Pages where the Genie floating button/chat should be visible.
 
 const GENIE_PAGES = ['home', 'hygiene', 'po-summary'];
@@ -1378,8 +1381,8 @@ function showObsForm(data = null) {
         <div class="obs-field"><span class="obs-field-label">Target Date</span><input type="date" name="TargetDate" class="remark-input" value="${item.TargetDate || ''}"></div>
         <div class="obs-field"><span class="obs-field-label">Revised Target Date</span><input type="date" name="RevisedTargetDate" class="remark-input" value="${item.RevisedTargetDate || ''}"></div>
         <div class="obs-field obs-field-checkbox"><input type="checkbox" name="TargetDateNotApplicable" id="obs-tdna" ${item.TargetDateNotApplicable === 'true' || item.TargetDateNotApplicable === true ? 'checked' : ''}><label for="obs-tdna" class="obs-field-label" style="margin:0">Target Date Not Applicable</label></div>
-        <div class="obs-field"><span class="obs-field-label">Percentage Completion (Auditee)</span><input type="number" name="PercentageCompletedAuditee" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditee || ''}"></div>
-        <div class="obs-field"><span class="obs-field-label">Percentage Completion (Auditor)</span><input type="number" name="PercentageCompletedAuditor" class="remark-input" min="0" max="100" step="0.01" value="${item.PercentageCompletedAuditor || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Percentage Completion (Auditee)</span><input type="number" name="PercentageCompletedAuditee" class="remark-input" min="${FORM_CONFIG.percentageCompletion.min}" max="${FORM_CONFIG.percentageCompletion.max}" step="${FORM_CONFIG.percentageCompletion.step}" value="${item.PercentageCompletedAuditee || ''}"></div>
+        <div class="obs-field"><span class="obs-field-label">Percentage Completion (Auditor)</span><input type="number" name="PercentageCompletedAuditor" class="remark-input" min="${FORM_CONFIG.percentageCompletion.min}" max="${FORM_CONFIG.percentageCompletion.max}" step="${FORM_CONFIG.percentageCompletion.step}" value="${item.PercentageCompletedAuditor || ''}"></div>
         <div class="obs-field"><span class="obs-field-label">Closure Date</span><input type="date" name="ClosureDate" class="remark-input" value="${item.ClosureDate || ''}"></div>
         <div class="obs-field"><span class="obs-field-label">Closure Reason</span><textarea name="ClosureReason" class="remark-input" rows="2">${esc(item.ClosureReason || '')}</textarea></div>
       </div>
