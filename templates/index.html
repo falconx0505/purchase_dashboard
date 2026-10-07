@@ -77,7 +77,8 @@
             <circle cx="9" cy="21" r="1" />
             <circle cx="20" cy="21" r="1" />
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-          </svg></span><span class="cp-name">Purchase Hygiene</span><span class="cp-badge">14</span>
+          </svg></span><span class="cp-name">Purchase Hygiene</span><span class="cp-badge"
+          id="sidebar-hygiene-badge">—</span>
       </button>
     </nav>
 
@@ -214,15 +215,15 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td class="c num font-bold">2</td>
+                  <tr id="home-purchase-row">
+                    <td class="c num font-bold">1</td>
                     <td>
                       <button class="home-table-btn" type="button" onclick="goTo('welcome')">Purchase</button>
                     </td>
-                    <td class="c num font-bold">20</td>
-                    <td class="c num"><span class="tag flag">14</span></td>
-                    <td class="c num">9</td>
-                    <td class="c num"><span class="tag warn">5</span></td>
+                    <td class="c num font-bold" id="home-ctrl-count">—</td>
+                    <td class="c num" id="home-error-count"><span class="tag flag">—</span></td>
+                    <td class="c num" id="home-remarks-count">—</td>
+                    <td class="c num" id="home-pending-count"><span class="tag warn">—</span></td>
                   </tr>
                 </tbody>
               </table>
@@ -967,12 +968,12 @@
               </div>
             </div>
             <div>
-              <div class="section-label">Purchase vs Purchase Return (Trend)</div>
+              <div class="section-label">Purchase Amount (Monthly Trend)</div>
               <div class="card">
                 <div class="card-h">
                   <div class="grow">
-                    <div class="ttl">Purchase vs Return — Monthly</div>
-                    <div class="desc">Combo chart: purchase amount (bars) vs return amount (line)</div>
+                    <div class="ttl">Purchase Amount — Monthly</div>
+                    <div class="desc">Purchase invoice amount by month</div>
                   </div>
                 </div>
                 <div class="card-b">

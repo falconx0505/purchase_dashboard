@@ -1,4 +1,3 @@
-
 //  PURCHASE ICD — MAIN JS
 //  Navigation · Filters · Data · Tables · Charts · Observations
 
@@ -178,6 +177,8 @@ async function loadData() {
     if (!res.ok) throw new Error(`Data service returned ${res.status}`);
     RAW = await res.json();
     buildFilterUI();
+    HOME_MONTHLY_SPLIT = null; // reset so monthly split recalculates with real data
+    renderHomeCharts();
     renderCurrentPage(currentPage());
   } catch (error) {
     console.error('Unable to load dashboard data:', error);
@@ -728,6 +729,8 @@ function renderHygiene() {
       <td class="c"><span class="tag flag">Not in Master</span></td>
       ${renderRemarkCell(r)}
     </tr>`);
+  updateHomeTable();
+
 }
 
 function downloadHygieneExcel(category) {
@@ -1532,11 +1535,9 @@ function hexA(hex, alpha) {
   const b = parseInt(hex.slice(5, 7), 16);
   return `rgba(${r},${g},${b},${alpha})`;
 }
-
 loadData();
-// HOME PAGE loads first (it's the default active page, before any nav tab
-// is selected), so its charts are drawn straight away rather than waiting
-// on loadData()/renderCurrentPage() to route to it.
+// Home charts are redrawn after loadData() so they reflect real hygiene counts.
+// The initial draw below uses zeros; after RAW arrives the charts update.
 renderHomeCharts();
 
 // ─────────────────────────────────────────────────────────────
@@ -1546,11 +1547,42 @@ renderHomeCharts();
 // scraped from RAW) since the Home table itself is static markup.
 // ─────────────────────────────────────────────────────────────
 function homeErrorData() {
-  return [
-    { name: 'Purchase', errors: 14 },
-  ];
+  if (!window.hygieneFilteredData) return [{ name: 'Purchase', errors: 0 }];
+  const h = window.hygieneFilteredData;
+  const errors =
+    (h.multi_tax ? h.multi_tax.length : 0) +
+    (h.prod_gst ? h.prod_gst.length : 0) +
+    (h.dup_cust ? h.dup_cust.length : 0) +
+    (h.prod_name ? h.prod_name.length : 0) +
+    (h.prod_code ? h.prod_code.length : 0);
+  return [{ name: 'Purchase', errors }];
 }
+function updateHomeTable() {
+  if (!window.hygieneFilteredData) return;
+  const h = window.hygieneFilteredData;
+  const allIssues = [
+    ...(h.multi_tax || []),
+    ...(h.prod_gst || []),
+    ...(h.dup_cust || []),
+    ...(h.prod_name || []),
+    ...(h.prod_code || []),
+  ];
+  const total = allIssues.length;
+  const remarked = allIssues.filter(r => r.REMARK && r.REMARK.trim()).length;
+  const pending = total - remarked;
 
+  const errEl = document.getElementById('home-error-count');
+  const rmkEl = document.getElementById('home-remarks-count');
+  const penEl = document.getElementById('home-pending-count');
+  const ctrlEl = document.getElementById('home-ctrl-count');
+
+  if (errEl) errEl.innerHTML = `<span class="tag flag">${total}</span>`;
+  if (rmkEl) rmkEl.textContent = remarked;
+  if (penEl) penEl.innerHTML = `<span class="tag warn">${pending}</span>`;
+  if (ctrlEl) ctrlEl.textContent = total > 0 ? total : '—';
+  const sidebarBadge = document.getElementById('sidebar-hygiene-badge');
+  if (sidebarBadge) sidebarBadge.textContent = total > 0 ? total : '0';
+}
 function renderHomeCharts() {
   const data = homeErrorData();
   renderHomePieChart(data);
@@ -1658,7 +1690,11 @@ function renderHomeMonthlyStackedChart(data) {
 // instead of reshuffling every time Home is opened.
 function getHomeMonthlySplit(data) {
   if (HOME_MONTHLY_SPLIT) return HOME_MONTHLY_SPLIT;
-  const months = ['April', 'May', 'June', 'July', 'August'];
+  const rawMonths = (RAW && RAW.months && RAW.months.length) ? RAW.months : ['June'];
+  const presentMonths = rawMonths.filter(m =>
+    RAW && RAW.purchase_raw && RAW.purchase_raw.some(r => r.MONTH === m)
+  );
+  const months = presentMonths.length ? presentMonths : rawMonths.slice(0, 1);
   HOME_MONTHLY_SPLIT = {
     months,
     series: data.map(d => ({ name: d.name, values: splitTotalAcrossParts(d.errors, months.length) }))

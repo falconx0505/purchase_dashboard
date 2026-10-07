@@ -49,7 +49,6 @@ print("DEBUG PG_PASSWORD EXISTS:", bool(os.getenv("PG_PASSWORD")))
 # ============================================================
 
 import math
-import random
 import re
 import sqlite3
 import tempfile
@@ -158,8 +157,6 @@ app.register_blueprint(auth_bp)
 #initialise db tables 
 init_users_table()
 init_encrypted_tables()
-
-random.seed(42)
 
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 0
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -310,14 +307,21 @@ def load_from_sqlite():
 
     with get_db_connection() as conn:
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        required_tables = {"po", "grn", "bank", "blocked_vendors", "gst_check", "disc_check"}
-        if not required_tables.issubset(tables):
+        if "gst_check" not in tables or "disc_check" not in tables:
             return None
 
-        po = _sqlite_table_to_records(conn, "po")
-        grn = _sqlite_table_to_records(conn, "grn")
-        bank = _sqlite_table_to_records(conn, "bank")
-        blocked_vendors = _sqlite_table_to_records(conn, "blocked_vendors")
+        # Wipe any previously saved synthetic PO/GRN/bank/blocked_vendor rows so
+        # stale demo data never shows up even if data.db already existed.
+        for stale_table in ("po", "grn", "bank", "blocked_vendors"):
+            if stale_table in tables:
+                conn.execute(f"DELETE FROM {stale_table}")
+        conn.commit()
+
+        # PO / GRN / bank have no real source — return empty until ERP data is connected.
+        po = []
+        grn = []
+        bank = []
+        blocked_vendors = []
         gst_check = _sqlite_table_to_records(conn, "gst_check")
         disc_check = _sqlite_table_to_records(conn, "disc_check")
 
@@ -637,22 +641,10 @@ def load_excel_data() -> dict:
     products = sorted(df["PROD_NM"].drop_nulls().unique().to_list())
     customers = sorted(df["CUST_NM"].drop_nulls().unique().to_list())
 
-    # STEP: Group rows by invoice and create illustrative PO, GRN, and bank-payment records.
-    # --- PO / GRN / Bank generation ---
-    invoice_agg = (
-        df.group_by("bill no").agg([
-            pl.col("COMP_NM").first(),
-            pl.col("CUST_NM").first(),
-            pl.col("INVOICE_AMT").sum(),
-            pl.col("MONTH").first(),
-            pl.col("YEAR").first(),
-        ])
-    )
-
+        # PO / GRN / bank data not available from Excel source — left empty until real ERP data is connected.
     po_data = []
     grn_data = []
     bank_data = []
-
     blocked_vendors = []
     
     # STEP: Look for inconsistent tax rates, duplicate mappings, and missing/conflicting product codes.
