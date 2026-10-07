@@ -71,17 +71,6 @@
             <line x1="6" y1="20" x2="6" y2="14" />
           </svg></span><span class="cp-name">Dashboard</span>
       </button>
-
-      <!-- ADD THIS BUTTON RIGHT HERE BELOW DASHBOARD -->
-      <button type="button" class="cp-item" data-page="audit-trail" onclick="navFromPanel('audit-trail')">
-        <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="8" y1="13" x2="16" y2="13" />
-            <line x1="8" y1="17" x2="16" y2="17" />
-          </svg></span><span class="cp-name">Audit Trail</span><span class="cp-badge">10</span>
-      </button>
       <button type="button" class="cp-item" data-page="welcome" onclick="navFromPanel('welcome')">
         <span class="cp-icon"><svg class="icn" viewBox="0 0 24 24" width="16" height="16" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -90,16 +79,6 @@
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
           </svg></span><span class="cp-name">Purchase Hygiene</span><span class="cp-badge">14</span>
       </button>
-
-      <!-- TOOLS Header -->
-
-      <!-- Data Extraction -->
-
-      <!-- KYC Tool -->
-
-      <!-- Anomalies Detection -->
-
-      <!-- Document Tampering Check -->
     </nav>
 
 
@@ -235,16 +214,6 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td class="c num font-bold">1</td>
-                    <td>
-                      <button class="home-table-btn" type="button" onclick="goTo('audit-trail')">Audit trial</button>
-                    </td>
-                    <td class="c num font-bold">3</td>
-                    <td class="c num"><span class="tag flag">10</span></td>
-                    <td class="c num">7</td>
-                    <td class="c num"><span class="tag warn">3</span></td>
-                  </tr>
                   <tr>
                     <td class="c num font-bold">2</td>
                     <td>
@@ -1041,53 +1010,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- AUDIT TRAIL PAGE: new dedicated page with grouped tables and filter controls. -->
-    <div class="page" id="page-audit-trail">
-      <button type="button" class="btn ghost sm" onclick="goTo('home')" style="margin-bottom: 16px;">← Back</button>
-      <div class="page-head">
-        <div class="eyebrow">Audit Trail</div>
-        <h1>Audit Trail</h1>
-        <p>Upload Excel-based audit data and review grouped records with working filters.</p>
-      </div>
-      <div class="stat-row">
-        <div class="stat-box" style="--accent:var(--red)">
-          <div class="s-label">Records Loaded</div>
-          <div class="s-val">1,240</div>
-          <div class="s-sub">From uploaded workbook</div>
-        </div>
-        <div class="stat-box" style="--accent:var(--orange)">
-          <div class="s-label">High Risk Entries</div>
-          <div class="s-val">68</div>
-          <div class="s-sub">Flagged for review</div>
-        </div>
-        <div class="stat-box" style="--accent:var(--warn)">
-          <div class="s-label">Departments Covered</div>
-          <div class="s-val">9</div>
-          <div class="s-sub">Across all processes</div>
-        </div>
-        <div class="stat-box" style="--accent:var(--ok)">
-          <div class="s-label">Controls Monitored</div>
-          <div class="s-val">24</div>
-          <div class="s-sub">Process-control combinations</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-h">
-          <div class="grow">
-            <div class="ttl">Filterable Audit Trail</div>
-            <div class="desc">Use the controls below to narrow the grouped audit trail data.</div>
-          </div>
-        </div>
-        <div class="card-b">
-          <div id="audit-trail-filters"
-            style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px;">
-          </div>
-          <div id="audit-trail-summary" style="margin-bottom:12px;"></div>
-          <div id="audit-trail-tables"></div>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
-/* ═══════════════════════════════════════════════════════════════
-   PURCHASE ICD — MAIN JS
-   Navigation · Filters · Data · Tables · Charts · Observations
-═══════════════════════════════════════════════════════════════ */
+
+//  PURCHASE ICD — MAIN JS
+//  Navigation · Filters · Data · Tables · Charts · Observations
+
 (async function loadCurrentUser() {
   const res = await fetch('/api/me');
   const data = await res.json();
@@ -26,10 +26,7 @@ const PIE_COLORS = [
   '#2f8f5b', '#857a74', '#B45309', '#1D4ED8', '#7C3AED',
 ];
 // Pages where the Genie floating button/chat should be visible.
-// Declared here (top of file, with the other constants) rather than
-// down by updateGenieVisibility(), because that function gets called
-// immediately below on page load — a `const` declared further down
-// would still be in its temporal dead zone at that point and throw.
+
 const GENIE_PAGES = ['home', 'hygiene', 'po-summary'];
 
 document.body.classList.add('on-home');
@@ -55,10 +52,6 @@ const BREADCRUMB_LABELS = {
   'upload-observation': 'Observation import'
 };
 // Cached monthly split for the Home "Monthly Error Trend" chart — declared
-// up top (not down near the chart function) because renderHomeCharts() is
-// invoked immediately below on page load, before the script has finished
-// running top-to-bottom. A `let` declared further down would still be in
-// its temporal dead zone at that point and throw a ReferenceError.
 let HOME_MONTHLY_SPLIT = null;
 
 const CHARTS = {};
@@ -68,8 +61,6 @@ function destroyChart(id) {
 
 // ── Genie AI Assistant: floating button + chat popup ─────────
 // Shown only on GENIE_PAGES (declared up top); goTo() calls
-// updateGenieVisibility() on every navigation so this stays in sync
-// without duplicating the button per page.
 function updateGenieVisibility(pageId) {
   const fab = document.getElementById('genie-fab');
 
@@ -112,7 +103,6 @@ function goTo(pageId) {
   if (tab) tab.classList.add('active');
   if (cpItem) cpItem.classList.add('active');
   updateBreadcrumb(pageId);
-  // 'it-controls', 'control-inventory', 'hr-payroll', 'loan-repayment' and 'audit-trail' are Home-only pages
   // (opened via the Home screen buttons, not the top-nav), so hide the
   // top-nav on all of them, same as Home.
   document.body.classList.toggle('on-home', pageId === 'home' || pageId === 'audit-trail');
@@ -375,184 +365,11 @@ function removeFilter(dim, val) {
   renderCurrentPage(currentPage());
 }
 
-async function loadAuditTrailData() {
-  try {
-    const res = await fetch('/api/audit-trail', { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Audit trail service returned ${res.status}`);
-    const payload = await res.json();
-    window.auditTrailData = payload;
-    window.auditTrailFilters = {};
-    renderAuditTrailPage();
-  } catch (error) {
-    console.error('Unable to load audit trail data:', error);
-    const status = document.getElementById('audit-trail-upload-status');
-    if (status) status.textContent = 'Unable to load audit trail data.';
-  }
-}
-
-function renderAuditTrailPage() {
-  // AUDIT TRAIL PAGE: render grouped tables and filter dropdowns from the backend payload.
-  const payload = window.auditTrailData || { rows: [], filters: {}, summary: {} };
-  const filtersHost = document.getElementById('audit-trail-filters');
-  const summaryHost = document.getElementById('audit-trail-summary');
-  const tablesHost = document.getElementById('audit-trail-tables');
-  if (!filtersHost || !summaryHost || !tablesHost) return;
-
-  const allRows = payload.rows || [];
-  const filterState = window.auditTrailFilters || {};
-
-  const ALL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const ALL_QUANTITIES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-
-  const years = payload.filters?.year?.length ? payload.filters.year : Array.from(new Set(allRows.map(r => r.Year).filter(Boolean))).sort();
-  const quantities = ALL_QUANTITIES;
-  const monthNames = ALL_MONTHS;
-  const vendors = Array.from(new Set(allRows.map(r => r.VendorName).filter(Boolean))).sort();
-
-  const filterFields = [
-    { key: 'year', label: 'Year', values: years, rowKey: 'Year' },
-    { key: 'quantity', label: 'Quantity', values: quantities, rowKey: 'Quantity' },
-    { key: 'monthName', label: 'Month Name', values: monthNames, rowKey: 'MonthName' },
-    { key: 'vendorName', label: 'Vendor Name', values: vendors, rowKey: 'VendorName' },
-  ];
-
-  filtersHost.innerHTML = filterFields.map(field => `
-    <div>
-      <label style="display:block;font-size:12px;margin-bottom:6px;color:var(--muted)">${esc(field.label)}</label>
-      <select class="remark-input" style="width:100%" onchange="setAuditTrailFilter('${field.key}', this.value)">
-        <option value="">All ${esc(field.label)}s</option>
-        ${field.values.map(v => `<option value="${esc(v)}" ${filterState[field.key] === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}
-      </select>
-    </div>`).join('');
-
-  const filteredRows = allRows.filter(row => {
-    for (const field of filterFields) {
-      const selected = filterState[field.key];
-      if (selected && String(row[field.rowKey] || '') !== String(selected)) {
-        return false;
-      }
-    }
-    return true;
-  });
-
-  const activeFilterCount = Object.keys(filterState).length;
-  summaryHost.innerHTML = `
-    <div class="filter-strip">
-      <span class="filter-strip-label">Summary:</span>
-      <span class="fchip">Matching Rows: ${filteredRows.length} / ${allRows.length}</span>
-      ${activeFilterCount > 0 ? `<span class="fchip" style="background:var(--peach)">Active Filters: ${activeFilterCount}</span>` : ''}
-      <button class="btn ghost sm" onclick="resetAuditTrailFilters()">Clear filters</button>
-    </div>`;
-
-  // 1. Dynamic Vendor Summary Table
-  const vendorGroups = {};
-  filteredRows.forEach(row => {
-    const vName = String(row.VendorName || '').trim();
-    if (!vName) return;
-    if (!vendorGroups[vName]) {
-      vendorGroups[vName] = { vendorName: vName, banklCount: 0, financialServicesOutsourcingCount: 0, panNumberCount: 0, servicesCount: 0, grandTotal: 0 };
-    }
-    const fc = String(row.FieldChanged || '').toLowerCase().trim();
-    if (fc === 'bankl') vendorGroups[vName].banklCount++;
-    else if (fc === 'financial services outsourcing') vendorGroups[vName].financialServicesOutsourcingCount++;
-    else if (fc === 'pan number') vendorGroups[vName].panNumberCount++;
-    else if (fc === 'services') vendorGroups[vName].servicesCount++;
-    vendorGroups[vName].grandTotal++;
-  });
-
-  const vendorRowsHtml = Object.keys(vendorGroups).sort().map(k => vendorGroups[k]).map(row => `
-    <tr>
-      <td style="font-weight:600">${esc(row.vendorName)}</td>
-      <td>${esc(row.banklCount)}</td>
-      <td>${esc(row.financialServicesOutsourcingCount)}</td>
-      <td>${esc(row.panNumberCount)}</td>
-      <td>${esc(row.servicesCount)}</td>
-      <td style="font-weight:600">${esc(row.grandTotal)}</td>
-    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--muted)">No records match selected filters.</td></tr>';
-
-  // 2. Dynamic Field Description Table (Replaces Field Risk Summary)
-  const fieldDescGroups = {};
-  filteredRows.forEach(row => {
-    let desc = String(row.FieldDescription || '').trim();
-    if (!desc || desc === 'Unspecified') {
-      desc = String(row.FieldChanged || '').trim() || 'Unspecified';
-    }
-    if (!fieldDescGroups[desc]) {
-      fieldDescGroups[desc] = { fieldDescription: desc, highRiskCount: 0, lowRiskCount: 0, grandTotal: 0 };
-    }
-    const r = String(row.Risk || '').toLowerCase().trim();
-    if (r === 'high') {
-      fieldDescGroups[desc].highRiskCount++;
-    } else {
-      fieldDescGroups[desc].lowRiskCount++;
-    }
-    fieldDescGroups[desc].grandTotal++;
-  });
-
-  const fieldDescRowsHtml = Object.keys(fieldDescGroups).sort().map(k => fieldDescGroups[k]).map(row => `
-    <tr>
-      <td style="font-weight:600">${esc(row.fieldDescription)}</td>
-      <td><span class="tag ${row.highRiskCount > 0 ? 'flag' : 'ok'}">${esc(row.highRiskCount)}</span></td>
-      <td>${esc(row.lowRiskCount)}</td>
-      <td style="font-weight:600">${esc(row.grandTotal)}</td>
-    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--muted)">No records match selected filters.</td></tr>';
-
-  // 3. Detailed Audit Log Table
-  const detailRowsHtml = filteredRows.map(row => `
-    <tr>
-      <td>${esc(row.VendorNo || '—')}</td>
-      <td><strong>${esc(row.VendorName || '—')}</strong></td>
-      <td>${esc(row.FieldChanged || '—')}</td>
-      <td>${esc(row.FieldDescription || '—')}</td>
-      <td><span class="tag ${row.Indicator === 'Deleted' ? 'flag' : row.Indicator === 'Inserted' ? 'ok' : ''}">${esc(row.Indicator || '—')}</span></td>
-      <td>${esc(row.OldValue || '—')}</td>
-      <td>${esc(row.NewValue || '—')}</td>
-      <td>${esc(row.ChangedBy || '—')}</td>
-      <td><span class="tag ${String(row.Risk || '').toLowerCase() === 'high' ? 'flag' : 'ok'}">${esc(row.Risk || '—')}</span></td>
-      <td>${esc(row.Year || '—')}</td>
-      <td>${esc(row.Quantity || '—')}</td>
-      <td>${esc(row.MonthName || '—')}</td>
-    </tr>`).join('') || '<tr><td colspan="12" style="text-align:center;color:var(--muted)">No records match selected filters.</td></tr>';
-
-  tablesHost.innerHTML = `
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-h"><div class="grow"><div class="ttl">Vendor Summary</div><div class="desc">Vendor-wise change counts (BANKL, Financial Services Outsourcing, PAN Number, Services) based on active filters</div></div></div>
-      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl">
-        <thead><tr><th>Vendor</th><th>BANKL</th><th>Financial Services Outsourcing</th><th>PAN Number</th><th>Services</th><th>Grand Total</th></tr></thead>
-        <tbody>${vendorRowsHtml}</tbody>
-      </table></div></div>
-    </div>
-    <div class="card" style="margin-bottom:16px;">
-      <div class="card-h"><div class="grow"><div class="ttl">Field Description Summary</div><div class="desc">Summary breakdown by Field Description with High/Low risk breakdown based on active filters</div></div></div>
-      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl">
-        <thead><tr><th>Field Description</th><th>High Risk</th><th>Low/Medium Risk</th><th>Grand Total</th></tr></thead>
-        <tbody>${fieldDescRowsHtml}</tbody>
-      </table></div></div>
-    </div>
-    <div class="card">
-      <div class="card-h"><div class="grow"><div class="ttl">Detailed Audit Trail Log</div><div class="desc">Individual audit record details matching active filters </div></div></div>
-      <div class="card-b no-pad"><div class="tbl-wrap-full"><table class="tbl" style="white-space:nowrap">
-        <thead><tr><th>Vendor No</th><th>Vendor Name</th><th>Field Changed</th><th>Field Description</th><th>Indicator</th><th>Old Value</th><th>New Value</th><th>Changed By</th><th>Risk</th><th>Year</th><th>Qty</th><th>Month</th></tr></thead>
-        <tbody>${detailRowsHtml}</tbody>
-      </table></div></div>
-    </div>`;
-}
-
 function titleCaseKey(key) {
   const map = { year: 'Year', quantity: 'Quantity', monthName: 'MonthName' };
   return map[key] || key;
 }
 
-function setAuditTrailFilter(key, value) {
-  window.auditTrailFilters = window.auditTrailFilters || {};
-  if (value) window.auditTrailFilters[key] = value; else delete window.auditTrailFilters[key];
-  renderAuditTrailPage();
-}
-
-function resetAuditTrailFilters() {
-  window.auditTrailFilters = {};
-  renderAuditTrailPage();
-}
 
 function renderCurrentPage(pageId) {
 
@@ -571,7 +388,6 @@ function renderCurrentPage(pageId) {
     case 'purchase': renderPurchase(); break;
     case 'ai-dashboard': renderAiDashboard(); break;
     case 'formula': renderFormula(); break;
-    case 'audit-trail': (async () => { await loadAuditTrailData(); })(); break;
     case 'addition': break;
     case 'it-controls': renderItControls(); break; // unreachable (handled above), kept for safety
     case 'hr-payroll': renderHrPayroll(); break; // unreachable (handled above), kept for safety
@@ -579,102 +395,12 @@ function renderCurrentPage(pageId) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
 // DATA EXTRACTION PAGE
 // Loads HTML from templates/pages/data_extraction.html and inserts
-// it into the #page-data-extraction container
-// ─────────────────────────────────────────────────────────────
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-
-
-
-// ═════════════════════════════════════════════════════════════
-// PO SPLIT MODULE — fully hardcoded demo data (no RAW / backend
-// dependency, same pattern as IT_TABLES / HR_TABLES above). Three
-// tables: same-vendor bill splitting, unit-price variance, and a
-// 5-year vendor purchase trend. Same 6 vendors reused across all
-// three so the page tells one consistent story.
-// ─────────────────────────────────────────────────────────────
-const PO_SPLIT_BILLS = [
-  { vendor: 'Om Sai Distributors', billNo: 'OSD/INV/1042', amount: 142000 },
-  { vendor: 'Om Sai Distributors', billNo: 'OSD/INV/1043', amount: 138500 },
-  { vendor: 'Sunrise Traders Pvt Ltd', billNo: 'STPL/SB-887', amount: 1560000 },
-  { vendor: 'Sunrise Traders Pvt Ltd', billNo: 'STPL/SB-888', amount: 1545000 },
-  { vendor: 'Metro Industrial Supplies', billNo: 'MIS/2210', amount: 105750 },
-  { vendor: 'Metro Industrial Supplies', billNo: 'MIS/2211', amount: 112300 },
-  { vendor: 'Krishna Enterprises', billNo: 'KE/0451', amount: 1620000 },
-  { vendor: 'Krishna Enterprises', billNo: 'KE/0452', amount: 1590500 },
-  { vendor: 'Vardhman Packaging Co', billNo: 'VPC/778', amount: 108400 },
-  { vendor: 'Vardhman Packaging Co', billNo: 'VPC/779', amount: 104900 },
-  { vendor: 'Shreeji Logistics Pvt Ltd', billNo: 'SL/3390', amount: 1510000 },
-  { vendor: 'Shreeji Logistics Pvt Ltd', billNo: 'SL/3391', amount: 1525600 },
-];
-
-const PO_SPLIT_VARIANCE = [
-  { vendor: 'Om Sai Distributors', product: 'Steel Rods (12mm)', max: 690.00, min: 220.00, avg: 455.00, count: 24 },
-  { vendor: 'Sunrise Traders Pvt Ltd', product: 'Packaging Film', max: 960.00, min: 340.00, avg: 650.00, count: 31 },
-  { vendor: 'Metro Industrial Supplies', product: 'Corrugated Boxes', max: 710.00, min: 250.00, avg: 480.00, count: 18 },
-  { vendor: 'Krishna Enterprises', product: 'Industrial Lubricant', max: 890.00, min: 610.00, avg: 750.00, count: 12 },
-  { vendor: 'Vardhman Packaging Co', product: 'Cotton Yarn', max: 315.00, min: 260.00, avg: 287.50, count: 27 },
-  { vendor: 'Shreeji Logistics Pvt Ltd', product: 'PVC Pipes', max: 780.00, min: 220.00, avg: 500.00, count: 15 },
-  { vendor: 'Om Sai Distributors', product: 'Adhesive Tape', max: 640.00, min: 210.00, avg: 425.00, count: 40 },
-  { vendor: 'Metro Industrial Supplies', product: 'Printing Ink', max: 520.00, min: 410.00, avg: 465.00, count: 9 },
-];
-
-const PO_SPLIT_TREND = [
-  { vendor: 'Om Sai Distributors', values: [1820000, 2250000, 2780000, 3410000, 4160000] },          // increasing
-  { vendor: 'Sunrise Traders Pvt Ltd', values: [5240000, 4790000, 4120000, 3560000, 2980000] },      // decreasing
-  { vendor: 'Metro Industrial Supplies', values: [3870000, 3320000, 2950000, 2410000, 1960000] },    // decreasing
-  { vendor: 'Krishna Enterprises', values: [2100000, 2640000, 3390000, 4020000, 4870000] },          // increasing
-  { vendor: 'Vardhman Packaging Co', values: [4530000, 3980000, 3460000, 2820000, 2290000] },        // decreasing
-  { vendor: 'Shreeji Logistics Pvt Ltd', values: [1560000, 1930000, 2480000, 3150000, 3840000] },    // increasing
-];
-
-function renderPoSplit() {
-  // NOTE: use fillTable() (targets "#id tbody", not the <table> itself) —
-  // setting innerHTML directly on the <table> element wipes out <thead>,
-  // which is why the column headers went missing before this fix.
-
-  // Group bill-split rows by vendor: one row per vendor, bill numbers and
-  // their matching amounts listed comma-separated in the same order.
-  const billsByVendor = [];
-  PO_SPLIT_BILLS.forEach(r => {
-    let entry = billsByVendor.find(v => v.vendor === r.vendor);
-    if (!entry) { entry = { vendor: r.vendor, bills: [] }; billsByVendor.push(entry); }
-    entry.bills.push(r);
-  });
-  fillTable('tbl-po-split-bills', billsByVendor, r => `
-      <tr>
-        <td class="grp">${esc(r.vendor)}</td>
-        <td>${r.bills.map(b => esc(b.billNo)).join(', ')}</td>
-        <td class="r">${fmtINRk(r.bills.reduce((sum, b) => sum + b.amount, 0))}</td>
-      </tr>`);
-
-  fillTable('tbl-po-split-variance', PO_SPLIT_VARIANCE, r => `
-      <tr>
-        <td class="grp">${esc(r.vendor)}</td>
-        <td>${esc(r.product)}</td>
-        <td class="r">₹${r.max.toFixed(2)}</td>
-        <td class="r">₹${r.min.toFixed(2)}</td>
-        <td class="r">₹${r.avg.toFixed(2)}</td>
-        <td class="c">${r.count}</td>
-      </tr>`);
-
-  fillTable('tbl-po-split-trend', PO_SPLIT_TREND, r => {
-    const rising = r.values[r.values.length - 1] > r.values[0];
-    return `
-      <tr class="${rising ? 'row-up' : 'row-down'}">
-        <td class="grp">${esc(r.vendor)}</td>
-        ${r.values.map(v => `<td class="r">${fmtINRk(v)}</td>`).join('')}
-      </tr>`;
-  });
-}
-// ═════════════════════════════════════════════════════════════
-// END PO SPLIT MODULE
-// ═════════════════════════════════════════════════════════════
 
 function renderWelcome() {
   const modules = [
@@ -1991,20 +1717,7 @@ function generateCardHtml(t) {
     </div>`;
 }
 
-// ═════════════════════════════════════════════════════════════
 // MODULE VISUALIZATION WIDGETS
-// Three small cards reused on IT Controls, EMI Checking, and KYC
-// Checks: a weekly review-trend bar, an exception-aging split, and
-// a classification-mix donut. The category breakdown always comes
-// from each page's real data (per-category employee/row counts, or
-// real bank-vs-calculation mismatch counts for EMI) — see
-// renderItControlsCharts / renderEmiCheckingCharts / renderKycCharts
-// below. There's no real weekly log to draw the trend/aging split
-// from, so those reuse the same "random split that always sums back
-// to the real total" trick as the Home page's monthly chart
-// (splitTotalAcrossParts), cached per page so the numbers stay put
-// across re-renders instead of reshuffling every time.
-// ═════════════════════════════════════════════════════════════
 
 const MODULE_VIS_SPLIT_CACHE = {};
 

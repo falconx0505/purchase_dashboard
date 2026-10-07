@@ -76,8 +76,6 @@ from flask import (
 )
 
 
-
-
 from auth import auth_bp
 
 from db_postgres import init_users_table
@@ -111,9 +109,7 @@ ALL_FIELDS = [
     "CompanyID", "EmpId", "ReportNo",
 ]
 
-# ---------------------------------------------------------------------------
 # Null / NaN helpers (replaces pd.isna)
-# ---------------------------------------------------------------------------
 
 # PURPOSE: Checks whether a value should be treated as missing, including None, NaN, and blank-like strings.
 def _is_na(value) -> bool:
@@ -154,10 +150,7 @@ def make_entity_key(title, table_name, row_num):
 def row_is_completely_empty(row: dict) -> bool:
     return all(safe_value(row.get(field)) == "" for field in ALL_FIELDS)
 
-
-# ---------------------------------------------------------------------------
 # App setup
-# ---------------------------------------------------------------------------
 #flask logic 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "dev-secret-change-me")#check if secret key exists
@@ -192,10 +185,7 @@ RE_COL = re.compile(r"([A-Z]+)")
 def normalize_columns(columns):
     return [str(c).strip().lower() for c in columns]
 
-
-# ---------------------------------------------------------------------------
 # SQLite helpers
-# ---------------------------------------------------------------------------
 #add missing columns to an existing audit_trail_records table
 # PURPOSE: Checks the audit-trail table and adds any expected columns that are missing.
 def ensure_audit_trail_schema(conn):
@@ -270,10 +260,7 @@ def get_db_connection():
     init_db_schema(conn)
     return conn
 
-
-# ---------------------------------------------------------------------------
 # Observation helpers
-# ---------------------------------------------------------------------------
 
 # PURPOSE: Matches uploaded observation headers to the standard field names, ignoring punctuation and case.
 def normalize_observation_headers(df: pl.DataFrame) -> pl.DataFrame:
@@ -287,262 +274,6 @@ def normalize_observation_headers(df: pl.DataFrame) -> pl.DataFrame:
         df = df.rename(rename_map)
     return df
 
-
-# ---------------------------------------------------------------------------
-# Audit trail helpers
-# ---------------------------------------------------------------------------
-
-AUDIT_TRAIL_ALIASES = {
-    "process": "process", "module": "process", "category": "process",
-    "control": "control", "controlname": "control", "controlid": "control",
-    "status": "status", "statusname": "status",
-    "owner": "owner", "assignedto": "owner", "responsibleowner": "owner",
-    "department": "department", "team": "department",
-    "remarks": "remarks", "comments": "remarks", "notes": "remarks",
-}
-
-
-# PURPOSE: Removes punctuation and case differences from an audit-trail column name.
-def normalize_audit_header(name: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "", str(name).strip().lower())
-
-
-# PURPOSE: Maps one audit-trail row into the dashboard’s standard field names and fills unavailable values.
-def normalize_audit_row(row: dict) -> dict:
-    normalized = {}
-    for key, value in row.items():
-        normalized_key = normalize_audit_header(key)
-        if normalized_key in AUDIT_TRAIL_ALIASES:
-            normalized[AUDIT_TRAIL_ALIASES[normalized_key]] = safe_value(value)
-
-    if "process" not in normalized:
-        normalized["process"] = safe_value(row.get("Vendor Name")) or safe_value(row.get("Vendor No")) or "Unspecified"
-    if "control" not in normalized:
-        normalized["control"] = safe_value(row.get("Field Changed")) or safe_value(row.get("Field Description")) or "Unspecified"
-    if "status" not in normalized:
-        normalized["status"] = safe_value(row.get("Indicator")) or "Unspecified"
-    if "owner" not in normalized:
-        normalized["owner"] = safe_value(row.get("Changed By")) or "Unspecified"
-    if "department" not in normalized:
-        normalized["department"] = safe_value(row.get("Risk")) or "Unspecified"
-    if "remarks" not in normalized:
-        normalized["remarks"] = safe_value(row.get("Old Value")) + " -> " + safe_value(row.get("New Value"))
-
-    normalized.setdefault("fielddescription", safe_value(row.get("Field Description")) or safe_value(row.get("FieldDescription")) or "Unspecified")
-    normalized.setdefault("vendorno", safe_value(row.get("Vendor No")) or safe_value(row.get("VendorNo")) or "Unspecified")
-
-    v_raw = safe_value(row.get("Vendor Name")) or safe_value(row.get("VendorName")) or "Unspecified"
-    if v_raw.lower() == "axis bank":
-        normalized.setdefault("vendorname", "Axis Bank")
-    elif v_raw.lower() == "qatar bank":
-        normalized.setdefault("vendorname", "Qatar Bank")
-    elif v_raw.lower() == "hdfc bank limited":
-        normalized.setdefault("vendorname", "HDFC Bank Limited")
-    elif v_raw and v_raw != "Unspecified":
-        normalized.setdefault("vendorname", v_raw.title())
-    else:
-        normalized.setdefault("vendorname", "Unspecified")
-
-    normalized.setdefault("fieldchanged", safe_value(row.get("Field Changed")) or safe_value(row.get("FieldChanged")) or "Unspecified")
-    normalized.setdefault("indicator", safe_value(row.get("Indicator")) or "Unspecified")
-    normalized.setdefault("oldvalue", safe_value(row.get("Old Value")) or "Unspecified")
-    normalized.setdefault("newvalue", safe_value(row.get("New Value")) or "Unspecified")
-    normalized.setdefault("changedby", safe_value(row.get("Changed By")) or "Unspecified")
-    normalized.setdefault("risk", safe_value(row.get("Risk")) or "Unspecified")
-    normalized.setdefault("year", safe_value(row.get("Year")) or safe_value(row.get("Month Year")) or "Unspecified")
-    normalized.setdefault("quantity", safe_value(row.get("Qty")) or safe_value(row.get("Quantity")) or "Unspecified")
-    normalized.setdefault("monthname", safe_value(row.get("Month Name")) or safe_value(row.get("MonthName")) or safe_value(row.get("Month")) or "Unspecified")
-
-    if not normalized:
-        return {}
-
-    return {
-        "Process": safe_value(normalized.get("process")) or "Unspecified",
-        "Control": safe_value(normalized.get("control")) or "Unspecified",
-        "Status": safe_value(normalized.get("status")) or "Unspecified",
-        "Owner": safe_value(normalized.get("owner")) or "Unspecified",
-        "Department": safe_value(normalized.get("department")) or "Unspecified",
-        "Remarks": safe_value(normalized.get("remarks")),
-        "VendorNo": safe_value(normalized.get("vendorno")) or "Unspecified",
-        "VendorName": safe_value(normalized.get("vendorname")) or "Unspecified",
-        "FieldChanged": safe_value(normalized.get("fieldchanged")) or "Unspecified",
-        "FieldDescription": safe_value(normalized.get("fielddescription")) or "Unspecified",
-        "Indicator": safe_value(normalized.get("indicator")) or "Unspecified",
-        "OldValue": safe_value(normalized.get("oldvalue")) or "Unspecified",
-        "NewValue": safe_value(normalized.get("newvalue")) or "Unspecified",
-        "ChangedBy": safe_value(normalized.get("changedby")) or "Unspecified",
-        "Risk": safe_value(normalized.get("risk")) or "Unspecified",
-        "Year": safe_value(normalized.get("year")) or "Unspecified",
-        "Quantity": safe_value(normalized.get("quantity")) or "Unspecified",
-        "MonthName": safe_value(normalized.get("monthname")) or "Unspecified",
-    }
-
-
-# PURPOSE: Normalizes each DataFrame row and collects usable audit-trail records.
-def parse_audit_trail_rows(df: pl.DataFrame) -> list[dict]:
-    rows = []
-    for row in df.to_dicts():
-        normalized = normalize_audit_row(row)
-        if normalized and any(normalized.values()):
-            rows.append(normalized)
-    return rows
-
-
-# PURPOSE: Replaces the stored audit-trail records with the supplied normalized rows and source filename.
-def save_audit_trail_rows(rows: list[dict], source_file: str):
-    with get_db_connection() as conn:
-        conn.execute("DELETE FROM audit_trail_records")
-        conn.executemany(
-            """INSERT INTO audit_trail_records
-               (process, control, status, owner, department, remarks,
-                vendor_no, vendor_name, field_changed, field_description,
-                indicator, old_value, new_value, changed_by, risk,
-                year, quantity, month_name, source_file)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-            [
-                (
-                    row.get("process", ""), row.get("control", ""),
-                    row.get("status", ""), row.get("owner", ""),
-                    row.get("department", ""), row.get("remarks", ""),
-                    row.get("VendorNo", ""), row.get("VendorName", ""),
-                    row.get("FieldChanged", ""), row.get("FieldDescription", ""),
-                    row.get("Indicator", ""), row.get("OldValue", ""),
-                    row.get("NewValue", ""), row.get("ChangedBy", ""),
-                    row.get("Risk", ""), row.get("Year", ""),
-                    row.get("Quantity", ""), row.get("MonthName", ""),
-                    source_file,
-                )
-                for row in rows
-            ],
-        )
-        conn.commit()
-
-
-# PURPOSE: Loads audit-trail data from the default workbook when available, otherwise reads saved SQLite records.
-def get_audit_trail_rows() -> list[dict]:
-    default_path = os.path.join(os.path.dirname(__file__), "audittrailmasterdata.xlsx")
-    if os.path.exists(default_path):
-        try:
-            df = pl.read_excel(default_path, infer_schema_length=0)
-            rows = parse_audit_trail_rows(df)
-            if rows:
-                save_audit_trail_rows(rows, os.path.basename(default_path))
-                return rows
-        except Exception as exc:
-            print("Error reading audit trail workbook:", exc)
-
-    try:
-        with get_db_connection() as conn:
-            cursor = conn.execute(
-                """SELECT process, control, status, owner, department, remarks,
-                          vendor_no, vendor_name, field_changed, field_description,
-                          indicator, old_value, new_value, changed_by, risk,
-                          year, quantity, month_name
-                   FROM audit_trail_records ORDER BY id"""
-            )
-            db_rows = cursor.fetchall()
-            if db_rows:
-                return [
-                    {
-                        "Process": r["process"] or "",
-                        "Control": r["control"] or "",
-                        "Status": r["status"] or "",
-                        "Owner": r["owner"] or "",
-                        "Department": r["department"] or "",
-                        "Remarks": r["remarks"] or "",
-                        "VendorNo": r["vendor_no"] or "",
-                        "VendorName": r["vendor_name"] or "",
-                        "FieldChanged": r["field_changed"] or "",
-                        "FieldDescription": r["field_description"] or "",
-                        "Indicator": r["indicator"] or "",
-                        "OldValue": r["old_value"] or "",
-                        "NewValue": r["new_value"] or "",
-                        "ChangedBy": r["changed_by"] or "",
-                        "Risk": r["risk"] or "",
-                        "Year": r["year"] or "",
-                        "Quantity": r["quantity"] or "",
-                        "MonthName": r["month_name"] or "",
-                    }
-                    for r in db_rows
-                ]
-    except Exception as exc:
-        print("Error reading audit trail rows:", exc)
-
-    return []
-
-
-# PURPOSE: Builds dashboard-ready audit-trail rows, vendor/field summaries, counts, and filter values.
-def build_audit_trail_payload(rows: list[dict]) -> dict:
-    normalized_rows = [r for row in rows if (r := normalize_audit_row(row))]
-
-    from collections import Counter
-
-    vendor_groups: dict[str, dict] = {}
-    for row in normalized_rows:
-        vendor_name = (row.get("VendorName") or "").strip()
-        if "hdfc" in vendor_name.lower():
-            vendor_key = "HDFC"
-        elif "axis" in vendor_name.lower():
-            vendor_key = "Axis"
-        elif "qatar" in vendor_name.lower():
-            vendor_key = "Qatar"
-        else:
-            vendor_key = "Other"
-
-        if vendor_key not in vendor_groups:
-            vendor_groups[vendor_key] = {
-                "vendorName": vendor_key,
-                "banklCount": 0, "financialServicesOutsourcingCount": 0,
-                "panNumberCount": 0, "servicesCount": 0, "grandTotal": 0,
-            }
-        group = vendor_groups[vendor_key]
-        field_changed = (row.get("FieldChanged") or "").strip().lower()
-        if field_changed == "bankl":
-            group["banklCount"] += 1
-        if field_changed == "financial services outsourcing":
-            group["financialServicesOutsourcingCount"] += 1
-        if field_changed == "pan number":
-            group["panNumberCount"] += 1
-        if field_changed == "services":
-            group["servicesCount"] += 1
-        group["grandTotal"] = (
-            group["banklCount"] + group["financialServicesOutsourcingCount"]
-            + group["panNumberCount"] + group["servicesCount"]
-        )
-
-    field_description_groups: dict[str, dict] = {}
-    for row in normalized_rows:
-        field_desc = (row.get("FieldDescription") or "").strip()
-        if not field_desc or field_desc == "Unspecified":
-            field_desc = (row.get("FieldChanged") or "").strip() or "Unspecified"
-        if field_desc not in field_description_groups:
-            field_description_groups[field_desc] = {
-                "fieldDescription": field_desc,
-                "highRiskCount": 0, "lowRiskCount": 0, "grandTotal": 0,
-            }
-        group = field_description_groups[field_desc]
-        risk = (row.get("Risk") or "").strip().lower()
-        if risk == "high":
-            group["highRiskCount"] += 1
-        else:
-            group["lowRiskCount"] += 1
-        group["grandTotal"] = group["highRiskCount"] + group["lowRiskCount"]
-
-    return {
-        "rows": normalized_rows,
-        "vendorSummaryTable": [vendor_groups[k] for k in ["HDFC", "Axis", "Qatar"] if k in vendor_groups],
-        "fieldDescriptionSummaryTable": [field_description_groups[k] for k in sorted(field_description_groups)],
-        "summary": {
-            "total_rows": len(normalized_rows),
-            "status_count": dict(Counter(row["Status"] for row in normalized_rows)),
-            "owner_count": dict(Counter(row["Owner"] for row in normalized_rows)),
-        },
-        "filters": {
-            "year": sorted({row["Year"] for row in normalized_rows if row.get("Year")}),
-            "quantity": sorted({row["Quantity"] for row in normalized_rows if row.get("Quantity")}),
-            "monthName": sorted({row["MonthName"] for row in normalized_rows if row.get("MonthName")}),
-        },
-    }
 
 
 # PURPOSE: Loads saved encrypted hygiene remarks and returns an empty mapping if loading fails.
@@ -1236,10 +967,7 @@ def send_observation_to_lars(data: dict) -> dict:
 
     return {"raw_response": res_data, "planid": plan_id, "ObservReqID": observ_req_id, "lars_url": lars_url}
 
-
-# ---------------------------------------------------------------------------
 # Routes
-# ---------------------------------------------------------------------------
 
 @app.route("/")
 # PURPOSE: Protects the main dashboard page with a session check and then renders its HTML template.
@@ -1300,40 +1028,6 @@ def get_data():
         "bank_summary": bank_summary,
         "pay_summary": pay_summary,
     })
-
-
-@app.route("/api/audit-trail", methods=["GET"])
-# PURPOSE: Returns audit-trail rows and their summary information as JSON.
-def get_audit_trail_data():
-    rows = get_audit_trail_rows()
-    return jsonify(build_audit_trail_payload(rows))
-
-
-@app.route("/api/audit-trail/upload", methods=["POST"])
-# PURPOSE: Validates an uploaded Excel audit-trail file, parses it, saves its rows, and reports the result.
-def upload_audit_trail_file():
-    uploaded = request.files.get("file")
-    if not uploaded or not uploaded.filename:
-        return jsonify({"success": False, "error": "No file uploaded"}), 400
-
-    filename = secure_filename(uploaded.filename)
-    if not filename.lower().endswith((".xlsx", ".xls")):
-        return jsonify({"success": False, "error": "Please upload an Excel file (.xlsx or .xls)"}), 400
-
-    temp_fd, temp_path = tempfile.mkstemp(suffix=os.path.splitext(filename)[1])
-    os.close(temp_fd)
-    try:
-        uploaded.save(temp_path)
-        df = pl.read_excel(temp_path, infer_schema_length=0)
-        rows = parse_audit_trail_rows(df)
-        save_audit_trail_rows(rows, filename)
-        return jsonify({"success": True, "rows": len(rows), "file": filename})
-    except Exception as exc:
-        return jsonify({"success": False, "error": str(exc)}), 500
-    finally:
-        if os.path.exists(temp_path):
-            os.remove(temp_path)
-
 
 # ── OBSERVATIONS ENDPOINTS ──────────────────────────────────────
 
@@ -1535,106 +1229,7 @@ def upload_observation_file():
 
 # ── Document OCR / KYC extraction ───────────────────────────────
 
-@app.route("/data-extraction")
-# PURPOSE: Renders the document data-extraction page.
-def data_extraction_page():
-    return render_template("pages/data_extraction.html")
-
-
-@app.route("/api/extract-kyc", methods=["POST"])
-# PURPOSE: Runs OCR on uploaded image/PDF files, identifies Aadhaar/PAN-like text patterns, and returns an Excel file.
-def extract_kyc():
-    files = request.files.getlist("files")
-    if not files:
-        return jsonify({"error": "No files uploaded"}), 400
-
-    records = []
-    for file in files:
-        filename = file.filename
-        ext = filename.lower().split(".")[-1]
-        try:
-            if ext in ("jpg", "jpeg", "png"):
-                img = Image.open(file.stream)
-                text = pytesseract.image_to_string(img, lang="eng")
-            elif ext == "pdf":
-                file_bytes = file.read()
-                pages = convert_from_bytes(file_bytes, dpi=300)
-                text = "".join(pytesseract.image_to_string(p, lang="eng") for p in pages)
-            else:
-                continue
-
-            t_upper = text.upper()
-            if "AADHAAR" in t_upper or "UIDAI" in t_upper:
-                doc_type = "Aadhaar Card"
-                match = re.search(r"\b\d{4}\s\d{4}\s\d{4}\b", text)
-                doc_number = match.group().replace(" ", "") if match else ""
-            elif "INCOME TAX DEPARTMENT" in t_upper or "PERMANENT ACCOUNT NUMBER" in t_upper:
-                doc_type = "PAN Card"
-                match = re.search(r"\b[A-Z]{5}[0-9]{4}[A-Z]\b", text)
-                doc_number = match.group() if match else ""
-            else:
-                doc_type = "Unknown"
-                doc_number = ""
-
-            records.append({
-                "File Name": filename, "Document Type": doc_type,
-                "Document Number": doc_number, "Person Name": "",
-            })
-        except Exception as e:
-            records.append({"File Name": filename, "Document Type": "Error",
-                            "Document Number": "", "Person Name": str(e)})
-
-    output = io.BytesIO()
-    pl.DataFrame(records).write_excel(output)
-    output.seek(0)
-    return send_file(
-        output,
-        download_name="id_extracted_data.xlsx",
-        as_attachment=True,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
-
-
 # ── Document tampering detection ─────────────────────────────────
-
-FORENSICS_PROMPT = """You are an elite digital document forensics system tasked with analyzing an image for sophisticated tampering.
-Perform an exhaustive pixel-level and semantic analysis based on standard forensic criteria.
-
-CRITICAL VISUAL ANALYSIS DIRECTION:
-1. FONT TEXTURE AND SOFTNESS COMPARISON: Real documents captured via scans or cameras exhibit a uniform edge softness/fuzziness across both labels and their corresponding values. Closely inspect fields like names, designations, and dates. If a text label (e.g., 'Date of Birth:') looks soft or compressed, but its associated value (e.g., the numerical date) is perfectly crisp, bold, or uses a high-contrast modern digital font, flag this as a critical digital overlay anomaly.
-2. COMPRESSION AND RESAMPLING MISMATCHES: Look for individual words or blocks of text (such as specific job designations or specific numeric fields) that appear visually sharper, heavier in weight, or display brighter compression auras than the baseline template text surrounding them.
-3. GEOGRAPHIC & JURISDICTIONAL LOGIC: Cross-reference the administrative locations. If an issuing authority belongs to one specific district (e.g., Goalpara), but the deployment data or personal address explicitly places them in a non-overlapping district (e.g., Udalguri), flag this as an impossible administrative contradiction.
-
-Provide your forensic report in this exact schema:
-- IDENTIFIED DOCUMENT: [Type of document]
-- COMPREHENSIVE VERDICT: [FAILED / TAMPERED or PASSED / AUTHENTIC]
-- FRAUD RISK CONFIDENCE (0-100%): [Score]
-- DETECTED VISUAL ANOMALIES: [Clearly point out any font edge softness mismatches, sharp digital overlays, or suspicious text boldness gaps compared to their labels]
-- DETECTED TEXTUAL ANOMALIES: [Detail any geographic, chronological, or logical contradictions]
-"""
-
-
-@app.route("/analyze", methods=["POST"])
-# PURPOSE: Sends an uploaded document image and forensic-analysis prompt to Gemini, then returns its report.
-def analyze():
-    if "image" not in request.files:
-        return jsonify({"error": "No image file uploaded."}), 400
-    file = request.files["image"]
-    if file.filename == "":
-        return jsonify({"error": "No image file selected."}), 400
-    if client is None:
-        return jsonify({"error": "Server is not configured with a Gemini API key."}), 503
-
-    image_bytes = file.read()
-    mime_type = file.mimetype or "image/png"
-    try:
-        response = client.models.generate_content(
-            model=GEN_MODEL,
-            contents=[types.Part.from_bytes(data=image_bytes, mime_type=mime_type), FORENSICS_PROMPT],
-        )
-        return jsonify({"report": response.text})
-    except Exception as e:
-        return jsonify({"error": f"Pipeline execution failure: {e}"}), 500
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
