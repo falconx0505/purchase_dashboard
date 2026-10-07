@@ -1063,8 +1063,7 @@ def load_excel_data() -> dict:
         elif len(names) > 1:
             prod_code_check.append({"PROD_CODE": code, "STATUS": "Multiple products"})
 
-    # STEP: Calculate expected GST and flag differences outside the configured tolerance.
-    # --- calculation check page ---
+    # --- GST check ---
     gst_frame = purchase_frame.select(["INVOICE_NO", "INVOICE_AMT", "GST_RATE", "GST_AMT"])
     gst_frame = gst_frame.with_columns([
         ((pl.col("INVOICE_AMT") * pl.col("GST_RATE") / 100).round(2)).alias("EXPECTED_GST"),
@@ -1077,8 +1076,7 @@ def load_excel_data() -> dict:
     ])
     gst_check = gst_frame.to_dicts()
 
-    # STEP: Compare recorded discounts with calculated discounts and flag large differences.
-    # --- calculation check page
+    # --- Discount check ---
     disc_frame = purchase_frame.select(["INVOICE_NO", "INVOICE_AMT", "DISCOUNT", "CALC_DISCOUNT", "DISC_DIFF"])
     disc_frame = disc_frame.with_columns([
         pl.when(pl.col("DISC_DIFF").abs() < 1).then(pl.lit("OK")).otherwise(pl.lit("Error")).alias("STATUS"),
@@ -1121,8 +1119,6 @@ def ensure_data_loaded():
     return DATA
 
 
-# PURPOSE: Aggregates purchase rows for dashboard display and limits large lists sent to the frontend.
-#po vs grn page
 def _dashboard_payload(payload: dict) -> dict:
     purchase_list = payload["purchase"]
     if purchase_list:
