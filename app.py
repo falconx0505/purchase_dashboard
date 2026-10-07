@@ -1,11 +1,5 @@
 import os
-
-
-# ============================================================
 # LOAD .ENV FIRST
-# ============================================================
-
-# PURPOSE: Reads key=value settings from the .env file and places them in environment variables.
 def load_env_file(path):
     if not os.path.exists(path):
         print(f"WARNING: .env file not found at: {path}")
@@ -26,16 +20,10 @@ def load_env_file(path):
             key, _, value = line.partition("=")
 
             os.environ[key.strip()] = value.strip().strip('"').strip("'")
-
-
-# IMPORTANT:
 # .env MUST be loaded before importing db_postgres
 load_env_file(os.path.join(os.path.dirname(__file__), ".env"))
 
-
-# ============================================================
 # DEBUG
-# ============================================================
 
 print("DEBUG PG_HOST:", os.getenv("PG_HOST"))
 print("DEBUG PG_PORT:", os.getenv("PG_PORT"))
@@ -43,10 +31,7 @@ print("DEBUG PG_DB:", os.getenv("PG_DB"))
 print("DEBUG PG_USER:", os.getenv("PG_USER"))
 print("DEBUG PG_PASSWORD EXISTS:", bool(os.getenv("PG_PASSWORD")))
 
-
-# ============================================================
 # NORMAL IMPORTS
-# ============================================================
 
 import math
 import re
@@ -57,13 +42,11 @@ import json
 import time
 from datetime import datetime
 from xml.etree.ElementTree import iterparse
-
 from werkzeug.utils import secure_filename
 import polars as pl
 import requests
 import io
 import shutil
-
 from flask import (
     Flask,
     request,
@@ -73,12 +56,8 @@ from flask import (
     session,
     redirect,
 )
-
-
 from auth import auth_bp
-
 from db_postgres import init_users_table
-
 from db_encrypted_store import (
     init_encrypted_tables,
     save_purchase_snapshot,
@@ -87,7 +66,8 @@ from db_encrypted_store import (
     delete_hygiene_remark_encrypted,
     load_hygiene_remarks_encrypted,
 )
-
+# Column mapping — single source of truth (see column_mapping.py)
+from column_mapping import apply_column_mapping, get_active_column_map, ACTIVE_CLIENT
 
 VALID_CATEGORIES = {
     "multi_tax", "prod_gst", "dup_cust", "prod_name", "prod_code",
@@ -108,7 +88,7 @@ ALL_FIELDS = [
     "CompanyID", "EmpId", "ReportNo",
 ]
 
-# Null / NaN helpers (replaces pd.isna)
+# apply_one_to_one_mapping removed — replaced by apply_column_mapping() from column_mapping.py
 
 # PURPOSE: Checks whether a value should be treated as missing, including None, NaN, and blank-like strings.
 def _is_na(value) -> bool:
@@ -168,13 +148,11 @@ ALL_MONTHS = ["January", "February", "March", "April", "May", "June",
               "July", "August", "September", "October", "November", "December"]
 MONTH_ORDER = ALL_MONTHS
 
-USE_COLUMNS = {
-    "bill no", "store code", "store name", "ordering channel", "source", "region",
-    "product code", "product name", "product cgst rate", "product sgst rate",
-    "product cgst amount", "product sgst amount", "net sale", "gross sale",
-    "item price", "quantity", "marketing discount amount", "loyalty discount amount",
-    "bill date time", "business day date",
-}
+# USE_COLUMNS is now derived at runtime from the active client's column mapping.
+# We keep ALL columns from the Excel and let apply_column_mapping() filter/rename them.
+# This constant is left here for reference but is no longer used as a pre-filter.
+USE_COLUMNS: set = set()  # kept for backward-compat; unused after mapping refactor
+
 XML_NS = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
 RE_COL = re.compile(r"([A-Z]+)")
 
@@ -386,10 +364,7 @@ def persist_sqlite_tables(po_data, grn_data, bank_data, blocked_vendors, gst_che
 
         conn.commit()
 
-
-# ---------------------------------------------------------------------------
 # Excel streaming parser (unchanged — intentional low-level XML approach)
-# ---------------------------------------------------------------------------
 
 # PURPOSE: Converts an Excel column reference such as A or AB into a zero-based column index.
 def _col_letter_to_index(ref: str) -> int:
@@ -401,7 +376,6 @@ def _col_letter_to_index(ref: str) -> int:
     for ch in col:
         idx = idx * 26 + (ord(ch) - 64)
     return idx - 1
-
 
 # PURPOSE: Reads the shared-string table inside an XLSX file, which stores repeated cell text.
 def _extract_shared_strings(z) -> list[str]:
@@ -431,11 +405,6 @@ def _find_sheet_path(z) -> str:
         if name.startswith("xl/worksheets/") and name.endswith(".xml"):
             return name
     raise FileNotFoundError("No worksheet XML found in XLSX archive")
-
-
-# ---------------------------------------------------------------------------
-# Date parsing (Polars version — replaces parse_excel_dates with pd)
-# ---------------------------------------------------------------------------
 
 # PURPOSE: Converts an Excel day-serial number into a Python date; returns None if it cannot parse it.
 def _parse_excel_serial_date(value: str):
@@ -467,10 +436,7 @@ def _parse_date_value(value: str):
             continue
     return None
 
-
-# ---------------------------------------------------------------------------
 # Main data loading (Polars)
-# ---------------------------------------------------------------------------
 
 # PURPOSE: Loads the source workbook, cleans and derives purchase fields, creates demo audit datasets, runs checks, saves results, and returns the combined data.
 def load_excel_data() -> dict:
@@ -478,7 +444,6 @@ def load_excel_data() -> dict:
         raise FileNotFoundError(f"Excel source not found: {DATA_PATH}")
 
     # STEP: Open the XLSX archive and stream its worksheet XML into header and row values.
-    # --- low-level XML streaming parse (kept as-is for performance) ---
     with zipfile.ZipFile(DATA_PATH, "r") as z:
         shared_strings = _extract_shared_strings(z)
         sheet_path = _find_sheet_path(z)
@@ -512,35 +477,44 @@ def load_excel_data() -> dict:
                     row_idx += 1
                     elem.clear()
 
-    selected_columns = [i for i, name in enumerate(header) if name in USE_COLUMNS]
-    selected_headers = [header[i] for i in selected_columns]
-    selected_rows = [
-        {selected_headers[i]: (row_values[idx] if idx < len(row_values) else "")
-         for i, idx in enumerate(selected_columns)}
+    # STEP: Keep ALL columns from the worksheet; column_mapping will filter/rename them.
+    all_headers = header  # already lowercased strings
+    all_rows = [
+        {all_headers[i]: (row_values[i] if i < len(row_values) else "")
+         for i in range(len(all_headers))}
         for row_values in rows
     ]
 
-    # STEP: Turn selected worksheet values into a Polars table for cleaning and calculations.
-    # --- build Polars DataFrame ---
-    df = pl.DataFrame(selected_rows, schema={h: pl.Utf8 for h in selected_headers})
+    # STEP: Turn raw worksheet values into a Polars table.
+    df = pl.DataFrame(all_rows, schema={h: pl.Utf8 for h in all_headers})
     df = df.rename({c: c.strip().lower() for c in df.columns})
 
-    # STEP: Ensure text fields exist, are strings, and have surrounding whitespace removed.
-    # String columns — ensure Utf8 and strip
-    text_cols = ["bill no", "store code", "store name", "ordering channel", "source",
-                 "region", "product code", "product name"]
+    # STEP: Apply the active client's column mapping (rename client headers → our
+    # internal names; drop any extra/unmapped client columns).
+    print(f"[load_excel_data] Applying column mapping for client: {ACTIVE_CLIENT}")
+    df = apply_column_mapping(df)
+
+    # STEP: Ensure core text fields exist, are strings, and have whitespace removed.
+    # These names are the internal names produced by apply_column_mapping.
+    text_cols = [
+        "invoice_number", "customer_code", "customer_name",
+        "product_code", "product_name_1", "our_company_name",
+        "location_1", "tax_code", "tax_description",
+    ]
     for col in text_cols:
         if col not in df.columns:
             df = df.with_columns(pl.lit("").alias(col))
         else:
             df = df.with_columns(pl.col(col).cast(pl.Utf8).str.strip_chars().fill_null(""))
 
-    # STEP: Convert amount/rate/quantity fields to numbers; invalid or missing values become zero.
-    # Numeric columns
+    # STEP: Convert amount / rate / quantity fields to numbers.
+    # Internal names produced by apply_column_mapping.
     numeric_cols = [
-        "product cgst rate", "product sgst rate", "product cgst amount", "product sgst amount",
-        "net sale", "gross sale", "item price", "quantity",
-        "marketing discount amount", "loyalty discount amount",
+        "product_cgst_amount", "product_sgst_amount", "product_igst_amount",
+        "net_sale", "gross_sale", "item_price", "quantity",
+        "discount_amount", "discount_rate",
+        "discount_amount_1", "discount_rate_1",
+        "invoice_amount", "tax_rate_1",
     ]
     for col in numeric_cols:
         if col not in df.columns:
@@ -558,12 +532,13 @@ def load_excel_data() -> dict:
 
 
     # STEP: Parse dates and derive month/year labels for grouping and filtering.
-    # Parse dates
-    date_col = "bill date time" if "bill date time" in df.columns else "business day date"
-    fallback_col = "business day date" if "business day date" in df.columns else date_col
+    # Internal date column name produced by apply_column_mapping.
+    date_col = "business_day_date" if "business_day_date" in df.columns else None
 
-    parsed_dates = [_parse_date_value(v) for v in df[date_col].to_list()]
-    parsed_fallback = [_parse_date_value(v) for v in df[fallback_col].to_list()]
+    if date_col:
+        parsed_dates = [_parse_date_value(v) for v in df[date_col].to_list()]
+    else:
+        parsed_dates = [None] * df.height
 
     months = []
     years = []
@@ -580,41 +555,44 @@ def load_excel_data() -> dict:
         pl.Series("YEAR", years, dtype=pl.Int64),
     ])
 
-    # STEP: Calculate GST, invoice, total, discount, and standardized entity fields.
-    # Derived columns
+    # STEP: Calculate derived columns using our internal column names.
+    # GST_RATE: use tax_rate_1 as the combined GST rate (CGST+SGST = full rate)
+    # If the client provides separate CGST/SGST amounts, sum them for GST_AMT.
     df = df.with_columns([
-        (pl.col("product cgst rate") + pl.col("product sgst rate")).alias("GST_RATE"),
-        pl.col("net sale").alias("INVOICE_AMT"),
-        (pl.col("product cgst amount") + pl.col("product sgst amount")).alias("GST_AMT"),
-        pl.col("gross sale").alias("TOTAL_AMT"),
-        (pl.col("marketing discount amount") + pl.col("loyalty discount amount")).alias("DISCOUNT"),
-        (pl.col("item price") * pl.col("quantity") - pl.col("net sale")).alias("CALC_DISCOUNT"),
-        pl.col("store name").str.replace("^$", "Unknown Store").alias("COMP_NM"),
-        pl.col("region").str.replace("^$", "Unknown").alias("COMP_STATE"),
-        pl.col("ordering channel").str.replace("^$", "Unknown").alias("CUST_NM"),
-        pl.col("source").str.replace("^$", "Unknown").alias("CUST_STATE"),
-        pl.col("product name").str.replace("^$", "Unknown Product").alias("PROD_NM"),
-        pl.col("product code").str.replace("^$", "Unknown").alias("PROD_CODE"),
+        pl.col("tax_rate_1").alias("GST_RATE"),
+        pl.col("net_sale").alias("INVOICE_AMT"),
+        (pl.col("product_cgst_amount") + pl.col("product_sgst_amount")
+         + pl.col("product_igst_amount")).alias("GST_AMT"),
+        pl.col("gross_sale").alias("TOTAL_AMT"),
+        pl.col("discount_amount").alias("DISCOUNT"),
+        (pl.col("item_price") * pl.col("quantity") - pl.col("net_sale")).alias("CALC_DISCOUNT"),
+        pl.col("our_company_name").str.replace("^$", "Unknown Company").alias("COMP_NM"),
+        pl.col("location_1").str.replace("^$", "Unknown").alias("COMP_STATE"),
+        pl.col("customer_name").str.replace("^$", "Unknown Customer").alias("CUST_NM"),
+        pl.col("customer_code").str.replace("^$", "Unknown").alias("CUST_STATE"),
+        pl.col("product_name_1").str.replace("^$", "Unknown Product").alias("PROD_NM"),
+        pl.col("product_code").str.replace("^$", "Unknown").alias("PROD_CODE"),
+        pl.col("customer_code").str.replace("^$", "Unknown").alias("CUST_CD"),
     ])
     df = df.with_columns(
         (pl.col("DISCOUNT") - pl.col("CALC_DISCOUNT")).alias("DISC_DIFF"),
     )
 
-    # STEP: Build a readable tax description from the CGST and SGST rates.
-    # TAX_DESC
-    tax_desc = [
-        f"{round(cgst, 2)}% CGST, {round(sgst, 2)}% SGST"
-        for cgst, sgst in zip(
-            df["product cgst rate"].to_list(),
-            df["product sgst rate"].to_list(),
-        )
-    ]
+    # STEP: Build TAX_DESC from the tax_description column; fall back to rate if missing.
+    if "tax_description" in df.columns:
+        tax_desc = [
+            safe_text(v, "N/A") for v in df["tax_description"].to_list()
+        ]
+    else:
+        tax_desc = [
+            f"{round(r, 2)}% GST" for r in df["GST_RATE"].to_list()
+        ]
     df = df.with_columns(pl.Series("TAX_DESC", tax_desc, dtype=pl.Utf8))
 
     # STEP: Select the cleaned columns and rename them into the purchase-data schema.
-    # purchase_frame — select + rename
+    # invoice_number is the internal name produced by apply_column_mapping.
     purchase_frame = df.select([
-        pl.col("bill no").alias("INVOICE_NO"),
+        pl.col("invoice_number").alias("INVOICE_NO"),
         "COMP_NM", "COMP_STATE", "PROD_NM", "PROD_CODE",
         "CUST_NM", "CUST_STATE", "MONTH",
         pl.col("YEAR").cast(pl.Int64),
@@ -659,9 +637,10 @@ def load_excel_data() -> dict:
                 "TAX_DESC": ", ".join(descs), "COUNT": len(group),
             })
 
+    # Duplicate customer check: same customer_name mapped to multiple customer_code values.
     dup_customers = []
-    for name, group in df.group_by("COMP_NM"):
-        codes = sorted({safe_text(c) for c in group["store code"].to_list() if safe_text(c)})
+    for name, group in df.group_by("CUST_NM"):
+        codes = sorted({safe_text(c) for c in group["CUST_CD"].to_list() if safe_text(c)})
         if len(codes) > 1:
             dup_customers.append({"CUST_NM": name, "CUST_CD": ", ".join(codes[:3]), "COUNT": len(group)})
 
@@ -791,10 +770,7 @@ def _dashboard_payload(payload: dict) -> dict:
         "months": payload.get("months", []),
     }
 
-
-# ---------------------------------------------------------------------------
 # LARS integration
-# ---------------------------------------------------------------------------
 
 LARS_API_URL = "http://45.248.67.66/LARS_Demo_bank/ImportObservationApi.asmx/AddObservations"
 LARS_OBS_VIEW_URL = "http://45.248.67.66/LARS_Demo_bank/ObsevationRequestView.aspx"
@@ -1217,11 +1193,6 @@ def upload_observation_file():
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
-
-# ── Document OCR / KYC extraction ───────────────────────────────
-
-# ── Document tampering detection ─────────────────────────────────
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=True)
